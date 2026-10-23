@@ -3,7 +3,6 @@ import {
   Animated,
   Pressable,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text as NativeText,
   View,
@@ -17,23 +16,16 @@ import {
   Star,
   Store,
 } from 'lucide-react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { homeScreen as styles } from './styles';
-
-const fontFamilies = {
-  normal: 'Inter-Regular',
-  '400': 'Inter-Regular',
-  '500': 'Inter-Medium',
-  '600': 'Inter-SemiBold',
-  '700': 'Inter-Bold',
-  '800': 'Inter-ExtraBold',
-  '900': 'Inter-Black',
-  bold: 'Inter-Bold',
-};
+import PrimaryButton from '../../components/PrimaryButton';
+import AuthLayout from '../auth/AuthLayout';
+import { fontFamilies, homeScreen as styles } from './styles';
 
 function Text({ style, ...props }) {
   const textStyle = StyleSheet.flatten(style);
-  const fontFamily = fontFamilies[textStyle?.fontWeight] || 'Inter-Regular';
+  const fontFamily =
+    textStyle?.fontFamily ||
+    fontFamilies.byWeight[textStyle?.fontWeight] ||
+    fontFamilies.regular;
 
   return (
     <NativeText
@@ -195,7 +187,7 @@ function TalentCard({ talent }) {
   );
 }
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
   const [openFaqs, setOpenFaqs] = useState([]);
   const [tickerWidth, setTickerWidth] = useState(0);
   const tickerOffset = useRef(new Animated.Value(0)).current;
@@ -226,16 +218,18 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FDF5E4" />
+    <AuthLayout
+      contentStyle={styles.layoutContent}
+      headerAction={
+        <Pressable
+          onPress={() => navigation.navigate('Login')}
+          style={styles.loginButton}
+        >
+          <Text style={styles.loginText}>Connexion</Text>
+        </Pressable>
+      }
+    >
       <View style={styles.screen}>
-        <View style={styles.header}>
-          <Text style={styles.brand}>bookly</Text>
-          <Pressable style={styles.loginButton}>
-            <Text style={styles.loginText}>Connexion</Text>
-          </Pressable>
-        </View>
-
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.content}
@@ -263,12 +257,10 @@ export default function HomeScreen() {
             </Text>
 
             <View style={styles.heroActions}>
-              <Pressable style={styles.primaryButton}>
-                <Text style={styles.primaryButtonText}>
-                  Trouver du personnel
-                </Text>
-                <ArrowRight size={17} color="#FFFFFF" strokeWidth={2.5} />
-              </Pressable>
+              <PrimaryButton
+                icon={<ArrowRight size={17} color="#FFFFFF" strokeWidth={2.5} />}
+                title="Trouver du personnel"
+              />
               <Pressable style={styles.secondaryButton}>
                 <Text style={styles.secondaryButtonText}>
                   Devenir extra partenaire
@@ -391,12 +383,10 @@ export default function HomeScreen() {
                 recevez des candidatures qualifiées sans effort.
               </Text>
               <BenefitList items={clientBenefits} />
-              <Pressable style={styles.primaryButton}>
-                <Text style={styles.primaryButtonText}>
-                  Créer un compte client
-                </Text>
-                <ArrowRight size={16} color="#FFFFFF" strokeWidth={2.5} />
-              </Pressable>
+              <PrimaryButton
+                icon={<ArrowRight size={16} color="#FFFFFF" strokeWidth={2.5} />}
+                title="Créer un compte client"
+              />
             </View>
 
             <View style={styles.infoCard}>
@@ -505,15 +495,15 @@ export default function HomeScreen() {
         <View style={styles.bottomNavigation}>
           <Pressable style={styles.bottomTab}>
             <Store size={18} color="#6B584C" strokeWidth={1.8} />
-            <Text style={styles.bottomTabText}>Espace Client</Text>
+            <Text style={styles.bottomTabText}>Inscription Client</Text>
           </Pressable>
           <View style={styles.tabDivider} />
           <Pressable style={styles.bottomTab}>
             <BadgeCheck size={18} color="#6B584C" strokeWidth={1.8} />
-            <Text style={styles.bottomTabText}>Espace Extra</Text>
+            <Text style={styles.bottomTabText}>Inscription Extra</Text>
           </Pressable>
         </View>
       </View>
-    </SafeAreaView>
+    </AuthLayout>
   );
 }

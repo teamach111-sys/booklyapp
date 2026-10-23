@@ -1,0 +1,121 @@
+import { useState } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { Eye, EyeOff } from 'lucide-react-native';
+import PrimaryButton from '../../components/PrimaryButton';
+import AuthLayout from './AuthLayout';
+import { authColors, loginScreen as styles } from './styles';
+
+export default function LoginScreen() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+
+  return (
+    <AuthLayout>
+      <ScrollView
+        style={styles.card}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.title}>Connexion</Text>
+        <Text style={styles.description}>Ravi de vous revoir sur Bookly.</Text>
+
+        <View style={styles.form}>
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            accessibilityLabel="Email"
+            autoCapitalize="none"
+            autoComplete="email"
+            autoCorrect={false}
+            keyboardType="email-address"
+            placeholder="email@bookly.fr"
+            placeholderTextColor={authColors.muted}
+            returnKeyType="next"
+            style={styles.input}
+            textContentType="emailAddress"
+            value={email}
+            onChangeText={setEmail}
+          />
+
+          <View style={styles.passwordLabelRow}>
+            <Text style={styles.label}>Mot de passe</Text>
+            <Pressable accessibilityRole="button">
+              <Text style={styles.link}>Oublié ?</Text>
+            </Pressable>
+          </View>
+          <View style={styles.passwordInput}>
+            <TextInput
+              accessibilityLabel="Mot de passe"
+              autoCapitalize="none"
+              autoComplete="password"
+              placeholder="••••••••••"
+              placeholderTextColor={authColors.muted}
+              returnKeyType="done"
+              secureTextEntry={!showPassword}
+              style={styles.passwordTextInput}
+              textContentType="password"
+              value={password}
+              onChangeText={setPassword}
+            />
+            <Pressable
+              accessibilityLabel={
+                showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'
+              }
+              accessibilityRole="button"
+              onPress={() => setShowPassword(current => !current)}
+              style={styles.visibilityButton}
+            >
+              {showPassword ? (
+                <EyeOff size={19} color={authColors.muted} />
+              ) : (
+                <Eye size={19} color={authColors.muted} />
+              )}
+            </Pressable>
+          </View>
+
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: rememberMe }}
+            onPress={() => setRememberMe(current => !current)}
+            style={styles.rememberRow}
+          >
+            <View
+              style={[
+                styles.checkbox,
+                rememberMe && styles.checkboxChecked,
+              ]}
+            >
+              {rememberMe ? <Text style={styles.checkboxCheck}>✓</Text> : null}
+            </View>
+            <Text style={styles.rememberText}>Rester connecté</Text>
+          </Pressable>
+
+          <PrimaryButton
+            style={styles.submitButton}
+            title="Se connecter"
+          />
+        </View>
+
+        <View style={styles.registration}>
+          <Text style={styles.registrationPrompt}>Pas encore de compte ?</Text>
+          <View style={styles.registrationButtons}>
+            <Pressable accessibilityRole="button" style={styles.registrationButton}>
+              <Text style={styles.registrationButtonText}>Devenir Extra</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" style={styles.registrationButton}>
+              <Text style={styles.registrationButtonText}>Espace Client</Text>
+            </Pressable>
+          </View>
+        </View>
+      </ScrollView>
+    </AuthLayout>
+  );
+}

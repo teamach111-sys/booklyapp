@@ -5,7 +5,6 @@ const colors = {
   white: '#FFFFFF',
   cream: '#FFF9EE',
   brown: '#4A3222',
-  text: '#3A2A1E',
   muted: '#6B584C',
   orange: '#D47A31',
   orangeDark: '#B9622C',
@@ -13,37 +12,43 @@ const colors = {
   palePink: '#F7E7DE',
   gold: '#F4CC73',
   green: '#1A6C38',
+  accent: '#C18855',
+};
+
+export const homeSpacing = {
+  headerContentGap: 20,
+};
+
+export const fontFamilies = {
+  regular: 'Inter-Regular',
+  black: 'Inter-Black',
+  extraBold: 'Inter-ExtraBold',
+  byWeight: {
+    normal: 'Inter-Regular',
+    '400': 'Inter-Regular',
+    '500': 'Inter-Medium',
+    '600': 'Inter-SemiBold',
+    '700': 'Inter-Bold',
+    '800': 'Inter-ExtraBold',
+    '900': 'Inter-Black',
+    bold: 'Inter-Bold',
+  },
 };
 
 export const homeScreen = StyleSheet.create({
   font: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: fontFamilies.regular,
   },
   fontNormal: {
     fontWeight: 'normal',
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
   },
   screen: {
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    minHeight: 52,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  brand: {
-    color: colors.orange,
-    fontSize: 23,
-    fontWeight: '900',
-    letterSpacing: -0.8,
+  layoutContent: {
+    flex: 1,
+    paddingTop: homeSpacing.headerContentGap,
   },
   loginButton: {
     minHeight: 34,
@@ -61,7 +66,6 @@ export const homeScreen = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 20,
     paddingBottom: 24,
     gap: 22,
   },
@@ -90,18 +94,19 @@ export const homeScreen = StyleSheet.create({
     flexShrink: 1,
     color: colors.orangeDark,
     fontSize: 9,
-    fontWeight: '900',
+    fontFamily: fontFamilies.black,
     letterSpacing: 0.45,
   },
   heroTitle: {
     color: colors.brown,
+    fontFamily: fontFamilies.black,
+    fontWeight: 'normal',
     fontSize: 39,
-    fontWeight: '900',
-    letterSpacing: -1.8,
     lineHeight: 42,
+    letterSpacing: -1.8,
   },
   heroAccent: {
-    color: '#C18855',
+    color: colors.accent,
     fontWeight: '900',
   },
   heroDescription: {
@@ -114,46 +119,23 @@ export const homeScreen = StyleSheet.create({
     gap: 8,
     marginTop: 2,
   },
-  primaryButton: {
-    minHeight: 44,
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderRadius: 12,
-    backgroundColor: colors.orange,
-    shadowColor: colors.orange,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  primaryButtonText: {
-    color: colors.white,
-    fontSize: 14,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
   secondaryButton: {
-    minHeight: 43,
+    minHeight: 48,
     paddingHorizontal: 16,
     paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    borderRadius: 12,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.white,
   },
   secondaryButtonText: {
     color: colors.orangeDark,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
-    textAlign: 'center',
   },
   socialProof: {
     flexDirection: 'row',
@@ -276,8 +258,9 @@ export const homeScreen = StyleSheet.create({
   sectionTitle: {
     flexShrink: 1,
     color: colors.brown,
+    fontFamily: fontFamilies.extraBold,
+    fontWeight: 'normal',
     fontSize: 15,
-    fontWeight: '800',
     letterSpacing: -0.2,
   },
   sectionAside: {
@@ -353,8 +336,10 @@ export const homeScreen = StyleSheet.create({
   cardTitle: {
     flex: 1,
     color: colors.brown,
+    fontFamily: fontFamilies.extraBold,
+    fontWeight: 'normal',
     fontSize: 15,
-    fontWeight: '800',
+    letterSpacing: -0.2,
   },
   cardDescription: {
     color: colors.muted,
