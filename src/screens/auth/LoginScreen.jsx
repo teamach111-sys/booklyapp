@@ -9,9 +9,9 @@ import {
 import { Eye, EyeOff } from 'lucide-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import AuthLayout from './AuthLayout';
-import { authColors, loginScreen as styles } from './styles';
+import { colors, loginScreenStyles as styles } from '../../styles';
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
@@ -37,7 +37,7 @@ export default function LoginScreen() {
             autoCorrect={false}
             keyboardType="email-address"
             placeholder="email@bookly.fr"
-            placeholderTextColor={authColors.muted}
+            placeholderTextColor={colors.muted}
             returnKeyType="next"
             style={styles.input}
             textContentType="emailAddress"
@@ -57,7 +57,7 @@ export default function LoginScreen() {
               autoCapitalize="none"
               autoComplete="password"
               placeholder="••••••••••"
-              placeholderTextColor={authColors.muted}
+              placeholderTextColor={colors.muted}
               returnKeyType="done"
               secureTextEntry={!showPassword}
               style={styles.passwordTextInput}
@@ -74,9 +74,9 @@ export default function LoginScreen() {
               style={styles.visibilityButton}
             >
               {showPassword ? (
-                <EyeOff size={19} color={authColors.muted} />
+                <EyeOff size={19} color={colors.muted} />
               ) : (
-                <Eye size={19} color={authColors.muted} />
+                <Eye size={19} color={colors.muted} />
               )}
             </Pressable>
           </View>
@@ -107,10 +107,18 @@ export default function LoginScreen() {
         <View style={styles.registration}>
           <Text style={styles.registrationPrompt}>Pas encore de compte ?</Text>
           <View style={styles.registrationButtons}>
-            <Pressable accessibilityRole="button" style={styles.registrationButton}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => navigation.navigate('ExtraRegister')}
+              style={styles.registrationButton}
+            >
               <Text style={styles.registrationButtonText}>Devenir Extra</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" style={styles.registrationButton}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => navigation.navigate('ClientRegister')}
+              style={styles.registrationButton}
+            >
               <Text style={styles.registrationButtonText}>Espace Client</Text>
             </Pressable>
           </View>

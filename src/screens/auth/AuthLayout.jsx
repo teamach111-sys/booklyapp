@@ -1,7 +1,7 @@
 import { StatusBar, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../components/Header';
-import { authColors, authLayout as styles } from './styles';
+import { authLayoutStyles as styles, colors } from '../../styles';
 
 export default function AuthLayout({
   children,
@@ -12,7 +12,7 @@ export default function AuthLayout({
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <StatusBar
         barStyle="dark-content"
-        backgroundColor={authColors.background}
+        backgroundColor={colors.background}
       />
       <View style={styles.screen}>
         <Header rightContent={headerAction} />

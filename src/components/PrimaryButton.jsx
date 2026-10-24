@@ -1,8 +1,9 @@
 import { Pressable, Text } from 'react-native';
-import { primaryButton as styles } from './styles';
+import { buttonStyles as styles } from '../styles';
 
 export default function PrimaryButton({
   accessibilityRole = 'button',
+  disabled = false,
   icon,
   onPress,
   style,
@@ -11,10 +12,12 @@ export default function PrimaryButton({
   return (
     <Pressable
       accessibilityRole={accessibilityRole}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
-      style={[styles.button, style]}
+      style={[styles.big, disabled && styles.disabled, style]}
     >
-      <Text style={styles.text}>{title}</Text>
+      <Text style={styles.bigText}>{title}</Text>
       {icon || null}
     </Pressable>
   );

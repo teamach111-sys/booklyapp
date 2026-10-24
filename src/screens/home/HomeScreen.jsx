@@ -3,7 +3,6 @@ import {
   Animated,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text as NativeText,
   View,
 } from 'react-native';
@@ -18,21 +17,15 @@ import {
 } from 'lucide-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import AuthLayout from '../auth/AuthLayout';
-import { fontFamilies, homeScreen as styles } from './styles';
+import {
+  buttonStyles,
+  homeScreenStyles as styles,
+  headerStyles,
+  typography,
+} from '../../styles';
 
 function Text({ style, ...props }) {
-  const textStyle = StyleSheet.flatten(style);
-  const fontFamily =
-    textStyle?.fontFamily ||
-    fontFamilies.byWeight[textStyle?.fontWeight] ||
-    fontFamilies.regular;
-
-  return (
-    <NativeText
-      {...props}
-      style={[styles.font, style, styles.fontNormal, { fontFamily }]}
-    />
-  );
+  return <NativeText {...props} style={[typography.p.regular, style]} />;
 }
 
 const roles = [
@@ -223,9 +216,9 @@ export default function HomeScreen({ navigation }) {
       headerAction={
         <Pressable
           onPress={() => navigation.navigate('Login')}
-          style={styles.loginButton}
+          style={headerStyles.loginButton}
         >
-          <Text style={styles.loginText}>Connexion</Text>
+          <Text style={headerStyles.loginText}>Connexion</Text>
         </Pressable>
       }
     >
@@ -261,8 +254,11 @@ export default function HomeScreen({ navigation }) {
                 icon={<ArrowRight size={17} color="#FFFFFF" strokeWidth={2.5} />}
                 title="Trouver du personnel"
               />
-              <Pressable style={styles.secondaryButton}>
-                <Text style={styles.secondaryButtonText}>
+              <Pressable
+                onPress={() => navigation.navigate('ExtraRegister')}
+                style={buttonStyles.bigSecondary}
+              >
+                <Text style={buttonStyles.bigSecondaryText}>
                   Devenir extra partenaire
                 </Text>
               </Pressable>
@@ -385,6 +381,7 @@ export default function HomeScreen({ navigation }) {
               <BenefitList items={clientBenefits} />
               <PrimaryButton
                 icon={<ArrowRight size={16} color="#FFFFFF" strokeWidth={2.5} />}
+                onPress={() => navigation.navigate('ClientRegister')}
                 title="Créer un compte client"
               />
             </View>
@@ -414,8 +411,11 @@ export default function HomeScreen({ navigation }) {
                 revenus en toute flexibilité.
               </Text>
               <BenefitList items={extraBenefits} />
-              <Pressable style={styles.secondaryButton}>
-                <Text style={styles.secondaryButtonText}>Devenir extra</Text>
+              <Pressable
+                onPress={() => navigation.navigate('ExtraRegister')}
+                style={buttonStyles.bigSecondary}
+              >
+                <Text style={buttonStyles.bigSecondaryText}>Devenir extra</Text>
                 <ArrowRight size={16} color="#B9622C" strokeWidth={2} />
               </Pressable>
             </View>
@@ -493,12 +493,18 @@ export default function HomeScreen({ navigation }) {
         </ScrollView>
 
         <View style={styles.bottomNavigation}>
-          <Pressable style={styles.bottomTab}>
+          <Pressable
+            onPress={() => navigation.navigate('ClientRegister')}
+            style={styles.bottomTab}
+          >
             <Store size={18} color="#6B584C" strokeWidth={1.8} />
             <Text style={styles.bottomTabText}>Inscription Client</Text>
           </Pressable>
           <View style={styles.tabDivider} />
-          <Pressable style={styles.bottomTab}>
+          <Pressable
+            onPress={() => navigation.navigate('ExtraRegister')}
+            style={styles.bottomTab}
+          >
             <BadgeCheck size={18} color="#6B584C" strokeWidth={1.8} />
             <Text style={styles.bottomTabText}>Inscription Extra</Text>
           </Pressable>
