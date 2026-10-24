@@ -3,11 +3,10 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import AuthLayout from './AuthLayout';
-import {
-  colors,
-  forgotPasswordScreenStyles as styles,
-  loginScreenStyles,
-} from '../../styles';
+import { colors, formStyles } from '../../styles';
+
+const styles = formStyles.recovery;
+const loginStyles = formStyles.login;
 
 export default function ForgotPasswordScreen({ navigation, route }) {
   const [email, setEmail] = useState(route.params?.email ?? '');
@@ -15,18 +14,18 @@ export default function ForgotPasswordScreen({ navigation, route }) {
   return (
     <AuthLayout>
       <ScrollView
-        style={loginScreenStyles.card}
-        contentContainerStyle={loginScreenStyles.content}
+        style={loginStyles.card}
+        contentContainerStyle={loginStyles.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={loginScreenStyles.title}>Réinitialisation</Text>
-        <Text style={loginScreenStyles.description}>
+        <Text style={loginStyles.title}>Réinitialisation</Text>
+        <Text style={loginStyles.description}>
           Entrez votre email pour continuer
         </Text>
 
-        <View style={loginScreenStyles.form}>
-          <Text style={loginScreenStyles.label}>Email</Text>
+        <View style={loginStyles.form}>
+          <Text style={loginStyles.label}>Email</Text>
           <TextInput
             accessibilityLabel="Email"
             autoCapitalize="none"
@@ -36,15 +35,12 @@ export default function ForgotPasswordScreen({ navigation, route }) {
             placeholder="email@bookly.fr"
             placeholderTextColor={colors.muted}
             returnKeyType="done"
-            style={[loginScreenStyles.input, styles.input]}
+            style={[loginStyles.input, styles.input]}
             textContentType="emailAddress"
             value={email}
             onChangeText={setEmail}
           />
-          <PrimaryButton
-            style={styles.submitButton}
-            title="Recevoir un lien"
-          />
+          <PrimaryButton style={styles.submitButton} title="Recevoir un lien" />
         </View>
 
         <View style={styles.divider} />

@@ -1,19 +1,12 @@
 import { useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { ChevronDown, X } from 'lucide-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
-import {
-  clientRegisterScreenStyles as registerStyles,
-  colors,
-  loginScreenStyles as loginStyles,
-} from '../../styles';
+import { colors, formStyles } from '../../styles';
 import AuthLayout from './AuthLayout';
+
+const registerStyles = formStyles.clientRegistration;
+const loginStyles = formStyles.login;
 
 const fields = [
   { name: 'name', label: 'Nom', placeholder: 'Votre nom' },
@@ -310,7 +303,9 @@ export default function ClientRegisterScreen({ navigation }) {
             onPress={() => setSites(current => [...current, ''])}
             style={registerStyles.addSiteButton}
           >
-            <Text style={registerStyles.addSiteText}>+ Ajouter un autre site</Text>
+            <Text style={registerStyles.addSiteText}>
+              + Ajouter un autre site
+            </Text>
           </Pressable>
           <Text style={registerStyles.helperText}>
             Indiquez le nom de votre site principal. Si vous avez plusieurs

@@ -27,20 +27,28 @@ import {
   Upload,
 } from 'lucide-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
-import {
-  buttonStyles,
-  clientRegisterScreenStyles as clientStyles,
-  colors,
-  extraRegisterScreenStyles as styles,
-  loginScreenStyles,
-} from '../../styles';
+import { clickableStyles, colors, formStyles, iconStyles } from '../../styles';
 import AuthLayout from './AuthLayout';
+
+const clientStyles = formStyles.clientRegistration;
+const styles = formStyles.extraRegistration;
+const loginForm = formStyles.login;
 
 const baseStepCount = 6;
 
 const formFields = [
-  { name: 'firstname', label: 'Prénom', placeholder: 'Votre prénom', autoComplete: 'given-name' },
-  { name: 'name', label: 'Nom', placeholder: 'Votre nom', autoComplete: 'family-name' },
+  {
+    name: 'firstname',
+    label: 'Prénom',
+    placeholder: 'Votre prénom',
+    autoComplete: 'given-name',
+  },
+  {
+    name: 'name',
+    label: 'Nom',
+    placeholder: 'Votre nom',
+    autoComplete: 'family-name',
+  },
   {
     name: 'email',
     label: 'Email',
@@ -166,7 +174,8 @@ const skills = [
   {
     code: 'SERVICE_BOISSON',
     label: 'Service boisson',
-    description: 'Servir vins, champagnes et boissons selon les règles du service.',
+    description:
+      'Servir vins, champagnes et boissons selon les règles du service.',
   },
   {
     code: 'COCKTAILS_CLASSIQUES',
@@ -233,7 +242,7 @@ const baristaQuestions = [
 
 const documentGroups = [
   {
-    title: "Photo de profil",
+    title: 'Photo de profil',
     files: [{ key: 'photo_profil', label: 'Photo de profil' }],
   },
   {
@@ -269,8 +278,8 @@ const documentGroups = [
 ];
 
 const consents = [
-  ['accept_cga', "J’accepte les Conditions Générales d’Adhésion (CGA)"],
-  ['accept_cgv', "J’accepte les Conditions Générales de Vente (CGV)"],
+  ['accept_cga', 'J’accepte les Conditions Générales d’Adhésion (CGA)'],
+  ['accept_cgv', 'J’accepte les Conditions Générales de Vente (CGV)'],
   ['accept_mentions', 'J’accepte les Mentions légales'],
   ['accept_cookies', 'J’accepte la Politique de cookies'],
 ];
@@ -287,7 +296,7 @@ const stepTitles = [
 function FormField({ field, value, onChange }) {
   return (
     <View style={clientStyles.field}>
-      <Text style={loginScreenStyles.label}>{field.label} *</Text>
+      <Text style={loginForm.label}>{field.label} *</Text>
       <TextInput
         accessibilityLabel={field.label}
         autoCapitalize={field.autoCapitalize || 'sentences'}
@@ -297,7 +306,7 @@ function FormField({ field, value, onChange }) {
         placeholder={field.placeholder}
         placeholderTextColor={colors.muted}
         secureTextEntry={field.secureTextEntry}
-        style={loginScreenStyles.input}
+        style={loginForm.input}
         value={value}
         onChangeText={onChange}
       />
@@ -314,7 +323,7 @@ function OptionCard({ title, description, icon, selected, onPress }) {
       onPress={onPress}
       style={[styles.optionCard, selected && styles.selectedOptionCard]}
     >
-      <View style={styles.optionIcon}>
+      <View style={iconStyles.optionIcon}>
         <Icon size={19} color={colors.orangeDark} />
       </View>
       <View style={styles.optionCopy}>
@@ -329,7 +338,7 @@ function OptionCard({ title, description, icon, selected, onPress }) {
 function ChoiceRow({ label, value, onChange }) {
   return (
     <View style={[clientStyles.field, styles.choiceField]}>
-      <Text style={loginScreenStyles.label}>{label} *</Text>
+      <Text style={loginForm.label}>{label} *</Text>
       <View style={styles.choiceList}>
         {[
           ['1', 'Oui'],
@@ -346,8 +355,8 @@ function ChoiceRow({ label, value, onChange }) {
             >
               <View
                 style={[
-                  loginScreenStyles.checkbox,
-                  selected && loginScreenStyles.checkboxChecked,
+                  loginForm.checkbox,
+                  selected && loginForm.checkboxChecked,
                 ]}
               >
                 {selected ? (
@@ -367,18 +376,20 @@ function SelectField({ label, options, value, onChange }) {
   const [open, setOpen] = useState(false);
   return (
     <View style={clientStyles.field}>
-      <Text style={loginScreenStyles.label}>{label}</Text>
+      <Text style={loginForm.label}>{label}</Text>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
         onPress={() => setOpen(current => !current)}
         style={clientStyles.selectButton}
       >
-        <Text style={clientStyles.selectText}>{value || '— Sélectionner —'}</Text>
+        <Text style={clientStyles.selectText}>
+          {value || '— Sélectionner —'}
+        </Text>
         <ChevronDown
           size={16}
           color={colors.orangeDark}
-          style={open ? styles.selectArrowOpen : undefined}
+          style={open ? iconStyles.selectArrowOpen : undefined}
         />
       </Pressable>
       {open ? (
@@ -418,7 +429,9 @@ function ConsentRow({ label, checked, onPress }) {
       style={styles.consentRow}
     >
       <View style={[styles.consentBox, checked && styles.consentBoxChecked]}>
-        {checked ? <Check size={13} color={colors.white} strokeWidth={3} /> : null}
+        {checked ? (
+          <Check size={13} color={colors.white} strokeWidth={3} />
+        ) : null}
       </View>
       <Text style={styles.consentText}>{label}</Text>
     </Pressable>
@@ -520,7 +533,7 @@ export default function ExtraRegisterScreen() {
 
   const renderEligibility = () => (
     <>
-      <Text style={loginScreenStyles.title}>Avant de commencer</Text>
+      <Text style={loginForm.title}>Avant de commencer</Text>
       <Text style={styles.description}>
         Une question rapide pour vérifier votre éligibilité.
       </Text>
@@ -561,7 +574,7 @@ export default function ExtraRegisterScreen() {
 
   const renderPersonalDetails = () => (
     <>
-      <Text style={loginScreenStyles.title}>{stepTitles[0]}</Text>
+      <Text style={loginForm.title}>{stepTitles[0]}</Text>
       <Text style={styles.description}>
         Étape 1 sur {totalSteps} — Vos coordonnées
       </Text>
@@ -642,16 +655,16 @@ export default function ExtraRegisterScreen() {
 
   const renderDocuments = () => (
     <>
-      <Text style={loginScreenStyles.title}>{stepTitles[1]}</Text>
+      <Text style={loginForm.title}>{stepTitles[1]}</Text>
       <Text style={styles.description}>
         Étape 2 sur {totalSteps} — Vous pouvez compléter plus tard
       </Text>
       <View style={styles.notice}>
         <Text style={styles.noticeTitle}>Information importante</Text>
         <Text style={styles.noticeText}>
-          Vous pourrez ajouter vos documents plus tard depuis votre profil.
-          Sans documents validés, vous ne pourrez pas recevoir de propositions
-          de missions. Un rappel vous sera envoyé après votre inscription.
+          Vous pourrez ajouter vos documents plus tard depuis votre profil. Sans
+          documents validés, vous ne pourrez pas recevoir de propositions de
+          missions. Un rappel vous sera envoyé après votre inscription.
         </Text>
       </View>
       {documentGroups.map(group => (
@@ -699,7 +712,7 @@ export default function ExtraRegisterScreen() {
 
   const renderUrssafNotice = () => (
     <>
-      <Text style={loginScreenStyles.title}>{stepTitles[2]}</Text>
+      <Text style={loginForm.title}>{stepTitles[2]}</Text>
       <Text style={styles.description}>
         Étape 3 sur {totalSteps} — Information importante
       </Text>
@@ -707,22 +720,24 @@ export default function ExtraRegisterScreen() {
         <BriefcaseBusiness
           size={42}
           color={colors.orange}
-          style={styles.noticeIcon}
+          style={iconStyles.noticeIcon}
         />
         <View style={styles.noticeHeading}>
           <AlertTriangle size={18} color={colors.orangeDark} />
-          <Text style={styles.noticeTitle}>Mise à jour obligatoire 2× par an</Text>
+          <Text style={styles.noticeTitle}>
+            Mise à jour obligatoire 2× par an
+          </Text>
         </View>
         <Text style={styles.noticeBody}>
-          Chaque année, les <Text style={styles.optionTitle}>10 janvier</Text> et{' '}
-          <Text style={styles.optionTitle}>10 juillet</Text>, vous devez fournir
-          votre attestation de vigilance URSSAF la plus récente.
+          Chaque année, les <Text style={styles.optionTitle}>10 janvier</Text>{' '}
+          et <Text style={styles.optionTitle}>10 juillet</Text>, vous devez
+          fournir votre attestation de vigilance URSSAF la plus récente.
         </Text>
         <View style={[clientStyles.optionList, styles.noticeFootnote]}>
           <Text style={styles.noticeText}>
             Cette démarche est obligatoire pour continuer à recevoir des
-            propositions de missions. Sans attestation valide, votre profil
-            sera temporairement suspendu.
+            propositions de missions. Sans attestation valide, votre profil sera
+            temporairement suspendu.
           </Text>
         </View>
       </View>
@@ -731,7 +746,7 @@ export default function ExtraRegisterScreen() {
 
   const renderQualifications = () => (
     <>
-      <Text style={loginScreenStyles.title}>{stepTitles[3]}</Text>
+      <Text style={loginForm.title}>{stepTitles[3]}</Text>
       <Text style={styles.description}>
         Étape 4 sur {totalSteps} — Sélectionnez au moins une qualification
       </Text>
@@ -754,8 +769,8 @@ export default function ExtraRegisterScreen() {
             >
               <View
                 style={[
-                  loginScreenStyles.checkbox,
-                  selected && loginScreenStyles.checkboxChecked,
+                  loginForm.checkbox,
+                  selected && loginForm.checkboxChecked,
                 ]}
               >
                 {selected ? (
@@ -772,7 +787,7 @@ export default function ExtraRegisterScreen() {
 
   const renderSkills = () => (
     <>
-      <Text style={loginScreenStyles.title}>{stepTitles[4]}</Text>
+      <Text style={loginForm.title}>{stepTitles[4]}</Text>
       <Text style={styles.description}>
         Étape 5 sur {totalSteps} — Évaluez vos compétences (optionnel)
       </Text>
@@ -817,7 +832,7 @@ export default function ExtraRegisterScreen() {
 
   const renderValidation = () => (
     <>
-      <Text style={loginScreenStyles.title}>{stepTitles[5]}</Text>
+      <Text style={loginForm.title}>{stepTitles[5]}</Text>
       <Text style={styles.description}>
         Étape {validationStep + 1} sur {totalSteps} — Dernière étape avant
         soumission
@@ -847,7 +862,7 @@ export default function ExtraRegisterScreen() {
 
   const renderBaristaQuestionnaire = () => (
     <>
-      <Text style={loginScreenStyles.title}>Questionnaire de compétences</Text>
+      <Text style={loginForm.title}>Questionnaire de compétences</Text>
       <Text style={styles.description}>
         Étape 6 sur 7 — Répondez à toutes les questions
       </Text>
@@ -908,10 +923,7 @@ export default function ExtraRegisterScreen() {
         'Activation de votre profil (sous 48h)',
         'Accès aux propositions de missions',
       ].map(item => (
-        <View
-          key={item}
-          style={styles.successItem}
-        >
+        <View key={item} style={styles.successItem}>
           <CircleCheck size={17} color={colors.success} />
           <Text style={styles.successText}>{item}</Text>
         </View>
@@ -929,18 +941,18 @@ export default function ExtraRegisterScreen() {
     if (step === -2) {
       return (
         <>
-          <Text style={loginScreenStyles.title}>Rejoins-nous vite !</Text>
+          <Text style={loginForm.title}>Rejoins-nous vite !</Text>
           <Text style={styles.description}>
-            Quand tu auras créé ton statut auto-entrepreneur, reviens t’inscrire.
-            On t’attend !
+            Quand tu auras créé ton statut auto-entrepreneur, reviens
+            t’inscrire. On t’attend !
           </Text>
           <Pressable
             accessibilityRole="button"
             onPress={() => setStep(-1)}
-            style={[buttonStyles.bigSecondary, styles.blockedBackButton]}
+            style={[clickableStyles.bigSecondary, styles.blockedBackButton]}
           >
             <ArrowLeft size={16} color={colors.orangeDark} />
-            <Text style={buttonStyles.bigSecondaryText}>Retour</Text>
+            <Text style={clickableStyles.bigSecondaryText}>Retour</Text>
           </Pressable>
         </>
       );
@@ -964,12 +976,12 @@ export default function ExtraRegisterScreen() {
   return (
     <AuthLayout>
       <ScrollView
-        style={loginScreenStyles.card}
-        contentContainerStyle={loginScreenStyles.content}
+        style={loginForm.card}
+        contentContainerStyle={loginForm.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={loginScreenStyles.title}>Inscription extra</Text>
+        <Text style={loginForm.title}>Inscription extra</Text>
         {isWizardStep ? (
           <View style={styles.progressTrack}>
             <View
@@ -987,10 +999,10 @@ export default function ExtraRegisterScreen() {
               <Pressable
                 accessibilityRole="button"
                 onPress={goBack}
-                style={[buttonStyles.bigSecondary, styles.footerButton]}
+                style={[clickableStyles.bigSecondary, styles.footerButton]}
               >
                 <ArrowLeft size={16} color={colors.orangeDark} />
-                <Text style={buttonStyles.bigSecondaryText}>Retour</Text>
+                <Text style={clickableStyles.bigSecondaryText}>Retour</Text>
               </Pressable>
               <PrimaryButton
                 icon={

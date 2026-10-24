@@ -1,21 +1,23 @@
 import { useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import AuthLayout from './AuthLayout';
-import { colors, loginScreenStyles as styles } from '../../styles';
+import { colors, formStyles } from '../../styles';
+
+const styles = formStyles.login;
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+
+  const handleConnect = () => {
+    if (email.trim().toLowerCase().includes('client')) {
+      navigation.replace('ClientDashboard');
+    }
+  };
 
   return (
     <AuthLayout>
@@ -49,9 +51,7 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.label}>Mot de passe</Text>
             <Pressable
               accessibilityRole="button"
-              onPress={() =>
-                navigation.navigate('ForgotPassword', { email })
-              }
+              onPress={() => navigation.navigate('ForgotPassword', { email })}
             >
               <Text style={styles.link}>Oublié ?</Text>
             </Pressable>
@@ -72,7 +72,9 @@ export default function LoginScreen({ navigation }) {
             />
             <Pressable
               accessibilityLabel={
-                showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'
+                showPassword
+                  ? 'Masquer le mot de passe'
+                  : 'Afficher le mot de passe'
               }
               accessibilityRole="button"
               onPress={() => setShowPassword(current => !current)}
@@ -93,10 +95,7 @@ export default function LoginScreen({ navigation }) {
             style={styles.rememberRow}
           >
             <View
-              style={[
-                styles.checkbox,
-                rememberMe && styles.checkboxChecked,
-              ]}
+              style={[styles.checkbox, rememberMe && styles.checkboxChecked]}
             >
               {rememberMe ? <Text style={styles.checkboxCheck}>✓</Text> : null}
             </View>
@@ -104,6 +103,7 @@ export default function LoginScreen({ navigation }) {
           </Pressable>
 
           <PrimaryButton
+            onPress={handleConnect}
             style={styles.submitButton}
             title="Se connecter"
           />

@@ -1,0 +1,1765 @@
+import { StyleSheet } from 'react-native';
+
+// Keep tokens first, then shared element categories, then composed content and form styles.
+// Add reusable rules to their element category; keep variants in formStyles or contentStyles.
+export const colors = {
+  background: '#FDF5E4',
+  white: '#FFFFFF',
+  cream: '#FFF9EE',
+  brown: '#4A3222',
+  muted: '#6B584C',
+  orange: '#D47A31',
+  orangeDark: '#B9622C',
+  border: '#EBDCC0',
+  palePink: '#F7E7DE',
+  gold: '#F4CC73',
+  green: '#1A6C38',
+  accent: '#C18855',
+  success: '#15803D',
+  successLight: '#DCFCE7',
+  successBorder: '#BBF7D0',
+  successDot: '#22C55E',
+  divider: '#ECDDD6',
+};
+
+export const fontFamilies = {
+  regular: 'Inter-Regular',
+  semiBold: 'Inter-SemiBold',
+  bold: 'Inter-Bold',
+  extraBold: 'Inter-ExtraBold',
+  black: 'Inter-Black',
+};
+
+// Text styles are grouped by headings, body copy, labels, fields, and actions.
+export const typography = {
+  headings: {
+    h1: {
+      fontFamily: fontFamilies.black,
+      fontWeight: 'normal',
+      fontSize: 39,
+      lineHeight: 42,
+      letterSpacing: -1.8,
+    },
+    h2: {
+      fontFamily: fontFamilies.bold,
+      fontWeight: 'normal',
+      fontSize: 15,
+      lineHeight: 25,
+    },
+    h3: {
+      fontFamily: fontFamilies.bold,
+      fontWeight: 'normal',
+      fontSize: 14,
+      lineHeight: 26,
+    },
+  },
+  body: {
+    regular: {
+      fontFamily: fontFamilies.regular,
+      fontSize: 11,
+      fontWeight: 'normal',
+      lineHeight: 18,
+    },
+  },
+  labels: {
+    regular: {
+      fontFamily: fontFamilies.semiBold,
+      fontSize: 12,
+      fontWeight: 'normal',
+    },
+    bold: {
+      fontFamily: fontFamilies.bold,
+      fontSize: 12,
+      fontWeight: 'normal',
+    },
+    form: {
+      fontFamily: fontFamilies.semiBold,
+      fontSize: 13,
+      fontWeight: 'normal',
+    },
+  },
+  fields: {
+    regular: {
+      fontFamily: fontFamilies.regular,
+      fontSize: 14,
+      fontWeight: 'normal',
+    },
+    large: {
+      fontFamily: fontFamilies.regular,
+      fontSize: 15,
+      fontWeight: 'normal',
+    },
+  },
+  clickables: {
+    primary: {
+      fontFamily: fontFamilies.extraBold,
+      fontSize: 14,
+      fontWeight: 'normal',
+      textAlign: 'center',
+    },
+    secondary: {
+      fontFamily: fontFamilies.bold,
+      fontSize: 12,
+      fontWeight: 'normal',
+    },
+  },
+  branding: {
+    wordmark: {
+      fontFamily: fontFamilies.black,
+      fontSize: 24,
+      fontWeight: 'normal',
+      letterSpacing: -0.8,
+    },
+  },
+  controls: {
+    checkbox: {
+      fontFamily: fontFamilies.bold,
+      fontSize: 12,
+      fontWeight: 'normal',
+      lineHeight: 15,
+    },
+  },
+};
+
+// Shared application header.
+export const headerStyles = StyleSheet.create({
+  container: {
+    minHeight: 52,
+    paddingHorizontal: 16,
+    paddingBottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  brand: {
+    color: colors.orange,
+    ...typography.branding.wordmark,
+  },
+  loginButton: {
+    minHeight: 34,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  loginText: {
+    color: colors.orangeDark,
+    ...typography.labels.bold,
+  },
+});
+
+// Reusable buttons and other pressable controls.
+export const clickableStyles = StyleSheet.create({
+  big: {
+    minHeight: 48,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 24,
+    backgroundColor: colors.orange,
+    shadowColor: colors.orange,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.22,
+    shadowRadius: 9,
+    elevation: 3,
+  },
+  bigText: {
+    color: colors.white,
+    ...typography.clickables.primary,
+  },
+  disabled: {
+    opacity: 0.55,
+  },
+  bigSecondary: {
+    minHeight: 48,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  bigSecondaryText: {
+    color: colors.orangeDark,
+    ...typography.clickables.secondary,
+  },
+  small: {
+    minHeight: 40,
+    paddingHorizontal: 8,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  smallText: {
+    color: colors.orangeDark,
+    ...typography.labels.regular,
+    textAlign: 'center',
+  },
+});
+
+// Shared screen layout styles.
+export const layoutSpacing = {
+  authContentTop: 13,
+  authContentBottom: 13,
+  contentTop: 0,
+};
+
+export const layoutStyles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  content: {
+    flex: 1,
+  },
+  authContent: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: layoutSpacing.authContentTop,
+    paddingBottom: layoutSpacing.authContentBottom,
+  },
+});
+
+export const iconStyles = StyleSheet.create({
+  orangeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.orange,
+  },
+  availabilityDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.green,
+  },
+  iconTile: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: colors.palePink,
+  },
+  extraIconTile: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.cream,
+  },
+  certifiedDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.successDot,
+  },
+  stepNumber: {
+    width: 31,
+    height: 31,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: colors.background,
+    backgroundColor: colors.orange,
+  },
+  optionIcon: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    backgroundColor: colors.palePink,
+  },
+  noticeIcon: {
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+  selectArrowOpen: {
+    transform: [{ rotate: '180deg' }],
+  },
+  faqChevronOpen: {
+    transform: [{ rotate: '180deg' }],
+  },
+});
+
+export const navigationStyles = StyleSheet.create({
+  bottomNavigation: {
+    minHeight: 58,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  bottomTab: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+    paddingVertical: 6,
+  },
+  bottomTabText: {
+    color: colors.muted,
+    ...typography.body.regular,
+  },
+  tabDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 40,
+    backgroundColor: colors.border,
+  },
+});
+
+// Content components are grouped by purpose, independent of their screen.
+export const contentStyles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  layoutContent: {
+    flex: 1,
+    paddingTop: layoutSpacing.contentTop,
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingBottom: 15,
+    gap: 22,
+    paddingTop: 20,
+  },
+  hero: {
+    gap: 12,
+  },
+  heroBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.cream,
+  },
+  heroBadgeText: {
+    flexShrink: 1,
+    color: colors.orangeDark,
+    ...typography.body.regular,
+  },
+  heroTitle: {
+    color: colors.brown,
+    ...typography.headings.h1,
+  },
+  heroAccent: {
+    color: colors.accent,
+    ...typography.headings.h1,
+  },
+  heroDescription: {
+    marginTop: -3,
+    color: colors.muted,
+    ...typography.body.regular,
+  },
+  heroActions: {
+    gap: 8,
+    marginTop: 2,
+  },
+  socialProof: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 2,
+    paddingVertical: 4,
+  },
+  avatarStack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  smallAvatar: {
+    width: 29,
+    height: 29,
+    marginRight: -7,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: colors.background,
+  },
+  smallAvatarText: {
+    ...typography.body.regular,
+  },
+  ratingBlock: {
+    flexShrink: 1,
+  },
+  ratingStars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 1,
+  },
+  ratingCaption: {
+    marginTop: 1,
+    color: colors.muted,
+    ...typography.body.regular,
+  },
+  ratingCaptionStrong: {
+    color: colors.brown,
+    ...typography.body.regular,
+  },
+  rolesSection: {
+    gap: 9,
+  },
+  tickerWindow: {
+    overflow: 'hidden',
+    marginHorizontal: -2,
+    paddingVertical: 2,
+  },
+  tickerTrack: {
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+  },
+  roleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: 8,
+  },
+  rolePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    shadowColor: colors.brown,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  roleText: {
+    ...typography.body.regular,
+  },
+  statsPanel: {
+    minHeight: 79,
+    paddingHorizontal: 5,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    borderRadius: 14,
+    backgroundColor: colors.brown,
+    shadowColor: colors.brown,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 3,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 3,
+  },
+  statValue: {
+    color: colors.gold,
+    ...typography.body.regular,
+  },
+  statLabel: {
+    color: colors.background,
+    ...typography.body.regular,
+    textAlign: 'center',
+  },
+  section: {
+    gap: 10,
+    paddingTop: 2,
+  },
+  sectionHeading: {
+    minHeight: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  sectionTitle: {
+    flexShrink: 1,
+    color: colors.brown,
+    ...typography.headings.h2,
+  },
+  sectionAside: {
+    color: colors.muted,
+    ...typography.body.regular,
+  },
+  sectionAsideWithDot: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  availabilityText: {
+    color: colors.green,
+    ...typography.body.regular,
+  },
+  infoCard: {
+    gap: 12,
+    padding: 14,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    shadowColor: colors.brown,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  categoryBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.cream,
+  },
+  categoryBadgeText: {
+    color: colors.orangeDark,
+    ...typography.body.regular,
+  },
+  cardHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  cardTitle: {
+    flex: 1,
+    color: colors.brown,
+    ...typography.headings.h2,
+  },
+  cardDescription: {
+    color: colors.muted,
+    ...typography.body.regular,
+  },
+  benefits: {
+    gap: 9,
+    paddingTop: 1,
+  },
+  benefitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  benefitText: {
+    flex: 1,
+    color: colors.brown,
+    ...typography.body.regular,
+  },
+  cardList: {
+    gap: 10,
+  },
+  talentCard: {
+    gap: 10,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    shadowColor: colors.brown,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  talentTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  talentIdentity: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  talentAvatar: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 11,
+  },
+  featuredAvatar: {
+    backgroundColor: colors.orange,
+  },
+  regularAvatar: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.palePink,
+  },
+  talentInitials: {
+    color: colors.white,
+    ...typography.body.regular,
+  },
+  regularInitials: {
+    color: colors.orangeDark,
+  },
+  talentNameBlock: {
+    flex: 1,
+  },
+  talentNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  talentName: {
+    flexShrink: 1,
+    color: colors.brown,
+    ...typography.headings.h3,
+  },
+  talentRole: {
+    marginTop: 2,
+    color: colors.muted,
+    ...typography.body.regular,
+  },
+  certifiedBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.successBorder,
+    backgroundColor: colors.successLight,
+  },
+  certifiedText: {
+    color: colors.success,
+    ...typography.body.regular,
+  },
+  talentStats: {
+    paddingTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.divider,
+  },
+  talentRating: {
+    color: colors.brown,
+    ...typography.body.regular,
+  },
+  statDivider: {
+    color: colors.border,
+    ...typography.body.regular,
+  },
+  talentStat: {
+    color: colors.muted,
+    ...typography.body.regular,
+  },
+  stepCard: {
+    minHeight: 62,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    shadowColor: colors.brown,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  stepNumberText: {
+    color: colors.white,
+    ...typography.body.regular,
+  },
+  stepCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  stepTitle: {
+    color: colors.brown,
+    ...typography.headings.h2,
+  },
+  stepDescription: {
+    color: colors.muted,
+    ...typography.body.regular,
+  },
+  faqSection: {
+    gap: 10,
+    paddingTop: 2,
+    paddingBottom: 10,
+  },
+  faqCard: {
+    padding: 13,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    shadowColor: colors.brown,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  faqQuestionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  faqQuestion: {
+    flex: 1,
+    color: colors.brown,
+    ...typography.headings.h2,
+  },
+  faqAnswer: {
+    marginTop: 10,
+    paddingTop: 10,
+    color: colors.muted,
+    ...typography.body.regular,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.divider,
+  },
+});
+
+// Authentication form styles: labels, fields, and clickable actions.
+// Form variants stay together so new field and label styles have one clear home.
+export const formStyles = {
+  login: StyleSheet.create({
+    card: {
+      flex: 1,
+      backgroundColor: colors.background,
+      paddingTop: 0,
+    },
+    content: {
+      flexGrow: 1,
+    },
+    title: {
+      color: colors.brown,
+      ...typography.headings.h2,
+      includeFontPadding: false,
+      paddingTop: 0,
+    },
+    description: {
+      marginTop: 6,
+      color: colors.muted,
+      ...typography.fields.large,
+    },
+    form: {
+      marginTop: 28,
+    },
+    label: {
+      color: colors.brown,
+      ...typography.labels.form,
+    },
+    input: {
+      height: 46,
+      marginTop: 8,
+      marginBottom: 17,
+      paddingHorizontal: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.cream,
+      color: colors.brown,
+      ...typography.fields.regular,
+    },
+    passwordLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    link: {
+      color: colors.orangeDark,
+      ...typography.labels.regular,
+    },
+    passwordInput: {
+      height: 46,
+      marginTop: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.cream,
+    },
+    passwordTextInput: {
+      flex: 1,
+      height: '100%',
+      paddingHorizontal: 14,
+      color: colors.brown,
+      ...typography.fields.regular,
+    },
+    visibilityButton: {
+      height: '100%',
+      paddingHorizontal: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    rememberRow: {
+      alignSelf: 'flex-start',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginTop: 16,
+    },
+    checkbox: {
+      width: 16,
+      height: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 3,
+      backgroundColor: colors.white,
+    },
+    checkboxChecked: {
+      borderColor: colors.orange,
+      backgroundColor: colors.orange,
+    },
+    checkboxCheck: {
+      color: colors.white,
+      ...typography.controls.checkbox,
+    },
+    rememberText: {
+      color: colors.muted,
+      ...typography.body.regular,
+    },
+    submitButton: {
+      marginTop: 12,
+    },
+    registration: {
+      marginTop: 24,
+      paddingTop: 19,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+    },
+    registrationPrompt: {
+      color: colors.muted,
+      ...typography.labels.form,
+      textAlign: 'center',
+    },
+    registrationButtons: {
+      flexDirection: 'row',
+      gap: 10,
+      marginTop: 14,
+    },
+    registrationButton: {
+      ...clickableStyles.small,
+    },
+    registrationButtonText: {
+      ...clickableStyles.smallText,
+    },
+  }),
+
+  recovery: StyleSheet.create({
+    input: {
+      marginBottom: 0,
+    },
+    submitButton: {
+      marginTop: 12,
+    },
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      marginTop: 24,
+      marginBottom: 18,
+      backgroundColor: colors.border,
+    },
+    returnButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      paddingVertical: 8,
+    },
+    returnText: {
+      color: colors.orangeDark,
+      ...typography.labels.regular,
+    },
+  }),
+
+  clientRegistration: StyleSheet.create({
+    form: {
+      marginTop: 28,
+      paddingBottom: 24,
+    },
+    sectionTitle: {
+      marginTop: 8,
+      marginBottom: 12,
+      color: colors.muted,
+      ...typography.labels.form,
+    },
+    field: {
+      marginBottom: 4,
+    },
+    optional: {
+      color: colors.muted,
+      ...typography.body.regular,
+    },
+    helperText: {
+      marginTop: 4,
+      marginBottom: 12,
+      color: colors.muted,
+      ...typography.body.regular,
+    },
+    selectButton: {
+      minHeight: 46,
+      marginTop: 12,
+      marginBottom: 14,
+      paddingHorizontal: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.cream,
+    },
+    selectText: {
+      color: colors.brown,
+      ...typography.fields.regular,
+    },
+    optionList: {
+      marginTop: -8,
+      marginBottom: 14,
+      padding: 4,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.white,
+    },
+    option: {
+      minHeight: 40,
+      marginTop: 12,
+      paddingHorizontal: 10,
+      justifyContent: 'center',
+      borderRadius: 8,
+    },
+    selectedOption: {
+      backgroundColor: colors.cream,
+    },
+    optionText: {
+      color: colors.brown,
+      ...typography.body.regular,
+    },
+    siteRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    siteInput: {
+      flex: 1,
+      marginBottom: 12,
+    },
+    removeSiteButton: {
+      width: 38,
+      height: 38,
+      marginTop: 12,
+      marginBottom: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      backgroundColor: colors.white,
+    },
+    addSiteButton: {
+      alignSelf: 'flex-start',
+      marginTop: 12,
+      marginBottom: 4,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderWidth: 1,
+      borderColor: colors.orange,
+      borderStyle: 'dashed',
+      borderRadius: 10,
+    },
+    addSiteText: {
+      color: colors.orange,
+      ...typography.labels.regular,
+    },
+    submitButton: {
+      marginTop: 12,
+    },
+    footer: {
+      marginTop: 18,
+      alignItems: 'center',
+    },
+    footerText: {
+      color: colors.muted,
+      ...typography.body.regular,
+    },
+    footerLink: {
+      marginTop: 12,
+      color: colors.orangeDark,
+      ...typography.labels.bold,
+    },
+  }),
+
+  extraRegistration: StyleSheet.create({
+    form: {
+      marginTop: 24,
+      paddingBottom: 28,
+    },
+    description: {
+      marginTop: 6,
+      marginBottom: 18,
+      color: colors.muted,
+      ...typography.body.regular,
+    },
+    skillsLead: {
+      marginTop: 0,
+      marginBottom: 18,
+      color: colors.muted,
+      ...typography.body.regular,
+    },
+    questionnaireQualification: {
+      marginBottom: 16,
+      paddingVertical: 8,
+      paddingHorizontal: 14,
+      borderLeftWidth: 3,
+      borderLeftColor: colors.orange,
+      borderRadius: 8,
+      backgroundColor: colors.cream,
+      color: colors.orange,
+      ...typography.labels.bold,
+    },
+    questionCard: {
+      marginBottom: 16,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.cream,
+    },
+    questionText: {
+      marginBottom: 12,
+      color: colors.brown,
+      ...typography.labels.bold,
+    },
+    questionAnswers: {
+      gap: 8,
+    },
+    questionAnswer: {
+      minHeight: 42,
+      padding: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 9,
+      backgroundColor: colors.white,
+    },
+    selectedQuestionAnswer: {
+      borderColor: colors.orange,
+      backgroundColor: colors.palePink,
+    },
+    questionAnswerLetter: {
+      color: colors.orangeDark,
+      ...typography.labels.bold,
+    },
+    selectedQuestionAnswerLetter: {
+      color: colors.orange,
+    },
+    questionAnswerText: {
+      flex: 1,
+      color: colors.brown,
+      ...typography.body.regular,
+    },
+    eligibilityOptions: {
+      marginTop: 16,
+    },
+    progressTrack: {
+      height: 5,
+      marginTop: 18,
+      marginBottom: 20,
+      overflow: 'hidden',
+      borderRadius: 3,
+      backgroundColor: colors.border,
+    },
+    progressFill: {
+      height: '100%',
+      borderRadius: 3,
+      backgroundColor: colors.orange,
+    },
+    optionCard: {
+      minHeight: 62,
+      marginBottom: 10,
+      padding: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 14,
+      backgroundColor: colors.white,
+    },
+    selectedOptionCard: {
+      borderColor: colors.orange,
+      backgroundColor: colors.cream,
+    },
+    optionCopy: {
+      flex: 1,
+      gap: 3,
+    },
+    optionTitle: {
+      color: colors.brown,
+      ...typography.labels.bold,
+    },
+    optionDescription: {
+      color: colors.muted,
+      ...typography.body.regular,
+    },
+    notice: {
+      marginBottom: 16,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      borderRadius: 12,
+      backgroundColor: colors.cream,
+    },
+    noticeTitle: {
+      marginBottom: 5,
+      color: colors.orangeDark,
+      ...typography.labels.bold,
+    },
+    noticeHeading: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    noticeBody: {
+      marginTop: 10,
+      color: colors.muted,
+      ...typography.body.regular,
+      lineHeight: 23,
+    },
+    noticeFootnote: {
+      marginTop: 14,
+      marginBottom: 0,
+    },
+    noticeText: {
+      color: colors.muted,
+      ...typography.body.regular,
+    },
+    choiceList: {
+      gap: 8,
+    },
+    choiceField: {
+      marginBottom: 17,
+    },
+    choice: {
+      minHeight: 44,
+      paddingHorizontal: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.white,
+    },
+    selectedChoice: {
+      borderColor: colors.orange,
+      backgroundColor: colors.cream,
+    },
+    choiceText: {
+      flex: 1,
+      color: colors.brown,
+      ...typography.body.regular,
+    },
+    languageOptions: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    languageButton: {
+      minHeight: 38,
+      paddingHorizontal: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 20,
+      backgroundColor: colors.white,
+    },
+    selectedLanguageButton: {
+      borderColor: colors.orange,
+      backgroundColor: colors.orange,
+    },
+    languageButtonText: {
+      color: colors.brown,
+      ...typography.body.regular,
+    },
+    selectedLanguageButtonText: {
+      color: colors.white,
+    },
+    documentSection: {
+      marginTop: 18,
+      marginBottom: 8,
+      color: colors.orangeDark,
+      ...typography.labels.form,
+    },
+    documentButton: {
+      minHeight: 54,
+      marginBottom: 10,
+      paddingHorizontal: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderStyle: 'dashed',
+      borderRadius: 12,
+      backgroundColor: colors.white,
+    },
+    documentCopy: {
+      flex: 1,
+      gap: 3,
+    },
+    documentTitle: {
+      color: colors.brown,
+      ...typography.labels.regular,
+    },
+    documentStatus: {
+      color: colors.muted,
+      ...typography.body.regular,
+    },
+    qualificationGrid: {
+      gap: 9,
+    },
+    qualificationCard: {
+      padding: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.white,
+    },
+    selectedQualification: {
+      borderColor: colors.orange,
+      backgroundColor: colors.cream,
+    },
+    skillRow: {
+      marginBottom: 10,
+      padding: 12,
+      gap: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.white,
+    },
+    skillDescription: {
+      color: colors.muted,
+      ...typography.body.regular,
+    },
+    starRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    starButton: {
+      padding: 2,
+    },
+    summary: {
+      marginBottom: 16,
+      padding: 14,
+      gap: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.cream,
+    },
+    summaryTitle: {
+      marginBottom: 3,
+      color: colors.brown,
+      ...typography.labels.bold,
+    },
+    summaryText: {
+      color: colors.muted,
+      ...typography.body.regular,
+    },
+    consentRow: {
+      minHeight: 44,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    consentBox: {
+      width: 20,
+      height: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 5,
+      backgroundColor: colors.white,
+    },
+    consentBoxChecked: {
+      borderColor: colors.orange,
+      backgroundColor: colors.orange,
+    },
+    consentText: {
+      flex: 1,
+      color: colors.brown,
+      ...typography.body.regular,
+    },
+    footerButtons: {
+      marginTop: 24,
+      flexDirection: 'row',
+      gap: 10,
+    },
+    footerButton: {
+      flex: 1,
+    },
+    success: {
+      alignItems: 'center',
+      paddingTop: 32,
+      paddingBottom: 40,
+      gap: 14,
+    },
+    successTitle: {
+      color: colors.brown,
+      ...typography.headings.h2,
+      textAlign: 'center',
+    },
+    successText: {
+      color: colors.muted,
+      ...typography.body.regular,
+      textAlign: 'center',
+    },
+    successItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    successButton: {
+      alignSelf: 'stretch',
+      marginTop: 10,
+    },
+    blockedBackButton: {
+      marginTop: 12,
+    },
+  }),
+};
+
+export const clientLayoutStyles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    minHeight: 58,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  headerAction: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: colors.cream,
+  },
+  brand: {
+    color: colors.orange,
+    ...typography.branding.wordmark,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 22,
+    paddingBottom: 24,
+    gap: 18,
+  },
+  pageHeading: {
+    gap: 4,
+  },
+  pageEyebrow: {
+    color: colors.orangeDark,
+    ...typography.labels.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.7,
+  },
+  pageTitle: {
+    color: colors.brown,
+    ...typography.headings.h1,
+    fontSize: 28,
+    lineHeight: 34,
+    letterSpacing: -0.7,
+  },
+  pageDescription: {
+    color: colors.muted,
+    ...typography.body.regular,
+  },
+  drawerBackdrop: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  drawerScrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.brown,
+    opacity: 0.4,
+  },
+  drawer: {
+    width: '86%',
+    maxWidth: 360,
+    paddingTop: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 18,
+    backgroundColor: colors.background,
+  },
+  drawerHeader: {
+    marginBottom: 18,
+    paddingBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  drawerIdentity: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  drawerAvatar: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 21,
+    backgroundColor: colors.palePink,
+  },
+  drawerTitle: {
+    color: colors.brown,
+    ...typography.labels.bold,
+  },
+  drawerSubtitle: {
+    marginTop: 2,
+    color: colors.muted,
+    ...typography.body.regular,
+  },
+  drawerList: {
+    gap: 4,
+  },
+  drawerItem: {
+    minHeight: 46,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 12,
+  },
+  drawerItemActive: {
+    backgroundColor: colors.palePink,
+  },
+  drawerItemText: {
+    flex: 1,
+    color: colors.muted,
+    ...typography.labels.regular,
+  },
+  drawerItemTextActive: {
+    color: colors.orangeDark,
+    ...typography.labels.bold,
+  },
+});
+
+export const clientNavigationStyles = StyleSheet.create({
+  bottomNavigation: {
+    minHeight: 62,
+    paddingHorizontal: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  bottomTab: {
+    flex: 1,
+    minHeight: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+  },
+  bottomTabActive: {
+    borderTopWidth: 2,
+    borderTopColor: colors.orange,
+  },
+  bottomTabText: {
+    color: colors.muted,
+    ...typography.body.regular,
+    fontSize: 10,
+  },
+  bottomTabTextActive: {
+    color: colors.orangeDark,
+    ...typography.labels.bold,
+    fontSize: 10,
+  },
+});
+
+export const clientContentStyles = StyleSheet.create({
+  section: {
+    gap: 10,
+  },
+  sectionHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  sectionTitle: {
+    color: colors.brown,
+    ...typography.headings.h2,
+  },
+  sectionAside: {
+    color: colors.muted,
+    ...typography.body.regular,
+  },
+  card: {
+    padding: 16,
+    gap: 13,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    backgroundColor: colors.white,
+    shadowColor: colors.brown,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  cardIcon: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: colors.palePink,
+  },
+  cardTitle: {
+    flex: 1,
+    color: colors.brown,
+    ...typography.headings.h3,
+  },
+  row: {
+    minHeight: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  rowLast: {
+    borderBottomWidth: 0,
+  },
+  rowLabel: {
+    flex: 1,
+    color: colors.muted,
+    ...typography.body.regular,
+  },
+  rowValue: {
+    flex: 1,
+    color: colors.brown,
+    ...typography.labels.regular,
+    textAlign: 'right',
+  },
+  actionButton: {
+    minHeight: 42,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    borderRadius: 12,
+    backgroundColor: colors.orange,
+  },
+  actionButtonText: {
+    color: colors.white,
+    ...typography.labels.bold,
+  },
+  secondaryButton: {
+    minHeight: 40,
+    paddingHorizontal: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    backgroundColor: colors.white,
+  },
+  secondaryButtonText: {
+    color: colors.orangeDark,
+    ...typography.labels.bold,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 22,
+    paddingHorizontal: 12,
+    gap: 9,
+  },
+  emptyIcon: {
+    width: 52,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 26,
+    backgroundColor: colors.cream,
+  },
+  emptyTitle: {
+    color: colors.brown,
+    ...typography.headings.h3,
+    textAlign: 'center',
+  },
+  emptyDescription: {
+    color: colors.muted,
+    ...typography.body.regular,
+    textAlign: 'center',
+  },
+  field: {
+    minHeight: 46,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 11,
+    backgroundColor: colors.cream,
+    color: colors.brown,
+    ...typography.fields.regular,
+  },
+  profileField: {
+    flex: 1,
+    minHeight: 38,
+  },
+  formActionExpand: {
+    flex: 1,
+  },
+  form: {
+    gap: 10,
+  },
+  formActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  badge: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: colors.cream,
+  },
+  badgeText: {
+    color: colors.orangeDark,
+    ...typography.labels.bold,
+  },
+  calendarWeek: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 5,
+  },
+  calendarDay: {
+    flex: 1,
+    minHeight: 58,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    backgroundColor: colors.white,
+  },
+  calendarDaySelected: {
+    borderColor: colors.orange,
+    backgroundColor: colors.orange,
+  },
+  calendarDayLabel: {
+    color: colors.muted,
+    ...typography.body.regular,
+    fontSize: 9,
+    textTransform: 'capitalize',
+  },
+  calendarDayNumber: {
+    color: colors.brown,
+    ...typography.labels.bold,
+  },
+  calendarDayTextSelected: {
+    color: colors.white,
+  },
+  listItem: {
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  listItemLast: {
+    borderBottomWidth: 0,
+  },
+  listItemIcon: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: colors.cream,
+  },
+  listItemCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  listItemTitle: {
+    color: colors.brown,
+    ...typography.labels.bold,
+  },
+  listItemDescription: {
+    color: colors.muted,
+    ...typography.body.regular,
+  },
+});

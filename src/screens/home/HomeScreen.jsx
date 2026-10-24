@@ -18,18 +18,20 @@ import {
 import PrimaryButton from '../../components/PrimaryButton';
 import AuthLayout from '../auth/AuthLayout';
 import {
-  buttonStyles,
-  homeScreenStyles as styles,
+  clickableStyles,
+  contentStyles as styles,
   headerStyles,
+  iconStyles,
+  navigationStyles,
   typography,
 } from '../../styles';
 
 function Text({ style, ...props }) {
-  return <NativeText {...props} style={[typography.p.regular, style]} />;
+  return <NativeText {...props} style={[typography.body.regular, style]} />;
 }
 
 const roles = [
-  ['Barista', '#B9622C'], 
+  ['Barista', '#B9622C'],
   ['Mixologue', '#4A3222'],
   ['Chef de rang', '#2D5A43'],
   ['Sommelier', '#7A3E65'],
@@ -164,7 +166,7 @@ function TalentCard({ talent }) {
           </View>
         </View>
         <View style={styles.certifiedBadge}>
-          <View style={styles.certifiedDot} />
+          <View style={iconStyles.certifiedDot} />
           <Text style={styles.certifiedText}>Certifié</Text>
         </View>
       </View>
@@ -229,7 +231,7 @@ export default function HomeScreen({ navigation }) {
         >
           <View style={styles.hero}>
             <View style={styles.heroBadge}>
-              <View style={styles.orangeDot} />
+              <View style={iconStyles.orangeDot} />
               <Text
                 numberOfLines={1}
                 adjustsFontSizeToFit
@@ -251,15 +253,17 @@ export default function HomeScreen({ navigation }) {
 
             <View style={styles.heroActions}>
               <PrimaryButton
-                icon={<ArrowRight size={17} color="#FFFFFF" strokeWidth={2.5} />}
+                icon={
+                  <ArrowRight size={17} color="#FFFFFF" strokeWidth={2.5} />
+                }
                 onPress={() => navigation.navigate('ClientRegister')}
                 title="Trouver du personnel"
               />
               <Pressable
                 onPress={() => navigation.navigate('ExtraRegister')}
-                style={buttonStyles.bigSecondary}
+                style={clickableStyles.bigSecondary}
               >
-                <Text style={buttonStyles.bigSecondaryText}>
+                <Text style={clickableStyles.bigSecondaryText}>
                   Devenir extra partenaire
                 </Text>
               </Pressable>
@@ -361,13 +365,13 @@ export default function HomeScreen({ navigation }) {
 
             <View style={styles.infoCard}>
               <View style={styles.categoryBadge}>
-                <View style={styles.orangeDot} />
+                <View style={iconStyles.orangeDot} />
                 <Text style={styles.categoryBadgeText}>
                   ENTREPRISES &amp; CLIENTS
                 </Text>
               </View>
               <View style={styles.cardHeading}>
-                <View style={styles.iconTile}>
+                <View style={iconStyles.iconTile}>
                   <Store size={21} color="#B9622C" strokeWidth={1.8} />
                 </View>
                 <Text style={styles.cardTitle}>
@@ -381,7 +385,9 @@ export default function HomeScreen({ navigation }) {
               </Text>
               <BenefitList items={clientBenefits} />
               <PrimaryButton
-                icon={<ArrowRight size={16} color="#FFFFFF" strokeWidth={2.5} />}
+                icon={
+                  <ArrowRight size={16} color="#FFFFFF" strokeWidth={2.5} />
+                }
                 onPress={() => navigation.navigate('ClientRegister')}
                 title="Créer un compte client"
               />
@@ -389,13 +395,13 @@ export default function HomeScreen({ navigation }) {
 
             <View style={styles.infoCard}>
               <View style={styles.categoryBadge}>
-                <View style={styles.orangeDot} />
+                <View style={iconStyles.orangeDot} />
                 <Text style={styles.categoryBadgeText}>
                   EXTRAS &amp; AUTO ENTREPRENEURS
                 </Text>
               </View>
               <View style={styles.cardHeading}>
-                <View style={[styles.iconTile, styles.extraIconTile]}>
+                <View style={[iconStyles.iconTile, iconStyles.extraIconTile]}>
                   <BriefcaseBusiness
                     size={20}
                     color="#B9622C"
@@ -414,9 +420,11 @@ export default function HomeScreen({ navigation }) {
               <BenefitList items={extraBenefits} />
               <Pressable
                 onPress={() => navigation.navigate('ExtraRegister')}
-                style={buttonStyles.bigSecondary}
+                style={clickableStyles.bigSecondary}
               >
-                <Text style={buttonStyles.bigSecondaryText}>Devenir extra</Text>
+                <Text style={clickableStyles.bigSecondaryText}>
+                  Devenir extra
+                </Text>
                 <ArrowRight size={16} color="#B9622C" strokeWidth={2} />
               </Pressable>
             </View>
@@ -439,8 +447,10 @@ export default function HomeScreen({ navigation }) {
             <SectionTitle
               right={
                 <View style={styles.sectionAsideWithDot}>
-                  <View style={styles.availabilityDot} />
-                  <Text style={styles.availabilityText}>Simple &amp; Rapide</Text>
+                  <View style={iconStyles.availabilityDot} />
+                  <Text style={styles.availabilityText}>
+                    Simple &amp; Rapide
+                  </Text>
                 </View>
               }
             >
@@ -449,7 +459,7 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.cardList}>
               {steps.map((step, index) => (
                 <View key={step.title} style={styles.stepCard}>
-                  <View style={styles.stepNumber}>
+                  <View style={iconStyles.stepNumber}>
                     <Text style={styles.stepNumberText}>{index + 1}</Text>
                   </View>
                   <View style={styles.stepCopy}>
@@ -480,7 +490,7 @@ export default function HomeScreen({ navigation }) {
                         size={20}
                         color="#B9622C"
                         strokeWidth={2}
-                        style={isOpen ? styles.faqChevronOpen : undefined}
+                        style={isOpen ? iconStyles.faqChevronOpen : undefined}
                       />
                     </View>
                     {isOpen ? (
@@ -493,21 +503,21 @@ export default function HomeScreen({ navigation }) {
           </View>
         </ScrollView>
 
-        <View style={styles.bottomNavigation}>
+        <View style={navigationStyles.bottomNavigation}>
           <Pressable
             onPress={() => navigation.navigate('ClientRegister')}
-            style={styles.bottomTab}
+            style={navigationStyles.bottomTab}
           >
             <Store size={18} color="#6B584C" strokeWidth={1.8} />
-            <Text style={styles.bottomTabText}>Espace client</Text>
+            <Text style={navigationStyles.bottomTabText}>Espace client</Text>
           </Pressable>
-          <View style={styles.tabDivider} />
+          <View style={navigationStyles.tabDivider} />
           <Pressable
             onPress={() => navigation.navigate('ExtraRegister')}
-            style={styles.bottomTab}
+            style={navigationStyles.bottomTab}
           >
             <BadgeCheck size={18} color="#6B584C" strokeWidth={1.8} />
-            <Text style={styles.bottomTabText}>Devenir extra</Text>
+            <Text style={navigationStyles.bottomTabText}>Devenir extra</Text>
           </Pressable>
         </View>
       </View>

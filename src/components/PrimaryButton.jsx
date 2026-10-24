@@ -1,5 +1,5 @@
 import { Pressable, Text } from 'react-native';
-import { buttonStyles as styles } from '../styles';
+import { clickableStyles as styles } from '../styles';
 
 export default function PrimaryButton({
   accessibilityRole = 'button',
