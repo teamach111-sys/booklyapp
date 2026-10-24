@@ -1,0 +1,380 @@
+{
+  "reference": {
+    "elements": "https://developer.mozilla.org/en-US/docs/Web/HTML/Element",
+    "input": "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input"
+  },
+  "notes": [
+    "Each element has a name, its applicable types, and common styles.",
+    "Button types button, submit, and reset are native HTML types; create, read, update, delete, and cancel are common button actions, not native HTML types.",
+    "Styles are CSS styling options, not HTML attributes or element types."
+  ],
+  "elements": [
+    {
+      "name": "html",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "head",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "meta",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "title",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "link",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "body",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "script",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "header",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "nav",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "main",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "section",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "article",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "aside",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "footer",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "div",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "span",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "h",
+      "types": ["h1", "h2", "h3", "h4", "h5", "h6"],
+      "styles": [
+        "regular (font-weight: 400)",
+        "semibold (font-weight: 600)",
+        "bold (font-weight: 700)",
+        "extrabold (font-weight: 800)"
+      ]
+    },
+    {
+      "name": "p",
+      "types": ["p"],
+      "styles": [
+        "regular (font-weight: 400)",
+        "semibold (font-weight: 600)",
+        "bold (font-weight: 700)",
+        "extrabold (font-weight: 800)"
+      ]
+    },
+    {
+      "name": "strong",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "em",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "br",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "hr",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "blockquote",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "code",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "pre",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "ul",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "ol",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "li",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "dl",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "dt",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "dd",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "a",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "img",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "figure",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "figcaption",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "picture",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "source",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "audio",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "video",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "track",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "iframe",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "form",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "label",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "input",
+      "types": [
+        "text",
+        "password",
+        "email",
+        "tel",
+        "url",
+        "search",
+        "number",
+        "checkbox",
+        "radio",
+        "file",
+        "date",
+        "time",
+        "datetime-local",
+        "month",
+        "week",
+        "range",
+        "color",
+        "hidden",
+        "submit",
+        "reset",
+        "button",
+        "image"
+      ],
+      "styles": []
+    },
+    {
+      "name": "textarea",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "select",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "option",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "optgroup",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "button",
+      "types": [
+        "button",
+        "submit",
+        "reset",
+        "create",
+        "read",
+        "update",
+        "delete",
+        "cancel"
+      ],
+      "styles": [
+        "regular (font-weight: 400)",
+        "semibold (font-weight: 600)",
+        "bold (font-weight: 700)",
+        "extrabold (font-weight: 800)"
+      ]
+    },
+    {
+      "name": "fieldset",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "legend",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "datalist",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "output",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "table",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "caption",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "thead",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "tbody",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "tfoot",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "tr",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "th",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "td",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "details",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "summary",
+      "types": [],
+      "styles": []
+    },
+    {
+      "name": "dialog",
+      "types": [],
+      "styles": []
+    }
+  ]
+}

@@ -47,7 +47,12 @@ export default function LoginScreen({ navigation }) {
 
           <View style={styles.passwordLabelRow}>
             <Text style={styles.label}>Mot de passe</Text>
-            <Pressable accessibilityRole="button">
+            <Pressable
+              accessibilityRole="button"
+              onPress={() =>
+                navigation.navigate('ForgotPassword', { email })
+              }
+            >
               <Text style={styles.link}>Oublié ?</Text>
             </Pressable>
           </View>

@@ -252,6 +252,7 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.heroActions}>
               <PrimaryButton
                 icon={<ArrowRight size={17} color="#FFFFFF" strokeWidth={2.5} />}
+                onPress={() => navigation.navigate('ClientRegister')}
                 title="Trouver du personnel"
               />
               <Pressable
@@ -498,7 +499,7 @@ export default function HomeScreen({ navigation }) {
             style={styles.bottomTab}
           >
             <Store size={18} color="#6B584C" strokeWidth={1.8} />
-            <Text style={styles.bottomTabText}>Inscription Client</Text>
+            <Text style={styles.bottomTabText}>Espace client</Text>
           </Pressable>
           <View style={styles.tabDivider} />
           <Pressable
@@ -506,7 +507,7 @@ export default function HomeScreen({ navigation }) {
             style={styles.bottomTab}
           >
             <BadgeCheck size={18} color="#6B584C" strokeWidth={1.8} />
-            <Text style={styles.bottomTabText}>Inscription Extra</Text>
+            <Text style={styles.bottomTabText}>Devenir extra</Text>
           </Pressable>
         </View>
       </View>

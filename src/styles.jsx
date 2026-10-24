@@ -813,7 +813,7 @@ export const loginScreenStyles = StyleSheet.create({
     ...typography.p.regular,
   },
   submitButton: {
-    marginTop: 22,
+    marginTop: 12,
   },
   registration: {
     marginTop: 24,
@@ -836,6 +836,32 @@ export const loginScreenStyles = StyleSheet.create({
   },
   registrationButtonText: {
     ...buttonStyles.smallText,
+  },
+});
+
+export const forgotPasswordScreenStyles = StyleSheet.create({
+  input: {
+    marginBottom: 0,
+  },
+  submitButton: {
+    marginTop: 12,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginTop: 24,
+    marginBottom: 18,
+    backgroundColor: colors.border,
+  },
+  returnButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 8,
+  },
+  returnText: {
+    color: colors.orangeDark,
+    ...typography.p.label,
   },
 });
 
@@ -865,7 +891,7 @@ export const clientRegisterScreenStyles = StyleSheet.create({
   },
   selectButton: {
     minHeight: 46,
-    marginTop: 8,
+    marginTop: 12,
     marginBottom: 14,
     paddingHorizontal: 14,
     flexDirection: 'row',
@@ -891,6 +917,7 @@ export const clientRegisterScreenStyles = StyleSheet.create({
   },
   option: {
     minHeight: 40,
+    marginTop: 12,
     paddingHorizontal: 10,
     justifyContent: 'center',
     borderRadius: 8,
@@ -914,7 +941,7 @@ export const clientRegisterScreenStyles = StyleSheet.create({
   removeSiteButton: {
     width: 38,
     height: 38,
-    marginTop: 8,
+    marginTop: 12,
     marginBottom: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -925,6 +952,7 @@ export const clientRegisterScreenStyles = StyleSheet.create({
   },
   addSiteButton: {
     alignSelf: 'flex-start',
+    marginTop: 12,
     marginBottom: 4,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -937,6 +965,9 @@ export const clientRegisterScreenStyles = StyleSheet.create({
     color: colors.orange,
     ...typography.p.label,
   },
+  submitButton: {
+    marginTop: 12,
+  },
   footer: {
     marginTop: 18,
     alignItems: 'center',
@@ -946,7 +977,7 @@ export const clientRegisterScreenStyles = StyleSheet.create({
     ...typography.p.regular,
   },
   footerLink: {
-    marginTop: 4,
+    marginTop: 12,
     color: colors.orangeDark,
     ...typography.p.labelBold,
   },

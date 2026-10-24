@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { ChevronDown, X } from 'lucide-react-native';
+import PrimaryButton from '../../components/PrimaryButton';
 import {
   clientRegisterScreenStyles as registerStyles,
   colors,
@@ -328,6 +329,11 @@ export default function ClientRegisterScreen({ navigation }) {
               )
             }
             onChange={updateValue}
+          />
+
+          <PrimaryButton
+            style={registerStyles.submitButton}
+            title="Créer mon compte"
           />
 
           <View style={registerStyles.footer}>

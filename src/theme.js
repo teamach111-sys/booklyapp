@@ -202,6 +202,34 @@ const theme = {
         borderColor: colors.border,
         ...typography.p.field,
       },
+      submitButton: {
+        marginTop: 12,
+      },
+    },
+    forgotPassword: {
+      input: {
+        marginBottom: 0,
+      },
+      submitButton: {
+        marginTop: 12,
+      },
+      divider: {
+        height: 1,
+        marginTop: 24,
+        marginBottom: 18,
+        backgroundColor: colors.border,
+      },
+      returnButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 8,
+      },
+      returnText: {
+        color: colors.orangeDark,
+        ...typography.p.label,
+      },
     },
     clientRegister: {
       title: {
@@ -233,7 +261,7 @@ const theme = {
       },
       selectButton: {
         minHeight: 46,
-        marginTop: 8,
+        marginTop: 12,
         marginBottom: 14,
         paddingHorizontal: 14,
         borderWidth: 1,
@@ -256,6 +284,7 @@ const theme = {
       },
       option: {
         minHeight: 40,
+        marginTop: 12,
         paddingHorizontal: 10,
         borderRadius: 8,
       },
@@ -278,7 +307,7 @@ const theme = {
       removeSiteButton: {
         width: 38,
         height: 38,
-        marginTop: 8,
+        marginTop: 12,
         marginBottom: 12,
         borderWidth: 1,
         borderColor: colors.border,
@@ -287,6 +316,7 @@ const theme = {
       },
       addSiteButton: {
         alignSelf: 'flex-start',
+        marginTop: 12,
         marginBottom: 4,
         paddingVertical: 8,
         paddingHorizontal: 12,
@@ -299,6 +329,9 @@ const theme = {
         color: colors.orange,
         ...typography.p.label,
       },
+      submitButton: {
+        marginTop: 12,
+      },
       footer: {
         marginTop: 18,
         alignItems: 'center',
@@ -308,7 +341,7 @@ const theme = {
         ...typography.p.regular,
       },
       footerLink: {
-        marginTop: 4,
+        marginTop: 12,
         color: colors.orangeDark,
         ...typography.p.labelBold,
       },
