@@ -514,7 +514,7 @@ function SelectField({
         </Pressable>
       </View>
       <Modal
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setOpen(false)}
         transparent
         visible={open}
@@ -1896,7 +1896,7 @@ export default function Prestations({ missions, setMissions }) {
 
     return (
       <Modal
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setConversationOpen(false)}
         transparent
         visible
@@ -2053,7 +2053,7 @@ export default function Prestations({ missions, setMissions }) {
     }
     return (
       <Modal
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setCancelTarget(null)}
         transparent
         visible

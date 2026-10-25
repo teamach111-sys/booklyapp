@@ -35,6 +35,7 @@ import {
 import Calendrier from './components/Calendrier';
 import Profile from './components/Profile';
 import Prestations, { demoMissions } from './components/Prestations';
+import Messages from './components/Messages';
 
 const sections = [
   { key: 'profile', label: 'Profil', icon: UserRound },
@@ -287,6 +288,9 @@ function ClientScreen() {
     }
     if (activeSection === 'services') {
       return <Prestations missions={missions} setMissions={setMissions} />;
+    }
+    if (activeSection === 'messages') {
+      return <Messages />;
     }
     return renderCollection();
   }
