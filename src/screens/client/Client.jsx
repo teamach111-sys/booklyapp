@@ -40,6 +40,8 @@ import ClientCoOwners from './components/ClientCoOwners';
 import ClientEmployees from './components/ClientEmployees';
 import Espaces from './components/Espaces';
 import Fav_extra from './components/Fav_extra';
+import Factures from './components/Factures';
+import Notifications from './components/Notifications';
 
 const sections = [
   { key: 'profile', label: 'Profil', icon: UserRound },
@@ -72,9 +74,19 @@ const sections = [
     description: 'Consultez les extras disponibles et gérez vos favoris.',
   },
   { key: 'calendar', label: 'Calendrier', icon: CalendarDays },
-  { key: 'invoices', label: 'Factures', icon: FileText },
+  {
+    key: 'invoices',
+    label: 'Factures',
+    icon: FileText,
+    description: 'Consultez et téléchargez vos factures Bookly.',
+  },
   { key: 'messages', label: 'Messages', icon: MessageCircle },
-  { key: 'notifications', label: 'Notifications', icon: Bell },
+  {
+    key: 'notifications',
+    label: 'Notifications',
+    icon: Bell,
+    description: 'Restez informé de vos missions, factures et actualités.',
+  },
   { key: 'history', label: 'Historique', icon: Clock3 },
 ];
 
@@ -330,6 +342,12 @@ function ClientScreen() {
     }
     if (activeSection === 'favorites') {
       return <Fav_extra />;
+    }
+    if (activeSection === 'invoices') {
+      return <Factures />;
+    }
+    if (activeSection === 'notifications') {
+      return <Notifications />;
     }
     return renderCollection();
   }
