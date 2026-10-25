@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   Alert,
-  FlatList,
   Modal,
   Pressable,
   ScrollView,
@@ -85,6 +84,10 @@ export default function Messages() {
       onRequestClose={() => setModalVisible(null)}
     >
       <View style={styles.modalOverlay}>
+        <Pressable
+          style={styles.modalScrim}
+          onPress={() => setModalVisible(null)}
+        />
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Nouvelle conversation</Text>
@@ -112,7 +115,11 @@ export default function Messages() {
             ))}
           </View>
 
-          <ScrollView style={styles.modalBody}>
+          <ScrollView
+            style={styles.modalBody}
+            contentContainerStyle={styles.modalScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
             {CONTACT_GROUPS.find(g => g.id === modalTab)?.contacts.length > 0 ? (
               CONTACT_GROUPS.find(g => g.id === modalTab).contacts.map(contact => (
                 <Pressable
@@ -151,6 +158,10 @@ export default function Messages() {
       onRequestClose={() => setModalVisible(null)}
     >
       <View style={styles.modalOverlay}>
+        <Pressable
+          style={styles.modalScrim}
+          onPress={() => setModalVisible(null)}
+        />
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Nouveau report</Text>
@@ -161,7 +172,9 @@ export default function Messages() {
 
           <ScrollView
             style={styles.modalBody}
-            contentContainerStyle={{ paddingBottom: 20 }}
+            contentContainerStyle={styles.modalScrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
             <View style={styles.formField}>
               <Text style={styles.label}>Type</Text>
@@ -190,6 +203,7 @@ export default function Messages() {
               <TextInput
                 style={styles.input}
                 placeholder="Entrez le sujet"
+                placeholderTextColor="#BBB"
                 value={subject}
                 onChangeText={setSubject}
               />
@@ -200,6 +214,7 @@ export default function Messages() {
               <TextInput
                 style={[styles.input, styles.textarea]}
                 placeholder="Votre message..."
+                placeholderTextColor="#BBB"
                 multiline
                 numberOfLines={6}
                 value={message}

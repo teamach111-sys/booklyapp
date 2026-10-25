@@ -1834,12 +1834,14 @@ export const messagesStyles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
+  modalScrim: {
+    ...StyleSheet.absoluteFillObject,
+  },
   modalContent: {
     backgroundColor: colors.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    minHeight: 500,
-    paddingBottom: 40,
+    maxHeight: '90%',
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -1886,8 +1888,12 @@ export const messagesStyles = StyleSheet.create({
     color: colors.orange,
   },
   modalBody: {
-    flex: 1,
-    padding: 20,
+    flexShrink: 1,
+  },
+  modalScrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 28,
   },
   contactItem: {
     flexDirection: 'row',
@@ -1988,7 +1994,6 @@ export const messagesStyles = StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
     marginTop: 24,
-    paddingBottom: 20,
   },
   submitButton: {
     flex: 1.2,
