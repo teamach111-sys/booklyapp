@@ -105,18 +105,18 @@ export const prestationsStyles = StyleSheet.create({
   },
   tab: {
     flexGrow: 1,
-    flexBasis: 0,
-    minWidth: 70,
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    paddingHorizontal: 8,
+    gap: 4,
+    paddingHorizontal: 4,
     paddingVertical: 8,
     borderRadius: 9,
   },
   tabSelected: {
     backgroundColor: colors.white,
+    flexGrow: 1.5,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -125,7 +125,7 @@ export const prestationsStyles = StyleSheet.create({
   },
   tabText: {
     color: '#888',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500',
   },
   tabTextSelected: {
@@ -143,7 +143,7 @@ export const prestationsStyles = StyleSheet.create({
     fontWeight: '800',
   },
   tabBadgeSelected: {
-    backgroundColor: '#F57F17',
+    backgroundColor: colors.orange,
   },
   tabBadgeIdle: {
     backgroundColor: '#BBB',
@@ -1427,6 +1427,268 @@ export const prestationsStyles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+export const profileStyles = StyleSheet.create({
+  section: {
+    gap: 14,
+  },
+
+  /* ---------- Identity Card ---------- */
+  identityCard: {
+    backgroundColor: colors.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#ECDDD6',
+    paddingHorizontal: 26,
+    paddingVertical: 22,
+    marginBottom: 14,
+  },
+  identityTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+    flexWrap: 'wrap',
+  },
+  avatarContainer: {
+    position: 'relative',
+    flexShrink: 0,
+  },
+  avatar: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: colors.palePink,
+    borderWidth: 3,
+    borderColor: '#ECDDD6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarText: {
+    fontSize: 30,
+    fontWeight: '700',
+    color: colors.orange,
+    fontFamily: 'Georgia',
+  },
+  identityInfo: {
+    flex: 1,
+    minWidth: 200,
+  },
+  identityName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    fontFamily: 'Georgia',
+  },
+  identityEmail: {
+    fontSize: 13,
+    color: '#AAA',
+    marginTop: 3,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+    flexWrap: 'wrap',
+  },
+  tag: {
+    fontSize: 11,
+    fontWeight: '700',
+    paddingHorizontal: 12,
+    paddingVertical: 3,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  tagBlue: {
+    backgroundColor: '#E3F2FD',
+    color: '#1565C0',
+  },
+  tagBrown: {
+    backgroundColor: '#F0E4DD',
+    color: colors.orangeDark,
+  },
+  modifierButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 9,
+    backgroundColor: colors.orange,
+  },
+  modifierButtonText: {
+    color: colors.white,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  /* ---------- Tabs ---------- */
+  tabs: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  tab: {
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 9,
+  },
+  tabActive: {
+    backgroundColor: colors.orange,
+  },
+  tabInactive: {
+    backgroundColor: '#F5F0EC',
+  },
+  tabText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  tabTextActive: {
+    color: colors.white,
+  },
+  tabTextInactive: {
+    color: '#888',
+  },
+
+  /* ---------- Information Groups ---------- */
+  groupCard: {
+    backgroundColor: colors.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#ECDDD6',
+    paddingHorizontal: 26,
+    paddingVertical: 22,
+    marginBottom: 14,
+  },
+  groupTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.orangeDark,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 16,
+  },
+  groupTitleSpacing: {
+    marginTop: 22,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  gridItem: {
+    width: '47%',
+    marginBottom: 16,
+  },
+  gridItemFull: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#AAA',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 6,
+  },
+  fieldLabelText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#AAA',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  fieldValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    paddingVertical: 8,
+  },
+  input: {
+    width: '100%',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: '#E0D0C8',
+    fontSize: 13,
+    backgroundColor: colors.white,
+    color: '#1A1A1A',
+  },
+  textarea: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+
+  /* ---------- Mot de passe ---------- */
+  passwordHelp: {
+    color: '#AAA',
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  passwordField: {
+    marginBottom: 16,
+  },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: '#E0D0C8',
+    backgroundColor: colors.white,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 13,
+    color: '#1A1A1A',
+  },
+  passwordToggle: {
+    paddingHorizontal: 12,
+  },
+
+  /* ---------- Action Buttons ---------- */
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    flexShrink: 0,
+  },
+  cancelButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: '#ECDDD6',
+    backgroundColor: colors.white,
+  },
+  cancelButtonText: {
+    color: '#888',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 9,
+    backgroundColor: colors.orange,
+  },
+  saveButtonText: {
+    color: colors.white,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+});
+
 export const profile = StyleSheet.create({});
 export const recap_global = StyleSheet.create({});
 export const retourPrestation = StyleSheet.create({});

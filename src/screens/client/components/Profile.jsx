@@ -2,144 +2,92 @@ import { useState } from 'react';
 import {
   Alert,
   Pressable,
-  StyleSheet,
+  ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import {
-  BriefcaseBusiness,
   Building2,
   Check,
+  Edit3,
   Eye,
   EyeOff,
-  LockKeyhole,
-  UserRound,
+  LayoutGrid,
+  Lock,
+  Mail,
+  MapPin,
+  Phone,
+  Save,
+  User,
+  X,
 } from 'lucide-react-native';
 import { colors } from '../../../styles';
-
-const fields = {
-  personal: [
-    ['firstName', 'Prénom', 'words'],
-    ['lastName', 'Nom', 'words'],
-    ['email', 'Email', 'email-address'],
-    ['phone', 'Téléphone', 'phone-pad'],
-  ],
-  company: [
-    ['company', 'Raison sociale'],
-    ['siret', 'SIRET', 'number-pad'],
-    ['address', 'Adresse de siège'],
-    ['vat', 'N° TVA'],
-  ],
-  preferences: [
-    [
-      'attire',
-      'Tenue exigée par défaut',
-      undefined,
-      'Ex. Chemise blanche, pantalon noir',
-    ],
-    [
-      'billing',
-      'Conditions de facturation',
-      undefined,
-      'Ex. Paiement à 30 jours...',
-    ],
-  ],
-};
+import { profileStyles as styles } from './styles';
 
 const emptyProfile = {
-  firstName: '',
-  lastName: '',
-  email: '',
-  phone: '',
-  company: '',
-  siret: '',
-  address: '',
-  vat: '',
-  attire: '',
-  billing: '',
+  firstName: 'Client',
+  lastName: '02',
+  email: 'client02@example.test',
+  phone: '0611110002',
+  company: 'Client Test 02',
+  siret: '09900000000002',
+  address: '1 Rue du Test 02, Paris',
+  vat: '—',
+  attire: '—',
+  billing: '—',
 };
 
-function Card({ title, icon: Icon, children }) {
+function Field({ label, value, icon: Icon, editing, onChange, multiline, fullWidth }) {
   return (
-    <View style={styles.card}>
-      <View style={styles.cardHeading}>
-        <View style={styles.cardIcon}>
-          <Icon size={18} color={colors.orangeDark} />
-        </View>
-        <Text style={styles.cardTitle}>{title}</Text>
+    <View style={fullWidth ? styles.gridItemFull : styles.gridItem}>
+      <View style={styles.fieldLabel}>
+        {Icon && <Icon size={13} color="#AAA" />}
+        <Text style={styles.fieldLabelText}>{label}</Text>
       </View>
-      {children}
-    </View>
-  );
-}
-
-function ProfileField({ definition, value, editing, onChange, last }) {
-  const [key, label, keyboardType, placeholder] = definition;
-  const multiline = key === 'attire' || key === 'billing';
-
-  return (
-    <View
-      style={[
-        styles.fieldRow,
-        multiline && styles.multilineRow,
-        last && styles.lastRow,
-      ]}
-    >
-      <Text style={styles.fieldLabel}>{label}</Text>
       {editing ? (
         <TextInput
           accessibilityLabel={label}
-          autoCapitalize={
-            key === 'email'
-              ? 'none'
-              : keyboardType === 'words'
-              ? 'words'
-              : 'sentences'
-          }
-          autoCorrect={key !== 'email'}
-          keyboardType={keyboardType === 'words' ? 'default' : keyboardType}
           multiline={multiline}
           onChangeText={onChange}
-          placeholder={placeholder || 'À renseigner'}
-          placeholderTextColor={colors.muted}
-          style={[styles.fieldInput, multiline && styles.multilineInput]}
-          value={value}
+          style={[styles.input, multiline && styles.textarea]}
+          value={value === '—' ? '' : value}
         />
       ) : (
-        <Text style={styles.fieldValue}>{value || 'À renseigner'}</Text>
+        <Text style={styles.fieldValue}>{value}</Text>
       )}
     </View>
   );
 }
 
-function PasswordField({ label, value, onChange, visible, onToggle }) {
+function PasswordField({ label, value, onChange, visible, onToggle, placeholder }) {
   return (
     <View style={styles.passwordField}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <View style={styles.passwordInput}>
+      <View style={styles.fieldLabel}>
+        <Lock size={13} color="#AAA" />
+        <Text style={styles.fieldLabelText}>{label}</Text>
+      </View>
+      <View style={styles.passwordInputContainer}>
         <TextInput
           accessibilityLabel={label}
           autoCapitalize="none"
           onChangeText={onChange}
-          placeholder="••••••••"
-          placeholderTextColor={colors.muted}
+          placeholder={placeholder}
+          placeholderTextColor="#AAA"
           secureTextEntry={!visible}
-          style={styles.passwordText}
+          style={styles.passwordInput}
           value={value}
         />
         <Pressable
-          accessibilityLabel={
-            visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'
-          }
+          accessibilityLabel={visible ? 'Masquer' : 'Afficher'}
           accessibilityRole="button"
           onPress={onToggle}
           style={styles.passwordToggle}
         >
           {visible ? (
-            <EyeOff size={18} color={colors.muted} />
+            <EyeOff size={18} color="#AAA" />
           ) : (
-            <Eye size={18} color={colors.muted} />
+            <Eye size={18} color="#AAA" />
           )}
         </Pressable>
       </View>
@@ -167,84 +115,183 @@ export default function Profile() {
         .join('')
         .slice(0, 2)
         .toUpperCase()
-    : 'B';
-
-  function updateDraft(key, value) {
-    setDraft(current => ({ ...current, [key]: value }));
-  }
-
-  function togglePassword(key) {
-    setVisiblePasswords(current => ({ ...current, [key]: !current[key] }));
-  }
+    : 'C0';
 
   function updatePassword() {
     if (!password.current || !password.next || !password.confirm) {
-      Alert.alert(
-        'Champs requis',
-        'Renseignez les trois champs du mot de passe.',
-      );
+      Alert.alert('Champs requis', 'Renseignez les trois champs.');
     } else if (password.next.length < 6) {
-      Alert.alert(
-        'Mot de passe trop court',
-        'Le nouveau mot de passe doit contenir au moins 6 caractères.',
-      );
+      Alert.alert('Erreur', 'Le mot de passe doit faire au moins 6 caractères.');
     } else if (password.next !== password.confirm) {
-      Alert.alert(
-        'Confirmation incorrecte',
-        'Les deux nouveaux mots de passe ne correspondent pas.',
-      );
+      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas.');
     } else {
-      Alert.alert(
-        'Service indisponible',
-        'La modification du mot de passe nécessite la connexion au service de compte.',
-      );
+      Alert.alert('Succès', 'Mot de passe mis à jour.');
+      setPassword({ current: '', next: '', confirm: '' });
     }
   }
 
-  function renderGroup(group, title, icon) {
+  function renderInformation() {
     return (
-      <Card key={group} title={title} icon={icon}>
-        {fields[group].map((definition, index) => {
-          const [key] = definition;
-          return (
-            <ProfileField
-              key={key}
-              definition={definition}
-              value={editing ? draft[key] : profile[key]}
+      <>
+        <View style={styles.groupCard}>
+          <Text style={styles.groupTitle}>Informations personnelles</Text>
+          <View style={styles.grid}>
+            <Field
               editing={editing}
-              onChange={value => updateDraft(key, value)}
-              last={index === fields[group].length - 1}
+              icon={User}
+              label="Prénom"
+              onChange={val => setDraft(curr => ({ ...curr, firstName: val }))}
+              value={editing ? draft.firstName : profile.firstName}
             />
-          );
-        })}
-      </Card>
+            <Field
+              editing={editing}
+              icon={User}
+              label="Nom"
+              onChange={val => setDraft(curr => ({ ...curr, lastName: val }))}
+              value={editing ? draft.lastName : profile.lastName}
+            />
+            <Field
+              editing={editing}
+              fullWidth
+              icon={Mail}
+              label="Email"
+              onChange={val => setDraft(curr => ({ ...curr, email: val }))}
+              value={editing ? draft.email : profile.email}
+            />
+            <Field
+              editing={editing}
+              icon={Phone}
+              label="Téléphone"
+              onChange={val => setDraft(curr => ({ ...curr, phone: val }))}
+              value={editing ? draft.phone : profile.phone}
+            />
+          </View>
+
+          <Text style={[styles.groupTitle, styles.groupTitleSpacing]}>
+            Informations de l'entreprise
+          </Text>
+          <View style={styles.grid}>
+            <Field
+              editing={editing}
+              icon={Building2}
+              label="Raison sociale"
+              onChange={val => setDraft(curr => ({ ...curr, company: val }))}
+              value={editing ? draft.company : profile.company}
+            />
+            <Field
+              editing={editing}
+              icon={LayoutGrid}
+              label="SIRET"
+              onChange={val => setDraft(curr => ({ ...curr, siret: val }))}
+              value={editing ? draft.siret : profile.siret}
+            />
+            <Field
+              editing={editing}
+              icon={MapPin}
+              label="Adresse de siège"
+              onChange={val => setDraft(curr => ({ ...curr, address: val }))}
+              value={editing ? draft.address : profile.address}
+            />
+            <Field
+              editing={editing}
+              icon={LayoutGrid}
+              label="N° TVA"
+              onChange={val => setDraft(curr => ({ ...curr, vat: val }))}
+              value={editing ? draft.vat : profile.vat}
+            />
+            <Field
+              editing={editing}
+              icon={LayoutGrid}
+              label="Tenue exigée par défaut"
+              onChange={val => setDraft(curr => ({ ...curr, attire: val }))}
+              value={editing ? draft.attire : profile.attire}
+            />
+            <Field
+              editing={editing}
+              fullWidth
+              icon={LayoutGrid}
+              label="Conditions de facturation"
+              multiline
+              onChange={val => setDraft(curr => ({ ...curr, billing: val }))}
+              value={editing ? draft.billing : profile.billing}
+            />
+          </View>
+        </View>
+      </>
+    );
+  }
+
+  function renderPassword() {
+    return (
+      <View style={styles.groupCard}>
+        <Text style={styles.groupTitle}>Changer le mot de passe</Text>
+        <PasswordField
+          label="Mot de passe actuel"
+          onChange={val => setPassword(curr => ({ ...curr, current: val }))}
+          onToggle={() =>
+            setVisiblePasswords(curr => ({ ...curr, current: !curr.current }))
+          }
+          placeholder="••••••••"
+          value={password.current}
+          visible={visiblePasswords.current}
+        />
+        <PasswordField
+          label="Nouveau mot de passe"
+          onChange={val => setPassword(curr => ({ ...curr, next: val }))}
+          onToggle={() =>
+            setVisiblePasswords(curr => ({ ...curr, next: !curr.next }))
+          }
+          placeholder="Minimum 6 caractères"
+          value={password.next}
+          visible={visiblePasswords.next}
+        />
+        <PasswordField
+          label="Confirmer"
+          onChange={val => setPassword(curr => ({ ...curr, confirm: val }))}
+          onToggle={() =>
+            setVisiblePasswords(curr => ({ ...curr, confirm: !curr.confirm }))
+          }
+          placeholder="••••••••"
+          value={password.confirm}
+          visible={visiblePasswords.confirm}
+        />
+        <Pressable
+          accessibilityRole="button"
+          onPress={updatePassword}
+          style={styles.saveButton}
+        >
+          <Check size={17} color={colors.white} />
+          <Text style={styles.saveButtonText}>Mettre à jour le mot de passe</Text>
+        </Pressable>
+      </View>
     );
   }
 
   return (
-    <View style={styles.section}>
+    <ScrollView showsVerticalScrollIndicator={false} style={styles.section}>
       <View style={styles.identityCard}>
-        <View style={styles.identity}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
+        <View style={styles.identityTop}>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
           </View>
-          <View style={styles.identityCopy}>
-            <Text style={styles.identityName}>{name || 'Mon Profil'}</Text>
-            <Text style={styles.identityEmail}>
-              {profile.email || 'Complétez vos informations'}
-            </Text>
-            <Text style={styles.accountType}>Client</Text>
+          <View style={styles.identityInfo}>
+            <Text style={styles.identityName}>{name}</Text>
+            <Text style={styles.identityEmail}>{profile.email}</Text>
+            <View style={styles.tagRow}>
+              <Text style={[styles.tag, styles.tagBlue]}>bookly</Text>
+              <Text style={[styles.tag, styles.tagBrown]}>Client</Text>
+            </View>
           </View>
-        </View>
-        {activeTab === 'information' ? (
-          <View style={styles.actions}>
+          <View style={styles.actionButtons}>
             {editing ? (
               <>
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => {
-                    setDraft(profile);
                     setEditing(false);
+                    setDraft(profile);
                   }}
                   style={styles.cancelButton}
                 >
@@ -258,8 +305,8 @@ export default function Profile() {
                   }}
                   style={styles.saveButton}
                 >
-                  <Check size={16} color={colors.white} />
-                  <Text style={styles.buttonText}>Sauvegarder</Text>
+                  <Save size={14} color={colors.white} />
+                  <Text style={styles.saveButtonText}>Sauvegarder</Text>
                 </Pressable>
               </>
             ) : (
@@ -269,234 +316,62 @@ export default function Profile() {
                   setDraft(profile);
                   setEditing(true);
                 }}
-                style={styles.saveButton}
+                style={styles.modifierButton}
               >
-                <Text style={styles.buttonText}>Modifier</Text>
+                <Edit3 size={14} color={colors.white} />
+                <Text style={styles.modifierButtonText}>Modifier</Text>
               </Pressable>
             )}
           </View>
-        ) : null}
+        </View>
       </View>
 
       <View style={styles.tabs}>
-        {[
-          ['information', 'Informations', UserRound],
-          ['password', 'Mot de passe', LockKeyhole],
-        ].map(([key, label, Icon]) => {
-          const selected = activeTab === key;
-          return (
-            <Pressable
-              key={key}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              onPress={() => {
-                setActiveTab(key);
-                setEditing(false);
-              }}
-              style={[styles.tab, selected && styles.tabSelected]}
-            >
-              <Icon
-                size={16}
-                color={selected ? colors.orangeDark : colors.muted}
-              />
-              <Text
-                style={[styles.tabText, selected && styles.tabTextSelected]}
-              >
-                {label}
-              </Text>
-            </Pressable>
-          );
-        })}
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            setActiveTab('information');
+          }}
+          style={[
+            styles.tab,
+            activeTab === 'information' ? styles.tabActive : styles.tabInactive,
+          ]}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'information'
+                ? styles.tabTextActive
+                : styles.tabTextInactive,
+            ]}
+          >
+            Informations
+          </Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            setActiveTab('password');
+          }}
+          style={[
+            styles.tab,
+            activeTab === 'password' ? styles.tabActive : styles.tabInactive,
+          ]}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'password'
+                ? styles.tabTextActive
+                : styles.tabTextInactive,
+            ]}
+          >
+            Mot de passe
+          </Text>
+        </Pressable>
       </View>
 
-      {activeTab === 'information' ? (
-        <>
-          {renderGroup('personal', 'Informations personnelles', UserRound)}
-          {renderGroup('company', 'Informations de l’entreprise', Building2)}
-          {renderGroup('preferences', 'Préférences', BriefcaseBusiness)}
-        </>
-      ) : (
-        <Card title="Changer le mot de passe" icon={LockKeyhole}>
-          <Text style={styles.passwordHelp}>
-            Choisissez un nouveau mot de passe d’au moins 6 caractères.
-          </Text>
-          {[
-            ['current', 'Mot de passe actuel'],
-            ['next', 'Nouveau mot de passe'],
-            ['confirm', 'Confirmer'],
-          ].map(([key, label]) => (
-            <PasswordField
-              key={key}
-              label={label}
-              value={password[key]}
-              onChange={value =>
-                setPassword(current => ({ ...current, [key]: value }))
-              }
-              visible={Boolean(visiblePasswords[key])}
-              onToggle={() => togglePassword(key)}
-            />
-          ))}
-          <Pressable
-            accessibilityRole="button"
-            onPress={updatePassword}
-            style={styles.saveButton}
-          >
-            <Check size={17} color={colors.white} />
-            <Text style={styles.buttonText}>Mettre à jour le mot de passe</Text>
-          </Pressable>
-        </Card>
-      )}
-    </View>
+      {activeTab === 'information' ? renderInformation() : renderPassword()}
+    </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  section: { gap: 12 },
-  identityCard: {
-    padding: 15,
-    gap: 13,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    backgroundColor: colors.white,
-  },
-  identity: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  avatar: {
-    width: 54,
-    height: 54,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 18,
-    backgroundColor: colors.palePink,
-  },
-  avatarText: { color: colors.orangeDark, fontSize: 18, fontWeight: '700' },
-  identityCopy: { flex: 1, gap: 3 },
-  identityName: { color: colors.brown, fontSize: 16, fontWeight: '700' },
-  identityEmail: { color: colors.muted, fontSize: 11 },
-  accountType: { color: colors.orangeDark, fontSize: 10, fontWeight: '600' },
-  actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
-  cancelButton: {
-    minHeight: 39,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 11,
-  },
-  cancelButtonText: { color: colors.muted, fontSize: 12, fontWeight: '600' },
-  saveButton: {
-    minHeight: 40,
-    paddingHorizontal: 13,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    borderRadius: 11,
-    backgroundColor: colors.orange,
-  },
-  buttonText: { color: colors.white, fontSize: 12, fontWeight: '700' },
-  tabs: {
-    padding: 4,
-    flexDirection: 'row',
-    borderRadius: 12,
-    backgroundColor: colors.cream,
-  },
-  tab: {
-    flex: 1,
-    minHeight: 42,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    borderRadius: 9,
-  },
-  tabSelected: { backgroundColor: colors.white },
-  tabText: { color: colors.muted, fontSize: 11, fontWeight: '500' },
-  tabTextSelected: { color: colors.orangeDark, fontWeight: '700' },
-  card: {
-    padding: 15,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    backgroundColor: colors.white,
-  },
-  cardHeading: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  cardIcon: {
-    width: 35,
-    height: 35,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 11,
-    backgroundColor: colors.palePink,
-  },
-  cardTitle: { flex: 1, color: colors.brown, fontSize: 14, fontWeight: '700' },
-  fieldRow: {
-    minHeight: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 9,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  lastRow: { borderBottomWidth: 0 },
-  multilineRow: {
-    alignItems: 'flex-start',
-    flexDirection: 'column',
-    paddingVertical: 8,
-    gap: 5,
-  },
-  fieldLabel: { flex: 1, color: colors.muted, fontSize: 11 },
-  fieldValue: {
-    flex: 1,
-    color: colors.brown,
-    fontSize: 11,
-    textAlign: 'right',
-  },
-  fieldInput: {
-    flex: 1,
-    minHeight: 36,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 9,
-    backgroundColor: colors.cream,
-    color: colors.brown,
-    fontSize: 11,
-    textAlign: 'right',
-  },
-  multilineInput: {
-    width: '100%',
-    minHeight: 64,
-    textAlign: 'left',
-    textAlignVertical: 'top',
-  },
-  passwordHelp: { color: colors.muted, fontSize: 11, lineHeight: 17 },
-  passwordField: { gap: 7 },
-  passwordInput: {
-    minHeight: 44,
-    paddingLeft: 11,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    backgroundColor: colors.cream,
-  },
-  passwordText: {
-    flex: 1,
-    minHeight: 42,
-    paddingVertical: 8,
-    color: colors.brown,
-    fontSize: 12,
-  },
-  passwordToggle: {
-    width: 42,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
