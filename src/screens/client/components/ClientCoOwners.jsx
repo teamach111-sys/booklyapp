@@ -16,7 +16,6 @@ import {
   Eye,
   EyeOff,
   Plus,
-  Search,
   Trash2,
   UserRound,
   X,
@@ -44,7 +43,6 @@ const defaultCoOwners = [
 
 export default function ClientCoOwners() {
   const [coOwners, setCoOwners] = useState(defaultCoOwners);
-  const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
@@ -190,59 +188,35 @@ export default function ClientCoOwners() {
     );
   }
 
-  const filteredCoOwners = coOwners.filter(item => {
-    if (!searchQuery.trim()) {
-      return true;
-    }
-    const query = searchQuery.toLowerCase();
-    return (
-      item.fullName.toLowerCase().includes(query) ||
-      item.email.toLowerCase().includes(query) ||
-      (item.phone && item.phone.toLowerCase().includes(query))
-    );
-  });
-
   return (
     <View style={styles.container}>
-      {/* ── Toolbar: Search + Square Plus Button (matching Messages.jsx) ── */}
-      <View style={styles.toolbar}>
-        <View style={styles.searchBar}>
-          <Search size={16} color="#BBB" />
-          <TextInput
-            accessibilityLabel="Rechercher un co-propriétaire"
-            onChangeText={setSearchQuery}
-            placeholder="Rechercher un co-propriétaire..."
-            placeholderTextColor="#BBB"
-            style={styles.searchInput}
-            value={searchQuery}
-          />
-        </View>
+      {/* ── Action Button (Full Button matching original design) ── */}
+      <View style={styles.actionRow}>
         <Pressable
           accessibilityLabel="Ajouter un co-propriétaire"
           accessibilityRole="button"
           onPress={openCreateModal}
           style={styles.addButton}
         >
-          <Plus size={20} color={colors.white} />
+          <Plus size={14} color={colors.white} strokeWidth={2.5} />
+          <Text style={styles.addButtonText}>Ajouter un co-propriétaire</Text>
         </Pressable>
       </View>
 
       {/* ── Content: Co-Owners List or Empty State ── */}
-      {filteredCoOwners.length === 0 ? (
+      {coOwners.length === 0 ? (
         <View style={styles.emptyCard}>
           <View style={styles.emptyIconWrap}>
             <UserRound size={22} color="#CCCCCC" strokeWidth={2} />
           </View>
           <Text style={styles.emptyTitle}>Aucun co-propriétaire</Text>
           <Text style={styles.emptySubtitle}>
-            {searchQuery
-              ? 'Aucun résultat ne correspond à votre recherche.'
-              : 'Ajoutez un compte avec un accès complet à votre entreprise.'}
+            Ajoutez un compte avec un accès complet à votre entreprise.
           </Text>
         </View>
       ) : (
         <View style={styles.listContainer}>
-          {filteredCoOwners.map(item => (
+          {coOwners.map(item => (
             <View key={item.id} style={styles.coOwnerCard}>
               <View style={styles.avatarWrap}>
                 <Text style={styles.avatarText}>{item.initials}</Text>
@@ -479,36 +453,25 @@ const styles = StyleSheet.create({
     gap: 16,
   },
 
-  /* ── Toolbar (Search + Square Plus Button matching Messages.jsx) ── */
-  toolbar: {
+  /* ── Action Button Row ── */
+  actionRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+    justifyContent: 'flex-end',
     marginBottom: 4,
   },
-  searchBar: {
-    flex: 1,
-    height: 38,
+  addButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: '#F5EDE8',
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    color: '#333333',
-    padding: 0,
-  },
-  addButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
+    gap: 7,
     backgroundColor: colors.orange,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+  },
+  addButtonText: {
+    color: colors.white,
+    fontSize: 13,
+    fontWeight: '600',
   },
 
   /* ── Empty State Card ── */
