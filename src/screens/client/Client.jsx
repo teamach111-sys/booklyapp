@@ -36,10 +36,17 @@ import Calendrier from './components/Calendrier';
 import Profile from './components/Profile';
 import Prestations, { demoMissions } from './components/Prestations';
 import Messages from './components/Messages';
+import ClientCoOwners from './components/ClientCoOwners';
 
 const sections = [
   { key: 'profile', label: 'Profil', icon: UserRound },
-  { key: 'coOwners', label: 'Co-propriétaires', icon: Users },
+  {
+    key: 'coOwners',
+    label: 'Co-propriétaires',
+    icon: Users,
+    description:
+      'Gérez les comptes ayant un accès complet à votre entreprise, comme vous.',
+  },
   { key: 'employees', label: 'Collaborateurs', icon: Users },
   { key: 'sites', label: 'Sites', icon: MapPin },
   { key: 'services', label: 'Prestations', icon: BriefcaseBusiness },
@@ -292,6 +299,9 @@ function ClientScreen() {
     if (activeSection === 'messages') {
       return <Messages />;
     }
+    if (activeSection === 'coOwners') {
+      return <ClientCoOwners />;
+    }
     return renderCollection();
   }
 
@@ -327,7 +337,8 @@ function ClientScreen() {
             <Text style={layoutStyles.pageEyebrow}>Espace client</Text>
             <Text style={layoutStyles.pageTitle}>{currentSection.label}</Text>
             <Text style={layoutStyles.pageDescription}>
-              Gérez votre entreprise et vos prestations Bookly.
+              {currentSection.description ||
+                'Gérez votre entreprise et vos prestations Bookly.'}
             </Text>
           </View>
           {renderContent()}
