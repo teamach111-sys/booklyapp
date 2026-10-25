@@ -1,17 +1,9 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import {
-  BriefcaseBusiness,
-  CalendarDays,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Clock3,
-  MapPin,
-} from 'lucide-react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { colors } from '../../../styles';
 
-const weekdays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+const weekdays = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
 
 function startOfWeek(date) {
   const start = new Date(date);
@@ -21,71 +13,54 @@ function startOfWeek(date) {
 }
 
 function sameDay(first, second) {
-  return first.toDateString() === second.toDateString();
+  return (
+    first.getFullYear() === second.getFullYear() &&
+    first.getMonth() === second.getMonth() &&
+    first.getDate() === second.getDate()
+  );
 }
 
-function formatDateRange(start, end) {
-  const firstDay = start.toLocaleDateString('fr-FR', { day: 'numeric' });
-  const lastDay = end.toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'short',
+function formatMonthTitle(date) {
+  const str = date.toLocaleDateString('fr-FR', {
+    month: 'long',
     year: 'numeric',
   });
-  const month = start.toLocaleDateString('fr-FR', { month: 'short' });
-
-  return `${firstDay} ${month} - ${lastDay}`;
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function Metric({ label, value, icon: Icon }) {
-  return (
-    <View style={styles.metric}>
-      <View style={styles.metricIcon}>
-        <Icon size={17} color={colors.orangeDark} />
-      </View>
-      <Text style={styles.metricValue}>{value}</Text>
-      <Text style={styles.metricLabel}>{label}</Text>
-    </View>
-  );
+function formatWeekRange(start, end) {
+  const startDay = start.getDate();
+  const startMonth = start.toLocaleDateString('fr-FR', { month: 'short' });
+  const endDay = end.getDate();
+  const endMonth = end.toLocaleDateString('fr-FR', { month: 'short' });
+  const year = end.getFullYear();
+
+  return `${startDay} ${startMonth} – ${endDay} ${endMonth} ${year}`;
 }
 
-function DateNavigation({ title, onPrevious, onNext, onToday }) {
-  return (
-    <View style={styles.dateNavigation}>
-      <View style={styles.dateControls}>
-        <Pressable
-          accessibilityLabel="Période précédente"
-          accessibilityRole="button"
-          onPress={onPrevious}
-          style={styles.arrowButton}
-        >
-          <ChevronLeft size={19} color={colors.brown} />
-        </Pressable>
-        <Text style={styles.dateTitle}>{title}</Text>
-        <Pressable
-          accessibilityLabel="Période suivante"
-          accessibilityRole="button"
-          onPress={onNext}
-          style={styles.arrowButton}
-        >
-          <ChevronRight size={19} color={colors.brown} />
-        </Pressable>
-      </View>
-      <Pressable
-        accessibilityRole="button"
-        onPress={onToday}
-        style={styles.todayButton}
-      >
-        <Text style={styles.todayButtonText}>Aujourd’hui</Text>
-      </Pressable>
-    </View>
-  );
+function formatDayCardDate(date) {
+  const day = date.getDate();
+  const month = date.toLocaleDateString('fr-FR', { month: 'short' });
+  return `${day} ${month}`;
+}
+
+function formatModalDate(date) {
+  const weekday = date.toLocaleDateString('fr-FR', { weekday: 'long' });
+  const day = date.getDate();
+  const month = date.toLocaleDateString('fr-FR', { month: 'long' });
+  const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+  const capitalizedMonth = month.charAt(0).toUpperCase() + month.slice(1);
+  return `${capitalizedWeekday} ${day} ${capitalizedMonth}`;
 }
 
 export default function Calendrier() {
   const [view, setView] = useState('month');
   const [focusedDate, setFocusedDate] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [modalVisible, setModalVisible] = useState(false);
 
+  // Month grid: 42 cells (6 weeks) starting from the Monday before/on the 1st
   const monthStart = new Date(
     focusedDate.getFullYear(),
     focusedDate.getMonth(),
@@ -100,16 +75,22 @@ export default function Calendrier() {
     date.setDate(monthGridStart.getDate() + index);
     return date;
   });
+
+  const monthWeeks = [
+    monthDays.slice(0, 7),
+    monthDays.slice(7, 14),
+    monthDays.slice(14, 21),
+    monthDays.slice(21, 28),
+    monthDays.slice(28, 35),
+    monthDays.slice(35, 42),
+  ];
+
+  // Week days: 7 days starting from Monday
   const weekStart = startOfWeek(focusedDate);
   const weekDays = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(weekStart);
     date.setDate(weekStart.getDate() + index);
     return date;
-  });
-  const isToday = sameDay(selectedDate, new Date());
-  const monthTitle = focusedDate.toLocaleDateString('fr-FR', {
-    month: 'long',
-    year: 'numeric',
   });
 
   function movePeriod(direction) {
@@ -121,7 +102,6 @@ export default function Calendrier() {
       next.setDate(focusedDate.getDate() + direction * 7);
     }
     setFocusedDate(next);
-    setSelectedDate(next);
   }
 
   function goToToday() {
@@ -130,183 +110,291 @@ export default function Calendrier() {
     setSelectedDate(today);
   }
 
-  function chooseDate(date) {
+  function onSelectDay(date) {
     setSelectedDate(date);
-    setFocusedDate(date);
+    setModalVisible(true);
   }
 
   return (
-    <View style={styles.section}>
-      <View style={styles.filterCard}>
-        <View style={styles.filterIcon}>
-          <MapPin size={17} color={colors.orangeDark} />
-        </View>
-        <View style={styles.filterCopy}>
-          <Text style={styles.filterLabel}>Filtrer par espace</Text>
-          <Text style={styles.filterValue}>Tous les espaces</Text>
-        </View>
-        <Text style={styles.activeSpace}>Site actif</Text>
+    <View style={styles.container}>
+      {/* 1. Filter Row */}
+      <View style={styles.filterRow}>
+        <Text style={styles.filterLabel}>FILTRER :</Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setSelectedFilter('all')}
+          style={[
+            styles.filterPill,
+            selectedFilter === 'all' && styles.filterPillActive,
+          ]}
+        >
+          <Text
+            style={[
+              styles.filterPillText,
+              selectedFilter === 'all' && styles.filterPillTextActive,
+            ]}
+          >
+            Tous les espaces
+          </Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setSelectedFilter('client02')}
+          style={[
+            styles.filterPill,
+            selectedFilter === 'client02' && styles.filterPillActive,
+          ]}
+        >
+          <Text
+            style={[
+              styles.filterPillText,
+              selectedFilter === 'client02' && styles.filterPillTextActive,
+            ]}
+          >
+            Dashboard Client 02
+          </Text>
+        </Pressable>
       </View>
 
-      <View style={styles.metrics}>
-        {view === 'month' ? (
-          <>
-            <Metric
-              label="Total prestations"
-              value="0"
-              icon={BriefcaseBusiness}
-            />
-            <Metric label="À venir" value="0" icon={CalendarDays} />
-            <Metric label="En cours" value="0" icon={Clock3} />
-            <Metric label="Passées" value="0" icon={Check} />
-          </>
-        ) : (
-          <>
-            <Metric label="Prestations" value="0" icon={BriefcaseBusiness} />
-            <Metric
-              label="Total estimé HT"
-              value="0,00 €"
-              icon={CalendarDays}
-            />
-            <Metric label="Jours travaillés" value="0/7" icon={Clock3} />
-          </>
-        )}
-      </View>
+      {/* 2. Stat Cards Row */}
+      {view === 'month' ? (
+        <View style={styles.statsContainer}>
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Text style={[styles.statNum, styles.statNumPrimary]}>0</Text>
+              <Text style={styles.statLabel}>TOTAL PRESTATIONS</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={[styles.statNum, styles.statNumWarning]}>0</Text>
+              <Text style={styles.statLabel}>PRESTATION À VENIR</Text>
+            </View>
+          </View>
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Text style={[styles.statNum, styles.statNumSuccess]}>0</Text>
+              <Text style={styles.statLabel}>PRESTATION EN COURS</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={[styles.statNum, styles.statNumMuted]}>0</Text>
+              <Text style={styles.statLabel}>PRESTATIONS PASSÉES</Text>
+            </View>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={[styles.statNum, styles.statNumPrimary]}>0</Text>
+            <Text style={styles.statLabel}>PRESTATIONS</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={[styles.statNum, styles.statNumPrimary]}>
+              0,00 €
+            </Text>
+            <Text style={styles.statLabel}>TOTAL ESTIMÉ HT</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={[styles.statNum, styles.statNumDark]}>
+              0/7
+            </Text>
+            <Text style={styles.statLabel}>JOURS TRAVAILLÉS</Text>
+          </View>
+        </View>
+      )}
 
-      <View style={styles.calendarCard}>
-        <DateNavigation
-          title={
-            view === 'month'
-              ? monthTitle
-              : formatDateRange(weekStart, weekDays[6])
-          }
-          onPrevious={() => movePeriod(-1)}
-          onNext={() => movePeriod(1)}
-          onToday={goToToday}
-        />
+      {/* 3. Main Calendar Container */}
+      <View style={styles.calWrapper}>
+        {/* Navigation Toolbar */}
+        <View style={styles.calNav}>
+          <View style={styles.calNavHeaderRow}>
+            <Pressable
+              accessibilityLabel="Période précédente"
+              accessibilityRole="button"
+              onPress={() => movePeriod(-1)}
+              style={styles.calNavBtn}
+            >
+              <ChevronLeft size={16} color={colors.orange} />
+            </Pressable>
 
-        <View style={styles.viewToggle}>
-          {['month', 'week'].map(mode => {
-            const active = view === mode;
-            return (
-              <Pressable
-                key={mode}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-                onPress={() => setView(mode)}
-                style={[styles.viewOption, active && styles.viewOptionActive]}
+            <Text numberOfLines={1} style={styles.calMonthTitle}>
+              {view === 'month'
+                ? formatMonthTitle(focusedDate)
+                : formatWeekRange(weekStart, weekDays[6])}
+            </Text>
+
+            <Pressable
+              accessibilityLabel="Période suivante"
+              accessibilityRole="button"
+              onPress={() => movePeriod(1)}
+              style={styles.calNavBtn}
+            >
+              <ChevronRight size={16} color={colors.orange} />
+            </Pressable>
+
+            <Pressable
+              accessibilityRole="button"
+              onPress={goToToday}
+              style={styles.calTodayBtn}
+            >
+              <Text style={styles.calTodayBtnText}>Aujourd'hui</Text>
+            </Pressable>
+          </View>
+
+          {/* View Toggle */}
+          <View style={styles.calNavToggle}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: view === 'month' }}
+              onPress={() => setView('month')}
+              style={[
+                styles.calToggleOption,
+                view === 'month' && styles.calToggleOptionActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.calToggleOptionText,
+                  view === 'month' && styles.calToggleOptionTextActive,
+                ]}
               >
-                <Text
-                  style={[
-                    styles.viewOptionText,
-                    active && styles.viewOptionTextActive,
-                  ]}
-                >
-                  {mode === 'month' ? 'Mois' : 'Semaine'}
-                </Text>
-              </Pressable>
-            );
-          })}
+                Mois
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: view === 'week' }}
+              onPress={() => setView('week')}
+              style={[
+                styles.calToggleOption,
+                view === 'week' && styles.calToggleOptionActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.calToggleOptionText,
+                  view === 'week' && styles.calToggleOptionTextActive,
+                ]}
+              >
+                Semaine
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
+        {/* View Content */}
         {view === 'month' ? (
           <>
-            <View style={styles.monthGrid}>
+            {/* Weekday Header */}
+            <View style={styles.calGridHeader}>
               {weekdays.map(day => (
-                <View key={day} style={styles.monthWeekday}>
-                  <Text style={styles.monthWeekdayText}>{day}</Text>
+                <View key={day} style={styles.calDayHeaderCell}>
+                  <Text style={styles.calDayHeaderText}>{day}</Text>
                 </View>
               ))}
-              {monthDays.map(date => {
-                const selected = sameDay(date, selectedDate);
-                const inMonth = date.getMonth() === focusedDate.getMonth();
-                const today = sameDay(date, new Date());
-                return (
-                  <Pressable
-                    key={date.toISOString()}
-                    accessibilityLabel={date.toLocaleDateString('fr-FR', {
-                      weekday: 'long',
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    onPress={() => chooseDate(date)}
-                    style={styles.monthDay}
-                  >
-                    <Text
-                      style={[
-                        styles.monthDayText,
-                        !inMonth && styles.otherMonthDay,
-                        today && styles.todayDay,
-                        selected && styles.selectedDayText,
-                      ]}
-                    >
-                      {date.getDate()}
-                    </Text>
-                  </Pressable>
-                );
-              })}
             </View>
-            <View style={styles.legend}>
-              {[
-                ['À venir', colors.orange],
-                ['En cours', colors.success],
-                ['Passée', colors.muted],
-              ].map(([label, color]) => (
-                <View key={label} style={styles.legendItem}>
-                  <View
-                    style={[styles.legendDot, { backgroundColor: color }]}
-                  />
-                  <Text style={styles.legendText}>{label}</Text>
+
+            {/* Month Day Cells by Week Rows */}
+            <View style={styles.calGrid}>
+              {monthWeeks.map((week, wIdx) => (
+                <View key={wIdx} style={styles.calWeekRow}>
+                  {week.map((date, dIdx) => {
+                    const inMonth = date.getMonth() === focusedDate.getMonth();
+                    const today = sameDay(date, new Date());
+                    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+
+                    return (
+                      <Pressable
+                        key={dIdx}
+                        accessibilityLabel={date.toLocaleDateString('fr-FR', {
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                        accessibilityRole="button"
+                        onPress={() => onSelectDay(date)}
+                        style={[
+                          styles.calCell,
+                          dIdx === 6 && styles.calCellLastInRow,
+                          wIdx === 5 && styles.calCellLastRow,
+                          !inMonth && styles.calCellOffRange,
+                          today && styles.calCellToday,
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.calDayNumWrap,
+                            today && styles.calDayNumWrapToday,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.calDayNum,
+                              !inMonth && styles.calDayNumOffRange,
+                              isWeekend &&
+                                inMonth &&
+                                !today &&
+                                styles.calDayNumWeekend,
+                              today && styles.calDayNumToday,
+                            ]}
+                          >
+                            {date.getDate()}
+                          </Text>
+                        </View>
+                        <View style={styles.calDots} />
+                      </Pressable>
+                    );
+                  })}
                 </View>
               ))}
+            </View>
+
+            {/* Legend */}
+            <View style={styles.calLegend}>
+              <View style={styles.calLegendItem}>
+                <View style={[styles.calDot, styles.calDotUpcoming]} />
+                <Text style={styles.calLegendText}>Prestation à venir</Text>
+              </View>
+              <View style={styles.calLegendItem}>
+                <View style={[styles.calDot, styles.calDotOngoing]} />
+                <Text style={styles.calLegendText}>Prestation en cours</Text>
+              </View>
+              <View style={styles.calLegendItem}>
+                <View style={[styles.calDot, styles.calDotPast]} />
+                <Text style={styles.calLegendText}>Prestation passée</Text>
+              </View>
             </View>
           </>
         ) : (
-          <View style={styles.weekList}>
+          /* Week View: 7 Day Cards */
+          <View style={styles.calDaygrid}>
             {weekDays.map(date => {
-              const selected = sameDay(date, selectedDate);
+              const today = sameDay(date, new Date());
+              const dayName = date.toLocaleDateString('fr-FR', {
+                weekday: 'long',
+              });
+              const capitalizedDayName =
+                dayName.charAt(0).toUpperCase() + dayName.slice(1);
+
               return (
                 <Pressable
                   key={date.toISOString()}
                   accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  onPress={() => chooseDate(date)}
-                  style={[styles.weekDay, selected && styles.weekDaySelected]}
+                  onPress={() => onSelectDay(date)}
+                  style={[styles.calDaycard, today && styles.calDaycardToday]}
                 >
-                  <View style={styles.weekDayDate}>
-                    <Text
-                      style={[
-                        styles.weekDayName,
-                        selected && styles.selectedDayText,
-                      ]}
-                    >
-                      {date.toLocaleDateString('fr-FR', {
-                        weekday: 'long',
-                      })}
+                  <View style={styles.calDaycardHeader}>
+                    <Text style={styles.calDaycardName}>
+                      {capitalizedDayName}
                     </Text>
-                    <Text
-                      style={[
-                        styles.weekDayNumber,
-                        selected && styles.selectedDayText,
-                      ]}
-                    >
-                      {date.toLocaleDateString('fr-FR', {
-                        day: 'numeric',
-                        month: 'short',
-                      })}
+                    <Text style={styles.calDaycardDate}>
+                      {formatDayCardDate(date)}
                     </Text>
                   </View>
-                  <Text
-                    style={[
-                      styles.noAppointments,
-                      selected && styles.selectedDayText,
-                    ]}
-                  >
-                    Aucune prestation
-                  </Text>
+                  <View style={styles.calDaycardBody}>
+                    <Text style={styles.calDaycardEmpty}>
+                      Aucune prestation
+                    </Text>
+                  </View>
                 </Pressable>
               );
             })}
@@ -314,344 +402,448 @@ export default function Calendrier() {
         )}
       </View>
 
-      <View style={styles.upcomingCard}>
-        <View style={styles.upcomingHeading}>
-          <Text style={styles.upcomingTitle}>Prochaines prestations</Text>
-          <Text style={styles.upcomingCount}>0</Text>
+      {/* 4. Upcoming Prestations Panel (Month View Only) */}
+      {view === 'month' ? (
+        <View style={styles.calSide}>
+          <Text style={styles.calSideTitle}>PROCHAINES PRESTATIONS</Text>
+          <Text style={styles.calSideEmpty}>Aucune prestation à venir.</Text>
         </View>
-        <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
-            <CalendarDays size={21} color={colors.orangeDark} />
-          </View>
-          <Text style={styles.emptyTitle}>Aucune prestation à venir</Text>
-          <Text style={styles.emptyDescription}>
-            Vos prochaines missions apparaîtront ici.
-          </Text>
-        </View>
-      </View>
+      ) : null}
 
-      <Text style={styles.selectedDate}>
-        {selectedDate.toLocaleDateString('fr-FR', {
-          weekday: 'long',
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-        })}
-        {isToday ? ' · Aujourd’hui' : ''}
-      </Text>
+      {/* 5. Day Detail Modal */}
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+        transparent
+        visible={modalVisible}
+      >
+        <Pressable
+          onPress={() => setModalVisible(false)}
+          style={styles.modalOverlay}
+        >
+          <Pressable
+            onPress={e => e.stopPropagation()}
+            style={styles.modalCard}
+          >
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setModalVisible(false)}
+              style={styles.modalBackBtn}
+            >
+              <Text style={styles.modalBackText}>‹ Retour au planning</Text>
+            </Pressable>
+            <Text style={styles.modalTitle}>
+              {formatModalDate(selectedDate)}
+            </Text>
+            <Text style={styles.modalEmptyText}>
+              Aucune prestation ce jour.
+            </Text>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  section: {
+  container: {
     gap: 12,
   },
-  filterCard: {
-    padding: 12,
+
+  /* ── Filter Row ── */
+  filterRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
+    gap: 8,
+    flexWrap: 'wrap',
+    marginBottom: 4,
+  },
+  filterLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#AAA',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  filterPill: {
+    paddingVertical: 5,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#E0D0C8',
     backgroundColor: colors.white,
   },
-  filterIcon: {
-    width: 36,
-    height: 36,
+  filterPillActive: {
+    backgroundColor: colors.orange,
+    borderColor: colors.orange,
+  },
+  filterPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#888',
+  },
+  filterPillTextActive: {
+    color: colors.white,
+  },
+
+  /* ── Stats Container & Rows ── */
+  statsContainer: {
+    gap: 10,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ECDDD6',
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statNum: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  statNumPrimary: {
+    color: colors.orange,
+  },
+  statNumWarning: {
+    color: '#E65100',
+  },
+  statNumSuccess: {
+    color: '#2E7D32',
+  },
+  statNumMuted: {
+    color: '#757575',
+  },
+  statNumDark: {
+    color: colors.orangeDark,
+  },
+  statLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#888',
+    textAlign: 'center',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+
+  /* ── Calendar Wrapper ── */
+  calWrapper: {
+    backgroundColor: colors.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#ECDDD6',
+    overflow: 'hidden',
+  },
+
+  /* ── Calendar Nav Toolbar ── */
+  calNav: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0E4DD',
+    gap: 10,
+  },
+  calNavHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  calNavBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0D0C8',
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calMonthTitle: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.orangeDark,
+    textAlign: 'center',
+    includeFontPadding: false,
+  },
+  calTodayBtn: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0D0C8',
+    backgroundColor: colors.white,
+  },
+  calTodayBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.orange,
+  },
+  calNavToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#F5F0EC',
+    borderRadius: 22,
+    padding: 3,
+  },
+  calToggleOption: {
+    flex: 1,
+    paddingVertical: 6,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calToggleOptionActive: {
+    backgroundColor: colors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  calToggleOptionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#999',
+  },
+  calToggleOptionTextActive: {
+    color: colors.orange,
+    fontWeight: '700',
+  },
+
+  /* ── Month Grid Header ── */
+  calGridHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#FAF6F4',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ECDDD6',
+    paddingVertical: 8,
+  },
+  calDayHeaderCell: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calDayHeaderText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#888',
+    letterSpacing: 0.5,
+  },
+
+  /* ── Month Grid Days ── */
+  calGrid: {
+    flexDirection: 'column',
+  },
+  calWeekRow: {
+    flexDirection: 'row',
+  },
+  calCell: {
+    flex: 1,
+    minHeight: 46,
+    paddingVertical: 5,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5EDE9',
+    borderRightWidth: 1,
+    borderRightColor: '#F5EDE9',
+  },
+  calCellLastInRow: {
+    borderRightWidth: 0,
+  },
+  calCellLastRow: {
+    borderBottomWidth: 0,
+  },
+  calCellOffRange: {
+    opacity: 0.35,
+  },
+  calCellToday: {
+    backgroundColor: '#FEF5F0',
+  },
+  calDayNumWrap: {
+    width: 22,
+    height: 22,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 11,
-    backgroundColor: colors.palePink,
   },
-  filterCopy: {
-    flex: 1,
-    gap: 3,
+  calDayNumWrapToday: {
+    backgroundColor: colors.orange,
   },
-  filterLabel: {
-    color: colors.muted,
+  calDayNum: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#333',
+  },
+  calDayNumOffRange: {
+    color: '#999',
+  },
+  calDayNumWeekend: {
+    color: '#C25E2E',
+  },
+  calDayNumToday: {
+    color: colors.white,
+    fontWeight: '700',
     fontSize: 11,
   },
-  filterValue: {
-    color: colors.brown,
-    fontSize: 13,
-    fontWeight: '600',
+  calDots: {
+    flexDirection: 'row',
+    gap: 3,
+    marginTop: 3,
+    minHeight: 6,
   },
-  activeSpace: {
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    overflow: 'hidden',
-    borderRadius: 9,
-    backgroundColor: colors.cream,
-    color: colors.orangeDark,
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  metrics: {
+
+  /* ── Legend ── */
+  calLegend: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  metric: {
-    width: '48%',
-    minHeight: 76,
-    padding: 11,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 13,
-    backgroundColor: colors.white,
-  },
-  metricIcon: {
-    width: 31,
-    height: 31,
-    alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 10,
-    backgroundColor: colors.palePink,
+    gap: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F0E4DD',
   },
-  metricValue: {
-    color: colors.brown,
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  metricLabel: {
-    flex: 1,
-    color: colors.muted,
-    fontSize: 10,
-    lineHeight: 14,
-  },
-  calendarCard: {
-    padding: 13,
-    gap: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    backgroundColor: colors.white,
-  },
-  dateNavigation: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  dateControls: {
-    flex: 1,
+  calLegendItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
-  arrowButton: {
-    width: 34,
-    height: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-  },
-  dateTitle: {
-    flex: 1,
-    color: colors.brown,
-    fontSize: 14,
-    fontWeight: '700',
-    textAlign: 'center',
-    textTransform: 'capitalize',
-  },
-  todayButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 9,
-    borderRadius: 10,
-    backgroundColor: colors.cream,
-  },
-  todayButtonText: {
-    color: colors.orangeDark,
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  viewToggle: {
-    padding: 3,
-    flexDirection: 'row',
-    borderRadius: 10,
-    backgroundColor: colors.cream,
-  },
-  viewOption: {
-    flex: 1,
-    minHeight: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-  },
-  viewOptionActive: {
-    backgroundColor: colors.orange,
-  },
-  viewOptionText: {
-    color: colors.muted,
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  viewOptionTextActive: {
-    color: colors.white,
-    fontWeight: '700',
-  },
-  monthGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  monthWeekday: {
-    width: '14.2857%',
-    height: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  monthWeekdayText: {
-    color: colors.muted,
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  monthDay: {
-    width: '14.2857%',
-    height: 39,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  monthDayText: {
-    width: 30,
-    height: 30,
-    overflow: 'hidden',
-    borderRadius: 15,
-    color: colors.brown,
-    fontSize: 12,
-    lineHeight: 30,
-    textAlign: 'center',
-  },
-  otherMonthDay: {
-    color: colors.border,
-  },
-  todayDay: {
-    borderWidth: 1,
-    borderColor: colors.orange,
-  },
-  selectedDayText: {
-    borderColor: colors.orange,
-    backgroundColor: colors.orange,
-    color: colors.white,
-  },
-  legend: {
-    paddingTop: 11,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  legendDot: {
+  calDot: {
     width: 7,
     height: 7,
     borderRadius: 4,
   },
-  legendText: {
-    color: colors.muted,
-    fontSize: 10,
+  calDotUpcoming: {
+    backgroundColor: '#FB8C00',
   },
-  weekList: {
-    gap: 7,
+  calDotOngoing: {
+    backgroundColor: '#43A047',
   },
-  weekDay: {
-    minHeight: 48,
-    paddingHorizontal: 9,
-    paddingVertical: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 11,
-    backgroundColor: colors.white,
+  calDotPast: {
+    backgroundColor: '#BDBDBD',
   },
-  weekDaySelected: {
-    borderColor: colors.orange,
-    backgroundColor: colors.orange,
-  },
-  weekDayDate: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  weekDayName: {
-    color: colors.brown,
+  calLegendText: {
     fontSize: 11,
-    fontWeight: '600',
-    textTransform: 'capitalize',
+    color: '#888',
+    fontWeight: '500',
   },
-  weekDayNumber: {
-    color: colors.muted,
-    fontSize: 10,
+
+  /* ── Week View Day Cards ── */
+  calDaygrid: {
+    padding: 12,
+    gap: 10,
   },
-  noAppointments: {
-    color: colors.muted,
-    fontSize: 10,
-  },
-  upcomingCard: {
-    padding: 14,
-    gap: 8,
+  calDaycard: {
+    backgroundColor: '#FDF9F7',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    backgroundColor: colors.white,
+    borderColor: '#ECDDD6',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
-  upcomingHeading: {
+  calDaycardToday: {
+    borderColor: colors.orange,
+    backgroundColor: '#FFF6F0',
+  },
+  calDaycardHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'baseline',
     justifyContent: 'space-between',
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0E4DD',
   },
-  upcomingTitle: {
-    color: colors.brown,
+  calDaycardName: {
     fontSize: 14,
     fontWeight: '700',
+    color: '#1A1A1A',
   },
-  upcomingCount: {
+  calDaycardDate: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#BBB',
+  },
+  calDaycardBody: {
+    paddingTop: 10,
+  },
+  calDaycardEmpty: {
+    fontSize: 12,
+    color: '#CCC',
+  },
+
+  /* ── Upcoming Prestations Card (Month View) ── */
+  calSide: {
+    backgroundColor: colors.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#ECDDD6',
+    padding: 16,
+  },
+  calSideTitle: {
+    fontSize: 11,
+    fontWeight: '700',
     color: colors.orangeDark,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0E4DD',
+  },
+  calSideEmpty: {
+    fontSize: 13,
+    color: '#BBB',
+    paddingVertical: 12,
+  },
+
+  /* ── Day Detail Modal ── */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(20, 12, 6, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    backgroundColor: '#FFFAF6',
+    borderRadius: 16,
+    width: '100%',
+    maxWidth: 480,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: '#ECDDD6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  modalBackBtn: {
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+  modalBackText: {
     fontSize: 12,
     fontWeight: '700',
+    color: colors.orangeDark,
   },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 13,
-    gap: 7,
-  },
-  emptyIcon: {
-    width: 42,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 21,
-    backgroundColor: colors.cream,
-  },
-  emptyTitle: {
-    color: colors.brown,
-    fontSize: 13,
+  modalTitle: {
+    fontSize: 19,
     fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 10,
   },
-  emptyDescription: {
-    color: colors.muted,
-    fontSize: 11,
-    textAlign: 'center',
-  },
-  selectedDate: {
-    color: colors.muted,
-    fontSize: 11,
-    textAlign: 'right',
-    textTransform: 'capitalize',
+  modalEmptyText: {
+    fontSize: 13,
+    color: '#BBB',
+    paddingVertical: 16,
   },
 });
