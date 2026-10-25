@@ -39,6 +39,7 @@ import Messages from './components/Messages';
 import ClientCoOwners from './components/ClientCoOwners';
 import ClientEmployees from './components/ClientEmployees';
 import Espaces from './components/Espaces';
+import Fav_extra from './components/Fav_extra';
 
 const sections = [
   { key: 'profile', label: 'Profil', icon: UserRound },
@@ -64,7 +65,12 @@ const sections = [
       'Gérez les espaces et sites rattachés à votre entreprise.',
   },
   { key: 'services', label: 'Prestations', icon: BriefcaseBusiness },
-  { key: 'favorites', label: 'Mes favoris', icon: Heart },
+  {
+    key: 'favorites',
+    label: 'Mes favoris',
+    icon: Heart,
+    description: 'Consultez les extras disponibles et gérez vos favoris.',
+  },
   { key: 'calendar', label: 'Calendrier', icon: CalendarDays },
   { key: 'invoices', label: 'Factures', icon: FileText },
   { key: 'messages', label: 'Messages', icon: MessageCircle },
@@ -321,6 +327,9 @@ function ClientScreen() {
     }
     if (activeSection === 'sites') {
       return <Espaces />;
+    }
+    if (activeSection === 'favorites') {
+      return <Fav_extra />;
     }
     return renderCollection();
   }
