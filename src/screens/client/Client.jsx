@@ -37,6 +37,7 @@ import Profile from './components/Profile';
 import Prestations, { demoMissions } from './components/Prestations';
 import Messages from './components/Messages';
 import ClientCoOwners from './components/ClientCoOwners';
+import ClientEmployees from './components/ClientEmployees';
 
 const sections = [
   { key: 'profile', label: 'Profil', icon: UserRound },
@@ -47,7 +48,13 @@ const sections = [
     description:
       'Gérez les comptes ayant un accès complet à votre entreprise, comme vous.',
   },
-  { key: 'employees', label: 'Collaborateurs', icon: Users },
+  {
+    key: 'employees',
+    label: 'Collaborateurs',
+    icon: Users,
+    description:
+      'Gérez les comptes employés rattachés à ce site. Maximum 3 par site.',
+  },
   { key: 'sites', label: 'Sites', icon: MapPin },
   { key: 'services', label: 'Prestations', icon: BriefcaseBusiness },
   { key: 'favorites', label: 'Mes favoris', icon: Heart },
@@ -301,6 +308,9 @@ function ClientScreen() {
     }
     if (activeSection === 'coOwners') {
       return <ClientCoOwners />;
+    }
+    if (activeSection === 'employees') {
+      return <ClientEmployees />;
     }
     return renderCollection();
   }
