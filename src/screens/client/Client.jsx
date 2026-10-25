@@ -38,6 +38,7 @@ import Prestations, { demoMissions } from './components/Prestations';
 import Messages from './components/Messages';
 import ClientCoOwners from './components/ClientCoOwners';
 import ClientEmployees from './components/ClientEmployees';
+import Espaces from './components/Espaces';
 
 const sections = [
   { key: 'profile', label: 'Profil', icon: UserRound },
@@ -55,7 +56,13 @@ const sections = [
     description:
       'Gérez les comptes employés rattachés à ce site. Maximum 3 par site.',
   },
-  { key: 'sites', label: 'Sites', icon: MapPin },
+  {
+    key: 'sites',
+    label: 'Sites',
+    icon: MapPin,
+    description:
+      'Gérez les espaces et sites rattachés à votre entreprise.',
+  },
   { key: 'services', label: 'Prestations', icon: BriefcaseBusiness },
   { key: 'favorites', label: 'Mes favoris', icon: Heart },
   { key: 'calendar', label: 'Calendrier', icon: CalendarDays },
@@ -311,6 +318,9 @@ function ClientScreen() {
     }
     if (activeSection === 'employees') {
       return <ClientEmployees />;
+    }
+    if (activeSection === 'sites') {
+      return <Espaces />;
     }
     return renderCollection();
   }
