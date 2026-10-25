@@ -12,7 +12,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Bell,
   BriefcaseBusiness,
-  Building2,
   CalendarDays,
   Check,
   ChevronRight,
@@ -33,6 +32,9 @@ import {
   clientNavigationStyles as navigationStyles,
   colors,
 } from '../../styles';
+import Calendrier from './components/Calendrier';
+import Profile from './components/Profile';
+import Prestations, { demoMissions } from './components/Prestations';
 
 const sections = [
   { key: 'profile', label: 'Profil', icon: UserRound },
@@ -49,21 +51,6 @@ const sections = [
 ];
 
 const bottomSections = ['services', 'calendar', 'messages', 'profile'];
-
-const profileFields = {
-  personal: [
-    ['firstName', 'Prénom'],
-    ['lastName', 'Nom'],
-    ['email', 'Email'],
-    ['phone', 'Téléphone'],
-  ],
-  company: [
-    ['company', 'Raison sociale'],
-    ['siret', 'SIRET'],
-    ['address', 'Adresse de siège'],
-    ['vat', 'N° TVA'],
-  ],
-};
 
 const emptyContent = {
   coOwners: {
@@ -148,29 +135,6 @@ function ActionButton({ title, onPress, secondary = false, icon }) {
   );
 }
 
-function SectionHeading({ title, aside }) {
-  return (
-    <View style={contentStyles.sectionHeading}>
-      <Text style={contentStyles.sectionTitle}>{title}</Text>
-      {aside ? <Text style={contentStyles.sectionAside}>{aside}</Text> : null}
-    </View>
-  );
-}
-
-function DataCard({ title, icon: Icon, children }) {
-  return (
-    <View style={contentStyles.card}>
-      <View style={contentStyles.cardHeader}>
-        <View style={contentStyles.cardIcon}>
-          <Icon size={18} color={colors.orangeDark} />
-        </View>
-        <Text style={contentStyles.cardTitle}>{title}</Text>
-      </View>
-      {children}
-    </View>
-  );
-}
-
 function EmptyState({ title, description, icon: Icon, action }) {
   return (
     <View style={contentStyles.emptyState}>
@@ -187,26 +151,15 @@ function EmptyState({ title, description, icon: Icon, action }) {
 function ClientScreen() {
   const [activeSection, setActiveSection] = useState('profile');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [editingProfile, setEditingProfile] = useState(false);
-  const [profile, setProfile] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    company: '',
-    siret: '',
-    address: '',
-    vat: '',
-  });
   const [collections, setCollections] = useState({
     coOwners: [],
     employees: [],
     sites: [],
     services: [],
   });
+  const [missions, setMissions] = useState(demoMissions);
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState('');
-  const [selectedDate, setSelectedDate] = useState(new Date().toDateString());
 
   const currentSection =
     sections.find(section => section.key === activeSection) || sections[0];
@@ -231,68 +184,6 @@ function ClientScreen() {
     }));
     setDraft('');
     setCreating(false);
-  }
-
-  function renderProfileRows(fields) {
-    return fields.map(([key, label], index) => (
-      <View
-        key={key}
-        style={[
-          contentStyles.row,
-          index === fields.length - 1 && contentStyles.rowLast,
-        ]}
-      >
-        <Text style={contentStyles.rowLabel}>{label}</Text>
-        {editingProfile ? (
-          <TextInput
-            accessibilityLabel={label}
-            onChangeText={value =>
-              setProfile(current => ({ ...current, [key]: value }))
-            }
-            placeholder="À renseigner"
-            placeholderTextColor={colors.muted}
-            style={[contentStyles.field, contentStyles.profileField]}
-            value={profile[key]}
-          />
-        ) : (
-          <Text style={contentStyles.rowValue}>
-            {profile[key] || 'À renseigner'}
-          </Text>
-        )}
-      </View>
-    ));
-  }
-
-  function renderProfile() {
-    return (
-      <>
-        <DataCard title="Informations personnelles" icon={UserRound}>
-          {renderProfileRows(profileFields.personal)}
-        </DataCard>
-        <DataCard title="Informations de l’entreprise" icon={Building2}>
-          {renderProfileRows(profileFields.company)}
-        </DataCard>
-        <DataCard title="Préférences" icon={BriefcaseBusiness}>
-          <View style={contentStyles.row}>
-            <Text style={contentStyles.rowLabel}>Tenue exigée par défaut</Text>
-            <Text style={contentStyles.rowValue}>À renseigner</Text>
-          </View>
-          <View style={[contentStyles.row, contentStyles.rowLast]}>
-            <Text style={contentStyles.rowLabel}>
-              Conditions de facturation
-            </Text>
-            <Text style={contentStyles.rowValue}>À renseigner</Text>
-          </View>
-        </DataCard>
-        <ActionButton
-          title={editingProfile ? 'Enregistrer les modifications' : 'Modifier'}
-          onPress={() => setEditingProfile(current => !current)}
-          icon={
-            editingProfile ? <Check size={17} color={colors.white} /> : null
-          }
-        />
-      </>
-    );
   }
 
   function renderCollection() {
@@ -387,71 +278,15 @@ function ClientScreen() {
     );
   }
 
-  function renderCalendar() {
-    const today = new Date();
-    const weekStart = new Date(today);
-    const dayOfWeek = (today.getDay() + 6) % 7;
-    weekStart.setDate(today.getDate() - dayOfWeek);
-    const days = Array.from({ length: 7 }, (_, index) => {
-      const date = new Date(weekStart);
-      date.setDate(weekStart.getDate() + index);
-      return date;
-    });
-
-    return (
-      <View style={contentStyles.section}>
-        <SectionHeading title="Cette semaine" />
-        <View style={contentStyles.calendarWeek}>
-          {days.map(date => {
-            const isSelected = date.toDateString() === selectedDate;
-            return (
-              <Pressable
-                key={date.toDateString()}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isSelected }}
-                onPress={() => setSelectedDate(date.toDateString())}
-                style={[
-                  contentStyles.calendarDay,
-                  isSelected && contentStyles.calendarDaySelected,
-                ]}
-              >
-                <Text
-                  style={[
-                    contentStyles.calendarDayLabel,
-                    isSelected && contentStyles.calendarDayTextSelected,
-                  ]}
-                >
-                  {date.toLocaleDateString('fr-FR', { weekday: 'short' })}
-                </Text>
-                <Text
-                  style={[
-                    contentStyles.calendarDayNumber,
-                    isSelected && contentStyles.calendarDayTextSelected,
-                  ]}
-                >
-                  {date.getDate()}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        <View style={contentStyles.card}>
-          <EmptyState
-            title="Aucune prestation prévue"
-            description="Vos prochaines missions apparaîtront dans ce calendrier."
-            icon={CalendarDays}
-          />
-        </View>
-      </View>
-    );
-  }
-
   function renderContent() {
     if (activeSection === 'profile') {
-      return renderProfile();
+      return <Profile />;
     }
     if (activeSection === 'calendar') {
-      return renderCalendar();
+      return <Calendrier />;
+    }
+    if (activeSection === 'services') {
+      return <Prestations missions={missions} setMissions={setMissions} />;
     }
     return renderCollection();
   }
