@@ -19,39 +19,41 @@ export default function ForgotPasswordScreen({ navigation, route }) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={loginStyles.title}>Réinitialisation</Text>
-        <Text style={loginStyles.description}>
-          Entrez votre email pour continuer
-        </Text>
+        <View style={styles.sectionCard}>
+          <Text style={loginStyles.title}>Mot de passe oublié</Text>
+          <Text style={loginStyles.description}>
+            Entrez votre email pour recevoir un code de vérification.
+          </Text>
 
-        <View style={loginStyles.form}>
-          <Text style={loginStyles.label}>Email</Text>
-          <TextInput
-            accessibilityLabel="Email"
-            autoCapitalize="none"
-            autoComplete="email"
-            autoCorrect={false}
-            keyboardType="email-address"
-            placeholder="email@bookly.fr"
-            placeholderTextColor={colors.muted}
-            returnKeyType="done"
-            style={[loginStyles.input, styles.input]}
-            textContentType="emailAddress"
-            value={email}
-            onChangeText={setEmail}
-          />
-          <PrimaryButton style={styles.submitButton} title="Recevoir un lien" />
+          <View style={loginStyles.form}>
+            <Text style={loginStyles.label}>Email</Text>
+            <TextInput
+              accessibilityLabel="Email"
+              autoCapitalize="none"
+              autoComplete="email"
+              autoCorrect={false}
+              keyboardType="email-address"
+              placeholder="email@bookly.fr"
+              placeholderTextColor={colors.muted}
+              returnKeyType="done"
+              style={[loginStyles.input, styles.input]}
+              textContentType="emailAddress"
+              value={email}
+              onChangeText={setEmail}
+            />
+            <PrimaryButton style={styles.submitButton} title="Recevoir un code" />
+          </View>
+
+          <View style={styles.divider} />
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => navigation.navigate('Login')}
+            style={styles.returnButton}
+          >
+            <ArrowLeft size={18} color={colors.orangeDark} />
+            <Text style={styles.returnText}>Retour à la connexion</Text>
+          </Pressable>
         </View>
-
-        <View style={styles.divider} />
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => navigation.navigate('Login')}
-          style={styles.returnButton}
-        >
-          <ArrowLeft size={18} color={colors.orangeDark} />
-          <Text style={styles.returnText}>Retour à la connexion</Text>
-        </Pressable>
       </ScrollView>
     </AuthLayout>
   );

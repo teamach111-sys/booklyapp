@@ -97,7 +97,11 @@ function FormField({ field, value, onChange }) {
     <View style={registerStyles.field}>
       <Text style={loginStyles.label}>
         {field.label}
-        {field.optional ? ' (optionnel)' : ' *'}
+        {field.optional ? (
+          <Text style={registerStyles.optional}> (optionnel)</Text>
+        ) : (
+          <Text style={{ color: colors.orangeDark }}> *</Text>
+        )}
       </Text>
       <TextInput
         accessibilityLabel={field.label}
@@ -135,7 +139,11 @@ function SelectField({
     <View style={registerStyles.field}>
       <Text style={loginStyles.label}>
         {label}
-        {optional ? ' (optionnel)' : ' *'}
+        {optional ? (
+          <Text style={registerStyles.optional}> (optionnel)</Text>
+        ) : (
+          <Text style={{ color: colors.orangeDark }}> *</Text>
+        )}
       </Text>
       <Pressable
         accessibilityRole="button"
@@ -144,8 +152,14 @@ function SelectField({
         onPress={onToggle}
         style={registerStyles.selectButton}
       >
-        <Text style={registerStyles.selectText}>
-          {selectedLabel || '— Sélectionner —'}
+        <Text
+          style={
+            selectedLabel
+              ? registerStyles.selectText
+              : registerStyles.selectPlaceholder
+          }
+        >
+          {selectedLabel || '— Sélectionner une tenue —'}
         </Text>
         <ChevronDown size={18} color={colors.orangeDark} />
       </Pressable>
@@ -214,131 +228,135 @@ export default function ClientRegisterScreen({ navigation }) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={loginStyles.title}>Inscription client</Text>
-        <View style={registerStyles.form}>
-          {fields.map(field => (
-            <FormField
-              key={field.name}
-              field={field}
-              value={values[field.name]}
-              onChange={value => updateValue(field.name, value)}
-            />
-          ))}
-
-          <Text style={registerStyles.sectionTitle}>
-            Informations entreprise
-          </Text>
-          {companyFields.map(field => (
-            <FormField
-              key={field.name}
-              field={field}
-              value={values[field.name]}
-              onChange={value => updateValue(field.name, value)}
-            />
-          ))}
-
-          <Text style={registerStyles.sectionTitle}>
-            Informations tenue client
-          </Text>
-          <SelectField
-            label="Tenue staff demandée"
-            name="tenue_staff"
-            options={outfitOptions}
-            value={values.tenue_staff}
-            optional
-            open={openSelect === 'tenue_staff'}
-            onToggle={() =>
-              setOpenSelect(current =>
-                current === 'tenue_staff' ? null : 'tenue_staff',
-              )
-            }
-            onChange={updateValue}
-          />
-          <Text style={registerStyles.helperText}>
-            La tenue sera pré-remplie lors de l'ajout d'une prestation et pourra
-            être modifiée pour certaines missions.
-          </Text>
-
-          <Text style={registerStyles.sectionTitle}>Vos sites</Text>
-          <Text style={loginStyles.label}>Nom du site *</Text>
-          {sites.map((site, index) => (
-            <View key={index} style={registerStyles.siteRow}>
-              <TextInput
-                accessibilityLabel={`Nom du site ${index + 1}`}
-                autoCapitalize="words"
-                placeholder={
-                  index === 0
-                    ? 'Ex : Siège social, Boutique Marais...'
-                    : 'Nom du site supplémentaire'
-                }
-                placeholderTextColor={colors.muted}
-                style={[loginStyles.input, registerStyles.siteInput]}
-                value={site}
-                onChangeText={value =>
-                  setSites(current =>
-                    current.map((currentSite, siteIndex) =>
-                      siteIndex === index ? value : currentSite,
-                    ),
-                  )
-                }
+        <View style={registerStyles.sectionCard}>
+          <Text style={registerStyles.title}>Inscription Client</Text>
+          <View style={registerStyles.form}>
+            {fields.map(field => (
+              <FormField
+                key={field.name}
+                field={field}
+                value={values[field.name]}
+                onChange={value => updateValue(field.name, value)}
               />
-              {sites.length > 1 ? (
-                <Pressable
-                  accessibilityLabel={`Supprimer le site ${index + 1}`}
-                  accessibilityRole="button"
-                  onPress={() =>
+            ))}
+
+            <Text style={registerStyles.sectionTitle}>
+              Informations entreprise
+            </Text>
+            {companyFields.map(field => (
+              <FormField
+                key={field.name}
+                field={field}
+                value={values[field.name]}
+                onChange={value => updateValue(field.name, value)}
+              />
+            ))}
+
+            <Text style={registerStyles.sectionTitle}>
+              Informations tenue client
+            </Text>
+            <SelectField
+              label="Tenue staff demandée"
+              name="tenue_staff"
+              options={outfitOptions}
+              value={values.tenue_staff}
+              optional
+              open={openSelect === 'tenue_staff'}
+              onToggle={() =>
+                setOpenSelect(current =>
+                  current === 'tenue_staff' ? null : 'tenue_staff',
+                )
+              }
+              onChange={updateValue}
+            />
+            <Text style={registerStyles.helperText}>
+              La tenue sera pré-remplie automatiquement lors de l'ajout d'une
+              prestation et pourra être modifiée pour certaines missions.
+            </Text>
+
+            <Text style={registerStyles.sectionTitle}>Vos sites</Text>
+            <Text style={loginStyles.label}>
+              Nom du site <Text style={{ color: colors.orangeDark }}>*</Text>
+            </Text>
+            {sites.map((site, index) => (
+              <View key={index} style={registerStyles.siteRow}>
+                <TextInput
+                  accessibilityLabel={`Nom du site ${index + 1}`}
+                  autoCapitalize="words"
+                  placeholder={
+                    index === 0
+                      ? 'Ex : Siège social, Boutique Marais...'
+                      : 'Nom du site supplémentaire'
+                  }
+                  placeholderTextColor={colors.muted}
+                  style={[loginStyles.input, registerStyles.siteInput]}
+                  value={site}
+                  onChangeText={value =>
                     setSites(current =>
-                      current.filter((_, siteIndex) => siteIndex !== index),
+                      current.map((currentSite, siteIndex) =>
+                        siteIndex === index ? value : currentSite,
+                      ),
                     )
                   }
-                  style={registerStyles.removeSiteButton}
-                >
-                  <X size={18} color={colors.orangeDark} />
-                </Pressable>
-              ) : null}
-            </View>
-          ))}
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setSites(current => [...current, ''])}
-            style={registerStyles.addSiteButton}
-          >
-            <Text style={registerStyles.addSiteText}>
-              + Ajouter un autre site
-            </Text>
-          </Pressable>
-          <Text style={registerStyles.helperText}>
-            Indiquez le nom de votre site principal. Si vous avez plusieurs
-            sites, ajoutez-les avec le bouton ci-dessus.
-          </Text>
-
-          <SelectField
-            label="Plateforme partenaire"
-            name="platform_partner"
-            options={partnerOptions}
-            value={values.platform_partner}
-            open={openSelect === 'platform_partner'}
-            onToggle={() =>
-              setOpenSelect(current =>
-                current === 'platform_partner' ? null : 'platform_partner',
-              )
-            }
-            onChange={updateValue}
-          />
-
-          <PrimaryButton
-            style={registerStyles.submitButton}
-            title="Créer mon compte"
-          />
-
-          <View style={registerStyles.footer}>
-            <Text style={registerStyles.footerText}>Déjà inscrit ?</Text>
+                />
+                {sites.length > 1 ? (
+                  <Pressable
+                    accessibilityLabel={`Supprimer le site ${index + 1}`}
+                    accessibilityRole="button"
+                    onPress={() =>
+                      setSites(current =>
+                        current.filter((_, siteIndex) => siteIndex !== index),
+                      )
+                    }
+                    style={registerStyles.removeSiteButton}
+                  >
+                    <X size={18} color={colors.orangeDark} />
+                  </Pressable>
+                ) : null}
+              </View>
+            ))}
             <Pressable
               accessibilityRole="button"
-              onPress={() => navigation.navigate('Login')}
+              onPress={() => setSites(current => [...current, ''])}
+              style={registerStyles.addSiteButton}
             >
-              <Text style={registerStyles.footerLink}>Se connecter</Text>
+              <Text style={registerStyles.addSiteText}>
+                + Ajouter un autre site
+              </Text>
             </Pressable>
+            <Text style={registerStyles.helperText}>
+              Indiquez le nom de votre site principal. Si vous avez plusieurs
+              sites, ajoutez-les avec le bouton ci-dessus.
+            </Text>
+
+            <SelectField
+              label="Plateforme partenaire"
+              name="platform_partner"
+              options={partnerOptions}
+              value={values.platform_partner}
+              open={openSelect === 'platform_partner'}
+              onToggle={() =>
+                setOpenSelect(current =>
+                  current === 'platform_partner' ? null : 'platform_partner',
+                )
+              }
+              onChange={updateValue}
+            />
+
+            <PrimaryButton
+              style={registerStyles.submitButton}
+              title="Créer mon compte"
+            />
+
+            <View style={registerStyles.footer}>
+              <Text style={registerStyles.footerText}>Déjà inscrit ?</Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => navigation.navigate('Login')}
+              >
+                <Text style={registerStyles.footerLink}>Se connecter</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </ScrollView>
