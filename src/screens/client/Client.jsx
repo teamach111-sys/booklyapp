@@ -42,6 +42,7 @@ import Espaces from './components/Espaces';
 import Fav_extra from './components/Fav_extra';
 import Factures from './components/Factures';
 import Notifications from './components/Notifications';
+import ClientHistorique from './components/ClientHistorique';
 
 const sections = [
   { key: 'profile', label: 'Profil', icon: UserRound },
@@ -87,7 +88,12 @@ const sections = [
     icon: Bell,
     description: 'Restez informé de vos missions, factures et actualités.',
   },
-  { key: 'history', label: 'Historique', icon: Clock3 },
+  {
+    key: 'history',
+    label: 'Historique',
+    icon: Clock3,
+    description: 'Consultez le journal des activités de votre compte.',
+  },
 ];
 
 const bottomSections = ['services', 'calendar', 'messages', 'profile'];
@@ -348,6 +354,9 @@ function ClientScreen() {
     }
     if (activeSection === 'notifications') {
       return <Notifications />;
+    }
+    if (activeSection === 'history') {
+      return <ClientHistorique />;
     }
     return renderCollection();
   }
