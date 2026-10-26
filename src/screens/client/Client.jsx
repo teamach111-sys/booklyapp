@@ -14,10 +14,12 @@ import {
   BriefcaseBusiness,
   CalendarDays,
   Check,
+  ChevronDown,
   ChevronRight,
   Clock3,
   FileText,
   Heart,
+  LogOut,
   MapPin,
   Menu,
   MessageCircle,
@@ -93,6 +95,19 @@ const createSections = brandName => [
 ];
 
 const bottomSections = ['services', 'calendar', 'messages', 'profile'];
+
+// Identity shown at the top of the drawer, matching the design sidebar.
+const clientIdentity = {
+  initials: 'C0',
+  name: 'Client 02',
+  company: 'Client Test 02',
+  status: 'Actif',
+};
+
+// Sites offered by the drawer's active-site selector (design `space-section`).
+const drawerSites = [
+  { id: 'site-1', name: 'Dashboard Client 02', city: 'Ile de France' },
+];
 
 const emptyContent = {
   coOwners: {
@@ -196,7 +211,7 @@ function EmptyState({ title, description, icon: Icon, action }) {
   );
 }
 
-function ClientDashboard() {
+function ClientDashboard({ navigation }) {
   const { partner, colors } = useClientTheme();
   const { layout: layoutStyles, navigation: navigationStyles, content: contentStyles } =
     clientShellStylesByBrand[partner];
@@ -204,6 +219,8 @@ function ClientDashboard() {
 
   const [activeSection, setActiveSection] = useState('profile');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [spaceOpen, setSpaceOpen] = useState(false);
+  const [activeSiteId, setActiveSiteId] = useState(drawerSites[0].id);
   const [collections, setCollections] = useState({
     coOwners: [],
     employees: [],
@@ -216,12 +233,20 @@ function ClientDashboard() {
 
   const currentSection =
     sections.find(section => section.key === activeSection) || sections[0];
+  const activeSite =
+    drawerSites.find(site => site.id === activeSiteId) || drawerSites[0];
   const sectionDetails = emptyContent[activeSection];
   const showCreateForm = creating && Boolean(sectionDetails?.action);
+
+  function closeMenu() {
+    setMenuOpen(false);
+    setSpaceOpen(false);
+  }
 
   function selectSection(key) {
     setActiveSection(key);
     setMenuOpen(false);
+    setSpaceOpen(false);
     setCreating(false);
     setDraft('');
   }
@@ -452,39 +477,119 @@ function ClientDashboard() {
 
       <Modal
         animationType="slide"
-        onRequestClose={() => setMenuOpen(false)}
+        onRequestClose={closeMenu}
         transparent
         visible={menuOpen}
       >
-        <View style={layoutStyles.drawerBackdrop}>
+        <Pressable
+          accessibilityLabel="Fermer le menu"
+          accessibilityRole="button"
+          onPress={closeMenu}
+          style={layoutStyles.drawerBackdrop}
+        >
+          <View pointerEvents="none" style={layoutStyles.drawerScrim} />
           <Pressable
-            accessibilityLabel="Fermer le menu"
-            onPress={() => setMenuOpen(false)}
-            style={layoutStyles.drawerScrim}
-          />
-          <View style={layoutStyles.drawer}>
+            accessibilityRole="none"
+            onPress={event => event.stopPropagation()}
+            style={layoutStyles.drawer}
+          >
             <View style={layoutStyles.drawerHeader}>
-              <View style={layoutStyles.drawerIdentity}>
-                <View style={layoutStyles.drawerAvatar}>
-                  <UserRound size={20} color={colors.orangeDark} />
-                </View>
-                <View>
-                  <Text style={layoutStyles.drawerTitle}>Espace client</Text>
-                  <Text style={layoutStyles.drawerSubtitle}>
-                    Gérez votre activité
-                  </Text>
-                </View>
-              </View>
               <Pressable
                 accessibilityLabel="Fermer le menu"
                 accessibilityRole="button"
-                onPress={() => setMenuOpen(false)}
-                style={layoutStyles.headerAction}
+                onPress={closeMenu}
+                style={layoutStyles.drawerClose}
               >
-                <X size={19} color={colors.brown} />
+                <X size={18} color={colors.white} />
               </Pressable>
+              <Text style={layoutStyles.drawerBrand}>{colors.brandLabel}</Text>
+              <View style={layoutStyles.drawerAvatar}>
+                <Text style={layoutStyles.drawerAvatarText}>
+                  {clientIdentity.initials}
+                </Text>
+              </View>
+              <Text style={layoutStyles.drawerName}>{clientIdentity.name}</Text>
+              <Text style={layoutStyles.drawerRole}>
+                {clientIdentity.company} · {colors.brand}
+              </Text>
+              <View style={layoutStyles.drawerStatus}>
+                <View style={layoutStyles.drawerStatusDot} />
+                <Text style={layoutStyles.drawerStatusText}>
+                  {clientIdentity.status}
+                </Text>
+              </View>
             </View>
-            <ScrollView contentContainerStyle={layoutStyles.drawerList}>
+            <View style={layoutStyles.drawerSpace}>
+              <Text style={layoutStyles.drawerSpaceLabel}>Site actif</Text>
+              <Pressable
+                accessibilityLabel="Changer de site"
+                accessibilityRole="button"
+                accessibilityState={{ expanded: spaceOpen }}
+                onPress={() => setSpaceOpen(open => !open)}
+                style={layoutStyles.drawerSpaceTrigger}
+              >
+                <View style={layoutStyles.drawerSpaceDot} />
+                <Text numberOfLines={1} style={layoutStyles.drawerSpaceName}>
+                  {activeSite.name}
+                </Text>
+                <Text style={layoutStyles.drawerSpaceCity}>
+                  {activeSite.city}
+                </Text>
+                <ChevronDown
+                  size={14}
+                  color="rgba(255,255,255,0.7)"
+                  style={
+                    spaceOpen ? layoutStyles.drawerSpaceChevronOpen : undefined
+                  }
+                />
+              </Pressable>
+              {spaceOpen ? (
+                <View style={layoutStyles.drawerSpaceMenu}>
+                  {drawerSites.map(site => {
+                    const isActive = site.id === activeSite.id;
+                    return (
+                      <Pressable
+                        key={site.id}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: isActive }}
+                        onPress={() => {
+                          setActiveSiteId(site.id);
+                          setSpaceOpen(false);
+                        }}
+                        style={[
+                          layoutStyles.drawerSpaceOption,
+                          isActive && layoutStyles.drawerSpaceOptionActive,
+                        ]}
+                      >
+                        <View
+                          style={[
+                            layoutStyles.drawerSpaceDot,
+                            !isActive && layoutStyles.drawerSpaceDotMuted,
+                          ]}
+                        />
+                        <Text
+                          numberOfLines={1}
+                          style={[
+                            layoutStyles.drawerSpaceOptionName,
+                            isActive &&
+                              layoutStyles.drawerSpaceOptionNameActive,
+                          ]}
+                        >
+                          {site.name}
+                        </Text>
+                        <Text style={layoutStyles.drawerSpaceOptionCity}>
+                          {site.city}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ) : null}
+            </View>
+            <ScrollView
+              contentContainerStyle={layoutStyles.drawerList}
+              style={layoutStyles.drawerScroll}
+            >
               {sections.map(section => {
                 const Icon = section.icon;
                 const active = activeSection === section.key;
@@ -501,7 +606,7 @@ function ClientDashboard() {
                   >
                     <Icon
                       size={18}
-                      color={active ? colors.orangeDark : colors.muted}
+                      color={active ? colors.white : 'rgba(255,255,255,0.7)'}
                     />
                     <Text
                       style={[
@@ -512,23 +617,33 @@ function ClientDashboard() {
                       {section.label}
                     </Text>
                     {active ? (
-                      <ChevronRight size={16} color={colors.orangeDark} />
+                      <ChevronRight size={16} color={colors.white} />
                     ) : null}
                   </Pressable>
                 );
               })}
             </ScrollView>
-          </View>
-        </View>
+            <View style={layoutStyles.drawerFooter}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => navigation?.navigate('Login')}
+                style={layoutStyles.drawerLogout}
+              >
+                <LogOut size={18} color="rgba(255,255,255,0.75)" />
+                <Text style={layoutStyles.drawerLogoutText}>Déconnexion</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </SafeAreaView>
   );
 }
 
-export default function ClientScreen({ route }) {
+export default function ClientScreen({ route, navigation }) {
   return (
     <ClientThemeProvider partner={route?.params?.partner}>
-      <ClientDashboard />
+      <ClientDashboard navigation={navigation} />
     </ClientThemeProvider>
   );
 }

@@ -521,13 +521,12 @@ function SelectField({
         transparent
         visible={open}
       >
-        <View style={styles.overlay}>
+        <Pressable onPress={() => setOpen(false)} style={styles.overlay}>
+          <View pointerEvents="none" style={styles.overlayScrim} />
           <Pressable
-            accessibilityLabel="Fermer les choix"
-            onPress={() => setOpen(false)}
-            style={styles.overlayScrim}
-          />
-          <View style={styles.pickerSheet}>
+            onPress={event => event.stopPropagation()}
+            style={styles.pickerSheet}
+          >
             <Text style={styles.pickerTitle}>{label}</Text>
             <ScrollView>
               {options.map(option => (
@@ -548,8 +547,8 @@ function SelectField({
                 </Pressable>
               ))}
             </ScrollView>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </>
   );
@@ -1914,13 +1913,15 @@ export default function Prestations({ missions, setMissions }) {
         transparent
         visible
       >
-        <View style={styles.overlay}>
+        <Pressable
+          onPress={() => setConversationOpen(false)}
+          style={styles.overlay}
+        >
+          <View pointerEvents="none" style={styles.overlayScrim} />
           <Pressable
-            accessibilityLabel="Fermer la conversation"
-            onPress={() => setConversationOpen(false)}
-            style={styles.overlayScrim}
-          />
-          <View style={styles.convModal}>
+            onPress={event => event.stopPropagation()}
+            style={styles.convModal}
+          >
             <View style={styles.convHeader}>
               <View style={styles.convAvatar}>
                 <Text style={styles.convAvatarText}>
@@ -2054,8 +2055,8 @@ export default function Prestations({ missions, setMissions }) {
                 </View>
               </View>
             )}
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     );
   }
@@ -2071,13 +2072,15 @@ export default function Prestations({ missions, setMissions }) {
         transparent
         visible
       >
-        <View style={styles.overlay}>
+        <Pressable
+          onPress={() => setCancelTarget(null)}
+          style={styles.overlay}
+        >
+          <View pointerEvents="none" style={styles.overlayScrim} />
           <Pressable
-            accessibilityLabel="Fermer"
-            onPress={() => setCancelTarget(null)}
-            style={styles.overlayScrim}
-          />
-          <View style={styles.cancelModal}>
+            onPress={event => event.stopPropagation()}
+            style={styles.cancelModal}
+          >
             <Text style={styles.cancelTitle}>Annuler la mission</Text>
             <Text style={styles.cancelText}>
               <Text style={styles.cancelStrong}>{cancelTarget.title}</Text> —
@@ -2109,8 +2112,8 @@ export default function Prestations({ missions, setMissions }) {
                 <Text style={styles.cancelConfirmText}>Confirmer</Text>
               </Pressable>
             </View>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     );
   }

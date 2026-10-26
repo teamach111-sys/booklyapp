@@ -86,12 +86,15 @@ export default function Messages() {
       visible={modalVisible === 'conversation'}
       onRequestClose={() => setModalVisible(null)}
     >
-      <View style={styles.modalOverlay}>
+      <Pressable
+        onPress={() => setModalVisible(null)}
+        style={styles.modalOverlay}
+      >
+        <View pointerEvents="none" style={styles.modalScrim} />
         <Pressable
-          style={styles.modalScrim}
-          onPress={() => setModalVisible(null)}
-        />
-        <View style={styles.modalContent}>
+          onPress={event => event.stopPropagation()}
+          style={styles.modalContent}
+        >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Nouvelle conversation</Text>
             <Pressable onPress={() => setModalVisible(null)} style={styles.modalClose}>
@@ -148,8 +151,8 @@ export default function Messages() {
               </View>
             )}
           </ScrollView>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 
@@ -160,12 +163,15 @@ export default function Messages() {
       visible={modalVisible === 'report'}
       onRequestClose={() => setModalVisible(null)}
     >
-      <View style={styles.modalOverlay}>
+      <Pressable
+        onPress={() => setModalVisible(null)}
+        style={styles.modalOverlay}
+      >
+        <View pointerEvents="none" style={styles.modalScrim} />
         <Pressable
-          style={styles.modalScrim}
-          onPress={() => setModalVisible(null)}
-        />
-        <View style={styles.modalContent}>
+          onPress={event => event.stopPropagation()}
+          style={styles.modalContent}
+        >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Nouveau report</Text>
             <Pressable onPress={() => setModalVisible(null)} style={styles.modalClose}>
@@ -246,8 +252,8 @@ export default function Messages() {
               </Pressable>
             </View>
           </ScrollView>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 

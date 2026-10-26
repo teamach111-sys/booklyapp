@@ -19,6 +19,10 @@ export default function LoginScreen({ navigation }) {
       navigation.replace('ClientDashboard', { partner: 'staffly' });
       return;
     }
+    if (value.includes('extra')) {
+      navigation.replace('ExtraDashboard');
+      return;
+    }
     if (value.includes('client')) {
       navigation.replace('ClientDashboard', { partner: 'bookly' });
     }

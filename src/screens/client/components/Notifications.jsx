@@ -450,13 +450,16 @@ export default function Notifications() {
         transparent
         visible={activeNotification !== null}
       >
-        <View style={styles.modalOverlay}>
-          <Pressable
-            onPress={() => setActiveNotification(null)}
-            style={styles.modalScrim}
-          />
+        <Pressable
+          onPress={() => setActiveNotification(null)}
+          style={styles.modalOverlay}
+        >
+          <View pointerEvents="none" style={styles.modalScrim} />
           {activeNotification ? (
-            <View style={styles.modalCard}>
+            <Pressable
+              onPress={event => event.stopPropagation()}
+              style={styles.modalCard}
+            >
               {/* Orange Top Accent Line */}
               <View style={styles.modalTopBar} />
 
@@ -526,9 +529,9 @@ export default function Notifications() {
                   </Pressable>
                 </View>
               </View>
-            </View>
+            </Pressable>
           ) : null}
-        </View>
+        </Pressable>
       </Modal>
     </View>
   );

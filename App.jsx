@@ -6,6 +6,7 @@ import ExtraRegisterScreen from './src/screens/auth/ExtraRegisterScreen';
 import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen';
 import HomeScreen from './src/screens/home/HomeScreen';
 import ClientScreen from './src/screens/client/Client';
+import ExtrasScreen from './src/screens/extras/Extras';
 
 const Stack = createNativeStackNavigator();
 
@@ -21,6 +22,11 @@ export default function App() {
         <Stack.Screen
           name="ClientDashboard"
           component={ClientScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ExtraDashboard"
+          component={ExtrasScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen

@@ -294,9 +294,12 @@ export default function ClientEmployees() {
         transparent
         visible={modalMode !== null}
       >
-        <View style={styles.modalOverlay}>
-          <Pressable onPress={closeModal} style={styles.modalScrim} />
-          <View style={styles.modalContent}>
+        <Pressable onPress={closeModal} style={styles.modalOverlay}>
+          <View pointerEvents="none" style={styles.modalScrim} />
+          <Pressable
+            onPress={event => event.stopPropagation()}
+            style={styles.modalContent}
+          >
             {/* Modal Header */}
             <View style={styles.modalHeader}>
               <View style={styles.modalTitleBlock}>
@@ -470,8 +473,8 @@ export default function ClientEmployees() {
                 </Pressable>
               </View>
             </ScrollView>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   );
