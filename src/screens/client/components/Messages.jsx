@@ -15,8 +15,8 @@ import {
   Search,
   X,
 } from 'lucide-react-native';
-import { colors } from '../../../styles';
-import { messagesStyles as styles } from './styles';
+import { useClientTheme } from '../theme/ClientThemeContext';
+import { messagesStylesByBrand } from './styles';
 
 const CONTACT_GROUPS = [
   {
@@ -46,6 +46,9 @@ const CONTACT_GROUPS = [
 const REPORT_TYPES = ['Bug', 'Technique', 'Signalement', 'General', 'Extra', 'Client'];
 
 export default function Messages() {
+  const { partner, colors } = useClientTheme();
+  const styles = messagesStylesByBrand[partner];
+
   const [activeTab, setActiveTab] = useState('messages');
   const [modalVisible, setModalVisible] = useState(null); // 'conversation' or 'report'
   const [modalTab, setModalTab] = useState('staff');

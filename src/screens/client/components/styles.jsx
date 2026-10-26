@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { colors } from '../../../styles';
+import { createBrandStyles } from '../theme/clientStyles';
 
 export const calendrier = StyleSheet.create({});
 export const clientCoOwners = StyleSheet.create({});
@@ -16,7 +16,7 @@ export const missionList = StyleSheet.create({});
 export const modification_conversation_client = StyleSheet.create({});
 export const prestations = StyleSheet.create({});
 
-export const prestationsStyles = StyleSheet.create({
+const createPrestationsStyles = colors => StyleSheet.create({
   section: {
     gap: 14,
   },
@@ -87,7 +87,7 @@ export const prestationsStyles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 9,
-    backgroundColor: '#F57F17',
+    backgroundColor: colors.orange,
   },
   bannerButtonText: {
     color: colors.white,
@@ -754,8 +754,8 @@ export const prestationsStyles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   clothingCheckboxChecked: {
-    borderColor: '#F5B942',
-    backgroundColor: '#F5B942',
+    borderColor: colors.orange,
+    backgroundColor: colors.orange,
   },
   clothingRowText: {
     flex: 1,
@@ -1471,7 +1471,7 @@ export const prestationsStyles = StyleSheet.create({
   },
 });
 
-export const profileStyles = StyleSheet.create({
+const createProfileStyles = colors => StyleSheet.create({
   section: {
     gap: 14,
   },
@@ -1732,7 +1732,7 @@ export const profileStyles = StyleSheet.create({
   },
 });
 
-export const messagesStyles = StyleSheet.create({
+const createMessagesStyles = colors => StyleSheet.create({
   section: {
     gap: 14,
   },
@@ -2026,5 +2026,9 @@ export const messagesStyles = StyleSheet.create({
 export const profile = StyleSheet.create({});
 export const recap_global = StyleSheet.create({});
 export const retourPrestation = StyleSheet.create({});
+
+export const prestationsStylesByBrand = createBrandStyles(createPrestationsStyles);
+export const profileStylesByBrand = createBrandStyles(createProfileStyles);
+export const messagesStylesByBrand = createBrandStyles(createMessagesStyles);
 
 export default StyleSheet.create({});

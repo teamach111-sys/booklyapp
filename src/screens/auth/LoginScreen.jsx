@@ -14,8 +14,13 @@ export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleConnect = () => {
-    if (email.trim().toLowerCase().includes('client')) {
-      navigation.replace('ClientDashboard');
+    const value = email.trim().toLowerCase();
+    if (value.includes('staffly')) {
+      navigation.replace('ClientDashboard', { partner: 'staffly' });
+      return;
+    }
+    if (value.includes('client')) {
+      navigation.replace('ClientDashboard', { partner: 'bookly' });
     }
   };
 

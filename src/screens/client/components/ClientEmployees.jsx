@@ -20,7 +20,8 @@ import {
   UserRound,
   X,
 } from 'lucide-react-native';
-import { colors } from '../../../styles';
+import { useClientTheme } from '../theme/ClientThemeContext';
+import { createBrandStyles } from '../theme/clientStyles';
 
 const serifFont = Platform.select({
   ios: 'Georgia',
@@ -44,6 +45,9 @@ const defaultEmployees = [
 const MAX_EMPLOYEES = 3;
 
 export default function ClientEmployees() {
+  const { partner, colors } = useClientTheme();
+  const styles = stylesByBrand[partner];
+
   const [employees, setEmployees] = useState(defaultEmployees);
   const [modalMode, setModalMode] = useState(null); // 'create' | 'edit' | null
   const [editingId, setEditingId] = useState(null);
@@ -473,7 +477,7 @@ export default function ClientEmployees() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = colors => StyleSheet.create({
   container: {
     gap: 16,
   },
@@ -783,3 +787,5 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
 });
+
+const stylesByBrand = createBrandStyles(createStyles);

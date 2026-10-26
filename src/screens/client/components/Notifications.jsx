@@ -19,7 +19,8 @@ import {
   Trash2,
   X,
 } from 'lucide-react-native';
-import { colors } from '../../../styles';
+import { useClientTheme } from '../theme/ClientThemeContext';
+import { createBrandStyles } from '../theme/clientStyles';
 
 const serifFont = Platform.select({
   ios: 'Georgia',
@@ -65,6 +66,8 @@ const FILTER_TABS = [
 ];
 
 export default function Notifications() {
+  const { partner, colors } = useClientTheme();
+  const styles = stylesByBrand[partner];
   const [notifications, setNotifications] = useState(defaultNotifications);
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -531,7 +534,7 @@ export default function Notifications() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = colors => StyleSheet.create({
   container: {
     gap: 14,
   },
@@ -565,7 +568,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#B9622C',
+    color: colors.orangeDark,
     fontFamily: serifFont,
   },
   unreadBadge: {
@@ -599,7 +602,7 @@ const styles = StyleSheet.create({
   markAllReadBtnText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#B9622C',
+    color: colors.orangeDark,
   },
   perPagePill: {
     flexDirection: 'row',
@@ -1022,3 +1025,5 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
 });
+
+const stylesByBrand = createBrandStyles(createStyles);

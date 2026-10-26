@@ -21,7 +21,8 @@ import {
   Trash2,
   X,
 } from 'lucide-react-native';
-import { colors } from '../../../styles';
+import { useClientTheme } from '../theme/ClientThemeContext';
+import { createBrandStyles } from '../theme/clientStyles';
 
 const serifFont = Platform.select({
   ios: 'Georgia',
@@ -41,6 +42,9 @@ const defaultSites = [
 ];
 
 export default function Espaces() {
+  const { partner, colors } = useClientTheme();
+  const styles = stylesByBrand[partner];
+
   const [sites, setSites] = useState(defaultSites);
   const [modalMode, setModalMode] = useState(null); // 'create' | 'edit' | null
   const [editingId, setEditingId] = useState(null);
@@ -491,7 +495,7 @@ export default function Espaces() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = colors => StyleSheet.create({
   container: {
     gap: 16,
   },
@@ -908,3 +912,5 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
 });
+
+const stylesByBrand = createBrandStyles(createStyles);

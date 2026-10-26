@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -26,12 +26,8 @@ import {
   Users,
   X,
 } from 'lucide-react-native';
-import {
-  clientContentStyles as contentStyles,
-  clientLayoutStyles as layoutStyles,
-  clientNavigationStyles as navigationStyles,
-  colors,
-} from '../../styles';
+import { clientShellStylesByBrand } from './theme/clientStyles';
+import { ClientThemeProvider, useClientTheme } from './theme/ClientThemeContext';
 import Calendrier from './components/Calendrier';
 import Profile from './components/Profile';
 import Prestations, { demoMissions } from './components/Prestations';
@@ -44,7 +40,7 @@ import Factures from './components/Factures';
 import Notifications from './components/Notifications';
 import ClientHistorique from './components/ClientHistorique';
 
-const sections = [
+const createSections = brandName => [
   { key: 'profile', label: 'Profil', icon: UserRound },
   {
     key: 'coOwners',
@@ -79,7 +75,7 @@ const sections = [
     key: 'invoices',
     label: 'Factures',
     icon: FileText,
-    description: 'Consultez et téléchargez vos factures Bookly.',
+    description: `Consultez et téléchargez vos factures ${brandName}.`,
   },
   { key: 'messages', label: 'Messages', icon: MessageCircle },
   {
@@ -159,6 +155,9 @@ const emptyContent = {
 };
 
 function ActionButton({ title, onPress, secondary = false, icon }) {
+  const { partner } = useClientTheme();
+  const contentStyles = clientShellStylesByBrand[partner].content;
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -182,6 +181,9 @@ function ActionButton({ title, onPress, secondary = false, icon }) {
 }
 
 function EmptyState({ title, description, icon: Icon, action }) {
+  const { partner, colors } = useClientTheme();
+  const contentStyles = clientShellStylesByBrand[partner].content;
+
   return (
     <View style={contentStyles.emptyState}>
       <View style={contentStyles.emptyIcon}>
@@ -194,7 +196,12 @@ function EmptyState({ title, description, icon: Icon, action }) {
   );
 }
 
-function ClientScreen() {
+function ClientDashboard() {
+  const { partner, colors } = useClientTheme();
+  const { layout: layoutStyles, navigation: navigationStyles, content: contentStyles } =
+    clientShellStylesByBrand[partner];
+  const sections = useMemo(() => createSections(colors.brandName), [colors.brandName]);
+
   const [activeSection, setActiveSection] = useState('profile');
   const [menuOpen, setMenuOpen] = useState(false);
   const [collections, setCollections] = useState({
@@ -374,7 +381,7 @@ function ClientScreen() {
           >
             <Menu size={21} color={colors.brown} />
           </Pressable>
-          <Text style={layoutStyles.brand}>bookly</Text>
+          <Text style={layoutStyles.brand}>{colors.brandLabel}</Text>
           <Pressable
             accessibilityLabel="Afficher les notifications"
             accessibilityRole="button"
@@ -394,7 +401,7 @@ function ClientScreen() {
             <Text style={layoutStyles.pageTitle}>{currentSection.label}</Text>
             <Text style={layoutStyles.pageDescription}>
               {currentSection.description ||
-                'Gérez votre entreprise et vos prestations Bookly.'}
+                `Gérez votre entreprise et vos prestations ${colors.brandName}.`}
             </Text>
           </View>
           {renderContent()}
@@ -518,4 +525,10 @@ function ClientScreen() {
   );
 }
 
-export default ClientScreen;
+export default function ClientScreen({ route }) {
+  return (
+    <ClientThemeProvider partner={route?.params?.partner}>
+      <ClientDashboard />
+    </ClientThemeProvider>
+  );
+}

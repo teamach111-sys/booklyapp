@@ -1610,7 +1610,9 @@ export const formStyles = {
   }),
 };
 
-export const clientLayoutStyles = StyleSheet.create({
+// Client dashboard shell styles are palette-driven so the same markup renders
+// for both client brands (see src/screens/client/theme).
+export const createClientLayoutStyles = colors => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -1740,7 +1742,7 @@ export const clientLayoutStyles = StyleSheet.create({
   },
 });
 
-export const clientNavigationStyles = StyleSheet.create({
+export const createClientNavigationStyles = colors => StyleSheet.create({
   bottomNavigation: {
     minHeight: 62,
     paddingHorizontal: 4,
@@ -1773,7 +1775,7 @@ export const clientNavigationStyles = StyleSheet.create({
   },
 });
 
-export const clientContentStyles = StyleSheet.create({
+export const createClientContentStyles = colors => StyleSheet.create({
   section: {
     gap: 10,
   },

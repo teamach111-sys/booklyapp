@@ -17,7 +17,8 @@ import {
   Star,
   Users,
 } from 'lucide-react-native';
-import { colors } from '../../../styles';
+import { useClientTheme } from '../theme/ClientThemeContext';
+import { createBrandStyles } from '../theme/clientStyles';
 
 const serifFont = Platform.select({
   ios: 'Georgia',
@@ -71,6 +72,8 @@ const FILTER_ROLES = [
 ];
 
 export default function Fav_extra() {
+  const { partner, colors } = useClientTheme();
+  const styles = stylesByBrand[partner];
   const [activeTab, setActiveTab] = useState('extras'); // 'extras' | 'favorites'
   const [extras, setExtras] = useState(defaultExtras);
   const [searchQuery, setSearchQuery] = useState('');
@@ -397,7 +400,7 @@ export default function Fav_extra() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = colors => StyleSheet.create({
   container: {
     gap: 14,
   },
@@ -676,3 +679,4 @@ const styles = StyleSheet.create({
     color: colors.orange,
   },
 });
+const stylesByBrand = createBrandStyles(createStyles);

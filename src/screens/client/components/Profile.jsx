@@ -22,8 +22,8 @@ import {
   User,
   X,
 } from 'lucide-react-native';
-import { colors } from '../../../styles';
-import { profileStyles as styles } from './styles';
+import { profileStylesByBrand } from './styles';
+import { useClientTheme } from '../theme/ClientThemeContext';
 
 const emptyProfile = {
   firstName: 'Client',
@@ -39,6 +39,9 @@ const emptyProfile = {
 };
 
 function Field({ label, value, icon: Icon, editing, onChange, multiline, fullWidth }) {
+  const { partner } = useClientTheme();
+  const styles = profileStylesByBrand[partner];
+
   return (
     <View style={fullWidth ? styles.gridItemFull : styles.gridItem}>
       <View style={styles.fieldLabel}>
@@ -61,6 +64,9 @@ function Field({ label, value, icon: Icon, editing, onChange, multiline, fullWid
 }
 
 function PasswordField({ label, value, onChange, visible, onToggle, placeholder }) {
+  const { partner } = useClientTheme();
+  const styles = profileStylesByBrand[partner];
+
   return (
     <View style={styles.passwordField}>
       <View style={styles.fieldLabel}>
@@ -96,6 +102,8 @@ function PasswordField({ label, value, onChange, visible, onToggle, placeholder 
 }
 
 export default function Profile() {
+  const { partner, colors } = useClientTheme();
+  const styles = profileStylesByBrand[partner];
   const [activeTab, setActiveTab] = useState('information');
   const [editing, setEditing] = useState(false);
   const [profile, setProfile] = useState(emptyProfile);
@@ -280,7 +288,7 @@ export default function Profile() {
             <Text style={styles.identityName}>{name}</Text>
             <Text style={styles.identityEmail}>{profile.email}</Text>
             <View style={styles.tagRow}>
-              <Text style={[styles.tag, styles.tagBlue]}>bookly</Text>
+              <Text style={[styles.tag, styles.tagBlue]}>{colors.brandLabel}</Text>
               <Text style={[styles.tag, styles.tagBrown]}>Client</Text>
             </View>
           </View>

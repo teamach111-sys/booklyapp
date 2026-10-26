@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
-import { colors } from '../../../styles';
+import { useClientTheme } from '../theme/ClientThemeContext';
+import { createBrandStyles } from '../theme/clientStyles';
 
 const weekdays = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
 
@@ -54,6 +55,8 @@ function formatModalDate(date) {
 }
 
 export default function Calendrier() {
+  const { partner, colors } = useClientTheme();
+  const styles = stylesByBrand[partner];
   const [view, setView] = useState('month');
   const [focusedDate, setFocusedDate] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(() => new Date());
@@ -445,7 +448,7 @@ export default function Calendrier() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = colors => StyleSheet.create({
   container: {
     gap: 12,
   },
@@ -847,3 +850,5 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
 });
+
+const stylesByBrand = createBrandStyles(createStyles);

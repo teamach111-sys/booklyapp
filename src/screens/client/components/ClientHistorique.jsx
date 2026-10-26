@@ -19,7 +19,8 @@ import {
   Star,
   UserCheck,
 } from 'lucide-react-native';
-import { colors } from '../../../styles';
+import { useClientTheme } from '../theme/ClientThemeContext';
+import { createBrandStyles } from '../theme/clientStyles';
 
 const serifFont = Platform.select({
   ios: 'Georgia',
@@ -40,6 +41,8 @@ const ACTIVITY_TYPES = [
 ];
 
 export default function ClientHistorique() {
+  const { partner, colors } = useClientTheme();
+  const styles = stylesByBrand[partner];
   const [activities] = useState([]);
   const [selectedType, setSelectedType] = useState('ALL');
   const [dateFrom, setDateFrom] = useState('');
@@ -237,7 +240,7 @@ export default function ClientHistorique() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = colors => StyleSheet.create({
   container: {
     gap: 12,
   },
@@ -448,3 +451,5 @@ const styles = StyleSheet.create({
     color: '#999999',
   },
 });
+
+const stylesByBrand = createBrandStyles(createStyles);

@@ -17,7 +17,8 @@ import {
   Search,
   X,
 } from 'lucide-react-native';
-import { colors } from '../../../styles';
+import { useClientTheme } from '../theme/ClientThemeContext';
+import { createBrandStyles } from '../theme/clientStyles';
 
 const serifFont = Platform.select({
   ios: 'Georgia',
@@ -42,6 +43,8 @@ const STATUS_FILTERS = [
 ];
 
 export default function Factures() {
+  const { partner, colors } = useClientTheme();
+  const styles = stylesByBrand[partner];
   const [invoices] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedPeriodIndex, setSelectedPeriodIndex] = useState(0);
@@ -361,7 +364,7 @@ export default function Factures() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = colors => StyleSheet.create({
   container: {
     gap: 14,
   },
@@ -704,3 +707,4 @@ const styles = StyleSheet.create({
     color: colors.orangeDark,
   },
 });
+const stylesByBrand = createBrandStyles(createStyles);

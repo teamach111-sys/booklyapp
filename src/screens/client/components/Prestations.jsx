@@ -37,8 +37,8 @@ import {
   Users,
   X,
 } from 'lucide-react-native';
-import { colors } from '../../../styles';
-import { prestationsStyles as styles } from './styles';
+import { prestationsStylesByBrand } from './styles';
+import { useClientTheme } from '../theme/ClientThemeContext';
 
 const statusTabs = [
   'Prestations ajoutées',
@@ -491,6 +491,8 @@ function SelectField({
   hideLabel,
   compact,
 }) {
+  const { partner, colors } = useClientTheme();
+  const styles = prestationsStylesByBrand[partner];
   const [open, setOpen] = useState(false);
 
   return (
@@ -554,6 +556,9 @@ function SelectField({
 }
 
 function InfoRow({ label, value }) {
+  const { partner } = useClientTheme();
+  const styles = prestationsStylesByBrand[partner];
+
   return (
     <View style={styles.infoRow}>
       <Text style={styles.infoLabel}>{label}</Text>
@@ -563,6 +568,9 @@ function InfoRow({ label, value }) {
 }
 
 function ConvInfoRow({ icon, label, value, first }) {
+  const { partner } = useClientTheme();
+  const styles = prestationsStylesByBrand[partner];
+
   return (
     <View style={[styles.convInfoRow, first && styles.convInfoRowFirst]}>
       {icon}
@@ -573,6 +581,9 @@ function ConvInfoRow({ icon, label, value, first }) {
 }
 
 function BackButton({ onPress }) {
+  const { partner } = useClientTheme();
+  const styles = prestationsStylesByBrand[partner];
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -586,6 +597,8 @@ function BackButton({ onPress }) {
 }
 
 export default function Prestations({ missions, setMissions }) {
+  const { partner, colors } = useClientTheme();
+  const styles = prestationsStylesByBrand[partner];
   const [screen, setScreen] = useState('list');
   const [selectedId, setSelectedId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('Prestations ajoutées');
