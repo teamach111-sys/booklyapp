@@ -34,6 +34,7 @@ import {
   User,
 } from 'lucide-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
+import DatePicker from '../../components/DatePicker';
 import { clickableStyles, colors, formStyles } from '../../styles';
 import AuthLayout from './AuthLayout';
 
@@ -77,7 +78,7 @@ const personalFields = {
     name: 'birth_date',
     label: 'Date de naissance',
     placeholder: 'JJ/MM/AAAA',
-    keyboardType: 'numbers-and-punctuation',
+    type: 'date',
   },
   phone: {
     name: 'phone',
@@ -455,19 +456,32 @@ function FormField({ field, value, onChange, style }) {
   return (
     <View style={[styles.field, style]}>
       <FieldLabel label={field.label} required />
-      <TextInput
-        accessibilityLabel={field.label}
-        autoCapitalize={field.autoCapitalize || 'sentences'}
-        autoComplete={field.autoComplete}
-        autoCorrect={false}
-        keyboardType={field.keyboardType || 'default'}
-        placeholder={field.placeholder}
-        placeholderTextColor="#AAAAAA"
-        secureTextEntry={field.secureTextEntry}
-        style={styles.input}
-        value={value}
-        onChangeText={onChange}
-      />
+      {field.type === 'date' ? (
+        <DatePicker
+          accessibilityLabel={field.label}
+          colors={colors}
+          maximumDate={new Date()}
+          onChange={onChange}
+          outputFormat="iso"
+          placeholder={field.placeholder}
+          style={styles.input}
+          value={value}
+        />
+      ) : (
+        <TextInput
+          accessibilityLabel={field.label}
+          autoCapitalize={field.autoCapitalize || 'sentences'}
+          autoComplete={field.autoComplete}
+          autoCorrect={false}
+          keyboardType={field.keyboardType || 'default'}
+          placeholder={field.placeholder}
+          placeholderTextColor="#AAAAAA"
+          secureTextEntry={field.secureTextEntry}
+          style={styles.input}
+          value={value}
+          onChangeText={onChange}
+        />
+      )}
       {field.helper ? <Text style={styles.helper}>{field.helper}</Text> : null}
     </View>
   );

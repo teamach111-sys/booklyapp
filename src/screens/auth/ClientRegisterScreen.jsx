@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Check, ChevronDown, X } from 'lucide-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
+import DatePicker from '../../components/DatePicker';
 import { colors, formStyles } from '../../styles';
 import AuthLayout from './AuthLayout';
 
@@ -41,7 +42,7 @@ const fields = [
     name: 'birth_date',
     label: 'Date de naissance',
     placeholder: 'JJ/MM/AAAA',
-    keyboardType: 'numbers-and-punctuation',
+    type: 'date',
   },
   {
     name: 'password',
@@ -111,18 +112,31 @@ function FormField({ field, value, onChange }) {
           <Text style={{ color: colors.orangeDark }}> *</Text>
         )}
       </Text>
-      <TextInput
-        accessibilityLabel={field.label}
-        autoCapitalize={field.autoCapitalize || 'sentences'}
-        autoCorrect={false}
-        keyboardType={field.keyboardType || 'default'}
-        placeholder={field.placeholder}
-        placeholderTextColor={colors.muted}
-        secureTextEntry={field.secureTextEntry}
-        style={loginStyles.input}
-        value={value}
-        onChangeText={onChange}
-      />
+      {field.type === 'date' ? (
+        <DatePicker
+          accessibilityLabel={field.label}
+          colors={colors}
+          maximumDate={new Date()}
+          onChange={onChange}
+          outputFormat="iso"
+          placeholder={field.placeholder}
+          style={loginStyles.input}
+          value={value}
+        />
+      ) : (
+        <TextInput
+          accessibilityLabel={field.label}
+          autoCapitalize={field.autoCapitalize || 'sentences'}
+          autoCorrect={false}
+          keyboardType={field.keyboardType || 'default'}
+          placeholder={field.placeholder}
+          placeholderTextColor={colors.muted}
+          secureTextEntry={field.secureTextEntry}
+          style={loginStyles.input}
+          value={value}
+          onChangeText={onChange}
+        />
+      )}
     </View>
   );
 }

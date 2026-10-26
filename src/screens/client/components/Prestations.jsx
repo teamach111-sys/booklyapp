@@ -39,6 +39,8 @@ import {
 import { prestationsStylesByBrand } from './styles';
 import { useClientTheme } from '../theme/ClientThemeContext';
 import BottomSheet from './BottomSheet';
+import DatePicker from '../../../components/DatePicker';
+import TimePicker from '../../../components/TimePicker';
 
 const statusTabs = [
   'Prestations ajoutées',
@@ -962,19 +964,25 @@ export default function Prestations({ missions, setMissions }) {
         </View>
 
         <View style={styles.filtersBar}>
-          <TextInput
+          <DatePicker
             accessibilityLabel="Date de début du filtre"
-            onChangeText={setFromDate}
+            allowClear
+            colors={colors}
+            onChange={setFromDate}
+            outputFormat="iso"
             placeholder="Depuis"
-            placeholderTextColor="#BBB"
+            showIcon={false}
             style={styles.filterInput}
             value={fromDate}
           />
-          <TextInput
+          <DatePicker
             accessibilityLabel="Date de fin du filtre"
-            onChangeText={setToDate}
+            allowClear
+            colors={colors}
+            onChange={setToDate}
+            outputFormat="iso"
             placeholder="Jusqu'au"
-            placeholderTextColor="#BBB"
+            showIcon={false}
             style={styles.filterInput}
             value={toDate}
           />
@@ -1138,22 +1146,24 @@ export default function Prestations({ missions, setMissions }) {
           <Text style={styles.clientHoursLabel}>
             Horaires client (facultatif)
           </Text>
-          <TextInput
+          <TimePicker
             accessibilityLabel="Heure de début client"
-            onChangeText={value =>
-              patchEvent(eventIndex, 'clientStart', value)
-            }
+            colors={colors}
+            onChange={value => patchEvent(eventIndex, 'clientStart', value)}
+            outputFormat="24h"
+            showIcon={false}
             placeholder="De"
-            placeholderTextColor="#BBB"
             style={styles.clientTimeInput}
             value={event.clientStart}
           />
           <Text style={styles.arrow}>→</Text>
-          <TextInput
+          <TimePicker
             accessibilityLabel="Heure de fin client"
-            onChangeText={value => patchEvent(eventIndex, 'clientEnd', value)}
+            colors={colors}
+            onChange={value => patchEvent(eventIndex, 'clientEnd', value)}
+            outputFormat="24h"
+            showIcon={false}
             placeholder="À"
-            placeholderTextColor="#BBB"
             style={styles.clientTimeInput}
             value={event.clientEnd}
           />
@@ -1195,23 +1205,27 @@ export default function Prestations({ missions, setMissions }) {
                 style={[styles.gridInput, styles.colNb]}
                 value={job.quantity}
               />
-              <TextInput
+              <TimePicker
                 accessibilityLabel="Heure de départ"
-                onChangeText={value =>
+                colors={colors}
+                onChange={value =>
                   patchJob(eventIndex, jobIndex, 'departure', value)
                 }
+                outputFormat="24h"
+                showIcon={false}
                 placeholder="Départ"
-                placeholderTextColor="#BBB"
                 style={[styles.gridInput, styles.colTime]}
                 value={job.departure}
               />
-              <TextInput
+              <TimePicker
                 accessibilityLabel="Heure d’arrivée"
-                onChangeText={value =>
+                colors={colors}
+                onChange={value =>
                   patchJob(eventIndex, jobIndex, 'arrival', value)
                 }
+                outputFormat="24h"
+                showIcon={false}
                 placeholder="Arrivée"
-                placeholderTextColor="#BBB"
                 style={[styles.gridInput, styles.colTime]}
                 value={job.arrival}
               />
@@ -1258,24 +1272,28 @@ export default function Prestations({ missions, setMissions }) {
             {job.breakEnabled ? (
               <View style={styles.breakRow}>
                 <Text style={styles.breakLabel}>Pause :</Text>
-                <TextInput
+                <TimePicker
                   accessibilityLabel="Début de la pause"
-                  onChangeText={value =>
+                  colors={colors}
+                  onChange={value =>
                     patchJob(eventIndex, jobIndex, 'breakStart', value)
                   }
+                  outputFormat="24h"
+                  showIcon={false}
                   placeholder="De"
-                  placeholderTextColor="#BBB"
                   style={styles.clientTimeInput}
                   value={job.breakStart}
                 />
                 <Text style={styles.arrow}>→</Text>
-                <TextInput
+                <TimePicker
                   accessibilityLabel="Fin de la pause"
-                  onChangeText={value =>
+                  colors={colors}
+                  onChange={value =>
                     patchJob(eventIndex, jobIndex, 'breakEnd', value)
                   }
+                  outputFormat="24h"
+                  showIcon={false}
                   placeholder="À"
-                  placeholderTextColor="#BBB"
                   style={styles.clientTimeInput}
                   value={job.breakEnd}
                 />
@@ -1402,19 +1420,21 @@ export default function Prestations({ missions, setMissions }) {
                   Date & heure de début de l’évènement *
                 </Text>
                 <View style={styles.twoColumns}>
-                  <TextInput
+                  <DatePicker
                     accessibilityLabel="Date de début"
-                    onChangeText={value => patchMission('startDate', value)}
+                    colors={colors}
+                    onChange={value => patchMission('startDate', value)}
+                    outputFormat="iso"
                     placeholder="JJ/MM/AAAA"
-                    placeholderTextColor="#BBB"
                     style={[styles.input, styles.dateInputFlex]}
                     value={mission.startDate}
                   />
-                  <TextInput
+                  <TimePicker
                     accessibilityLabel="Heure de début"
-                    onChangeText={value => patchMission('startTime', value)}
+                    colors={colors}
+                    onChange={value => patchMission('startTime', value)}
+                    outputFormat="24h"
                     placeholder="Heure"
-                    placeholderTextColor="#BBB"
                     style={[styles.input, styles.timeInputFlex]}
                     value={mission.startTime}
                   />
@@ -1427,19 +1447,21 @@ export default function Prestations({ missions, setMissions }) {
                   Date & heure de fin de l’évènement *
                 </Text>
                 <View style={styles.twoColumns}>
-                  <TextInput
+                  <DatePicker
                     accessibilityLabel="Date de fin"
-                    onChangeText={value => patchMission('endDate', value)}
+                    colors={colors}
+                    onChange={value => patchMission('endDate', value)}
+                    outputFormat="iso"
                     placeholder="JJ/MM/AAAA"
-                    placeholderTextColor="#BBB"
                     style={[styles.input, styles.dateInputFlex]}
                     value={mission.endDate}
                   />
-                  <TextInput
+                  <TimePicker
                     accessibilityLabel="Heure de fin"
-                    onChangeText={value => patchMission('endTime', value)}
+                    colors={colors}
+                    onChange={value => patchMission('endTime', value)}
+                    outputFormat="24h"
                     placeholder="Heure"
-                    placeholderTextColor="#BBB"
                     style={[styles.input, styles.timeInputFlex]}
                     value={mission.endTime}
                   />

@@ -34,6 +34,7 @@ import {
 import { colors } from '../../../styles';
 import { extras } from '../styles';
 import { mission as styles } from './styles';
+import DatePicker from '../../../components/DatePicker';
 import RetourPrestation from './RetourPrestation';
 
 const TABS = [
@@ -639,27 +640,29 @@ export default function Mission() {
 
       {/* Filter Bar with Date Inputs and Search Input */}
       <View style={styles.filterBar}>
-        <View style={styles.filterDateBtn}>
-          <Calendar size={13} color="#888" />
-          <TextInput
-            onChangeText={setDateFilterStart}
-            placeholder="mm/dd/yyyy"
-            placeholderTextColor="#bbb"
-            style={styles.filterDateText}
-            value={dateFilterStart}
-          />
-        </View>
+        <DatePicker
+          accessibilityLabel="Filtrer à partir du"
+          allowClear
+          colors={colors}
+          onChange={setDateFilterStart}
+          outputFormat="iso"
+          placeholder="JJ/MM/AAAA"
+          style={styles.filterDateBtn}
+          textStyle={styles.filterDateText}
+          value={dateFilterStart}
+        />
 
-        <View style={styles.filterDateBtn}>
-          <Calendar size={13} color="#888" />
-          <TextInput
-            onChangeText={setDateFilterEnd}
-            placeholder="mm/dd/yyyy"
-            placeholderTextColor="#bbb"
-            style={styles.filterDateText}
-            value={dateFilterEnd}
-          />
-        </View>
+        <DatePicker
+          accessibilityLabel="Filtrer jusqu'au"
+          allowClear
+          colors={colors}
+          onChange={setDateFilterEnd}
+          outputFormat="iso"
+          placeholder="JJ/MM/AAAA"
+          style={styles.filterDateBtn}
+          textStyle={styles.filterDateText}
+          value={dateFilterEnd}
+        />
 
         <View style={styles.filterSearchBox}>
           <Search size={13} color="#888" />

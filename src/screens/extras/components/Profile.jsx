@@ -12,6 +12,7 @@ import {
 import {
   errorCodes,
   isErrorWithCode,
+  keepLocalCopy,
   pick,
   types,
 } from '@react-native-documents/picker';
@@ -368,7 +369,7 @@ export default function Profile() {
       ) : null}
 
       {tab === 'DOCUMENTS' ? (
-        <DocumentsTab documents={documents || []} />
+        <DocumentsTab documents={documents || []} onChange={updateExtraData} />
       ) : null}
 
       {tab === 'SKILLS' ? (
@@ -823,7 +824,7 @@ function InfoTab({ accountInfo, profileDetails, onChange }) {
 }
 
 /* ════ Tab 2 — Documents ════ */
-function DocumentsTab({ documents }) {
+function DocumentsTab({ documents, onChange }) {
   const getExistingDoc = (key) =>
     documents.find((doc) => doc.type_document === key);
 
@@ -833,6 +834,75 @@ function DocumentsTab({ documents }) {
       .filter((doc) => !DOC_TYPES.some((type) => type.key === doc.type_document))
       .map((doc) => ({ key: doc.type_document, label: doc.type_document.replace(/_/g, ' ') })),
   ];
+
+  const commitDocuments = (nextDocuments) => onChange({ documents: nextDocuments });
+
+  // "Ajouter" and "Remplacer" open the phone file picker (images + PDF). A local
+  // copy is kept so the selected file stays readable once the API is wired.
+  const pickDocument = async (key) => {
+    try {
+      const [picked] = await pick({ type: [types.images, types.pdf] });
+      if (!picked?.uri) return;
+
+      let uri = picked.uri;
+      if (uri.startsWith('content://')) {
+        try {
+          const [copy] = await keepLocalCopy({
+            files: [{ uri, fileName: picked.name || `${key}.pdf` }],
+            destination: 'cachesDirectory',
+          });
+          if (copy?.status === 'success' && copy.localUri) uri = copy.localUri;
+        } catch (copyError) {
+          // Keep the picker uri when the local copy cannot be made.
+        }
+      }
+
+      const nextDocuments = documents.filter(
+        (doc) => doc.type_document !== key,
+      );
+      nextDocuments.push({
+        type_document: key,
+        statut_conformite: 'en_attente',
+        date_upload: new Date().toISOString(),
+        file_name: picked.name || `${key}.pdf`,
+        file_uri: uri,
+        file_type: picked.type || null,
+        file_size: picked.size || null,
+      });
+      commitDocuments(nextDocuments);
+    } catch (error) {
+      if (
+        isErrorWithCode(error) &&
+        error.code === errorCodes.OPERATION_CANCELED
+      ) {
+        return;
+      }
+      Alert.alert(
+        'Impossible de sélectionner le document',
+        isErrorWithCode(error)
+          ? error.message
+          : 'Une erreur inattendue est survenue. Réessayez.',
+      );
+    }
+  };
+
+  const deleteDocument = (key) => {
+    Alert.alert(
+      'Supprimer ce document',
+      'Le document sera retiré de votre dossier. Vous pourrez en déposer un nouveau à tout moment.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: () =>
+            commitDocuments(
+              documents.filter((doc) => doc.type_document !== key),
+            ),
+        },
+      ],
+    );
+  };
 
   return (
     <View style={profile.card}>
@@ -847,7 +917,9 @@ function DocumentsTab({ documents }) {
           const badge = getDocBadge(doc);
           const hasFile = !!doc;
           const rejected = doc?.statut_conformite === 'rejete';
-          const outlined = hasFile && !rejected;
+          // Solid orange is reserved for "Ajouter"; "Remplacer" is outlined
+          // whatever the document status.
+          const outlined = hasFile;
           return (
             <View
               key={key}
@@ -879,7 +951,12 @@ function DocumentsTab({ documents }) {
               ) : null}
 
               <View style={profile.docActions}>
-                <View style={[profile.docBtn, outlined && profile.docBtnOutline]}>
+                <Pressable
+                  accessibilityLabel={`${hasFile ? 'Remplacer' : 'Ajouter'} ${label}`}
+                  accessibilityRole="button"
+                  onPress={() => pickDocument(key)}
+                  style={[profile.docBtn, outlined && profile.docBtnOutline]}
+                >
                   {hasFile ? (
                     <Upload size={14} color={outlined ? colors.orangeDark : colors.white} />
                   ) : (
@@ -888,11 +965,16 @@ function DocumentsTab({ documents }) {
                   <Text style={[profile.docBtnText, outlined && profile.docBtnTextOutline]}>
                     {hasFile ? 'Remplacer' : 'Ajouter'}
                   </Text>
-                </View>
+                </Pressable>
                 {hasFile ? (
-                  <View style={profile.docDeleteBtn}>
+                  <Pressable
+                    accessibilityLabel={`Supprimer ${label}`}
+                    accessibilityRole="button"
+                    onPress={() => deleteDocument(key)}
+                    style={profile.docDeleteBtn}
+                  >
                     <Trash size={14} color="#9b1c1c" />
-                  </View>
+                  </Pressable>
                 ) : null}
               </View>
             </View>

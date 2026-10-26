@@ -3,9 +3,1688 @@ import { colors, fontFamilies } from '../../../styles';
 
 const fontSerif = Platform.OS === 'ios' ? 'Georgia' : 'serif';
 
-export const calendrier = StyleSheet.create({});
-export const disponibilite = StyleSheet.create({});
-export const extraFactures = StyleSheet.create({});
+// Extra calendar page (src/pages/extras/components/Calendrier.jsx + .css).
+// The design is a 1fr / 300px grid: month view on the left, legend, summary and
+// selected-day panel on the right. On mobile those stack under the month view.
+export const calendrier = StyleSheet.create({
+  pageHeadingSpacing: {
+    marginBottom: 16,
+  },
+
+  // ── "Vous êtes disponible par défaut" notice ──
+  notice: {
+    marginBottom: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    backgroundColor: '#FFF8E1',
+  },
+  noticeText: {
+    flex: 1,
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#92400E',
+  },
+  noticeStrong: {
+    fontFamily: fontFamilies.bold,
+  },
+
+  // ── Header: Mon calendrier + actions ──
+  header: {
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headerIconTile: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    backgroundColor: colors.palePink,
+  },
+  headerTitle: {
+    fontFamily: fontSerif,
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: colors.orangeDark,
+  },
+  headerSub: {
+    marginTop: 1,
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    color: '#aaa',
+  },
+  headerText: {
+    flexShrink: 1,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  btnToday: {
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    backgroundColor: colors.white,
+  },
+  btnTodayText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 12,
+    color: '#555',
+  },
+  btnAccent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 7,
+    paddingHorizontal: 16,
+    borderRadius: 9,
+    backgroundColor: '#DC2626',
+  },
+  btnAccentText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 12,
+    color: colors.white,
+  },
+  btnAdd: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 7,
+    paddingHorizontal: 16,
+    borderRadius: 9,
+    backgroundColor: colors.orange,
+  },
+  btnAddText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 12,
+    color: colors.white,
+  },
+
+  // ── Month view ──
+  calendarCard: {
+    marginBottom: 20,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#ecddd6',
+    backgroundColor: colors.white,
+    overflow: 'hidden',
+  },
+  toolbar: {
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0e4dd',
+  },
+  toolbarNav: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    backgroundColor: colors.white,
+  },
+  monthLabel: {
+    flex: 1,
+    textAlign: 'center',
+    fontFamily: fontSerif,
+    fontWeight: 'bold',
+    fontSize: 15,
+    color: colors.orangeDark,
+  },
+  weekHeaderRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5ede8',
+  },
+  weekHeaderCell: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  weekHeaderText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 10,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    color: '#aaa',
+  },
+  weekHeaderTextWeekend: {
+    color: '#DC2626',
+  },
+  weekRow: {
+    flexDirection: 'row',
+  },
+  dayCell: {
+    flex: 1,
+    minHeight: 62,
+    paddingVertical: 6,
+    paddingHorizontal: 5,
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5ede8',
+  },
+  dayCellRightBorder: {
+    borderRightWidth: 1,
+    borderRightColor: '#f5ede8',
+  },
+  dayCellOutside: {
+    backgroundColor: '#FAFAFA',
+    opacity: 0.45,
+  },
+  dayCellUnavailable: {
+    backgroundColor: '#FDF0F0',
+  },
+  dayCellToday: {
+    backgroundColor: '#FFF8F0',
+  },
+  dayCellSelected: {
+    backgroundColor: colors.palePink,
+  },
+  dayNumberWrap: {
+    width: 26,
+    height: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 13,
+  },
+  dayNumberWrapToday: {
+    backgroundColor: colors.orange,
+  },
+  dayNumberWrapSelected: {
+    backgroundColor: colors.orangeDark,
+  },
+  dayNumber: {
+    fontFamily: fontFamilies.regular,
+    fontWeight: '500',
+    fontSize: 12,
+    color: '#333',
+  },
+  dayNumberWeekend: {
+    color: '#DC2626',
+  },
+  dayNumberOnAccent: {
+    fontFamily: fontFamilies.bold,
+    color: colors.white,
+  },
+
+  // ── Legend & summary cards ──
+  sideCard: {
+    marginBottom: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ecddd6',
+    backgroundColor: colors.white,
+  },
+  sideCardTitle: {
+    marginBottom: 10,
+    fontFamily: fontFamilies.bold,
+    fontSize: 10,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    color: '#aaa',
+  },
+  // Legend lays its four keys out in a single row (wrapping on narrow screens)
+  // to take as little vertical space as possible.
+  legendItems: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    columnGap: 14,
+    rowGap: 8,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 3,
+  },
+  legendText: {
+    flexShrink: 1,
+    fontFamily: fontFamilies.regular,
+    fontSize: 12,
+    color: '#555',
+  },
+  summaryRow: {
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  summaryLabel: {
+    flex: 1,
+    fontFamily: fontFamilies.regular,
+    fontSize: 12,
+    color: '#555',
+  },
+  summaryValue: {
+    fontFamily: fontSerif,
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  summaryValueMission: {
+    color: '#EA580C',
+  },
+  summaryValueUnavail: {
+    color: '#DC2626',
+  },
+
+  // ── Selected day card ──
+  dayCard: {
+    marginBottom: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ecddd6',
+    backgroundColor: colors.white,
+    overflow: 'hidden',
+  },
+  dayCardHeader: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0e4dd',
+  },
+  dayCardDate: {
+    flexShrink: 1,
+    fontFamily: fontFamilies.bold,
+    fontSize: 12,
+    color: colors.orangeDark,
+  },
+  btnMiniIndispo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 7,
+    backgroundColor: '#DC2626',
+  },
+  btnMiniIndispoText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 10,
+    color: colors.white,
+  },
+  dayCardEmpty: {
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    gap: 6,
+  },
+  dayCardEmptyText: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 12,
+    color: '#bbb',
+    textAlign: 'center',
+  },
+  shiftList: {
+    padding: 12,
+    gap: 8,
+  },
+  shiftItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderTopRightRadius: 8,
+    borderBottomRightRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#9b1c1c',
+    backgroundColor: '#fdf4f4',
+  },
+  shiftTime: {
+    minWidth: 48,
+    alignItems: 'center',
+  },
+  shiftTimeStart: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 12,
+    color: '#9b1c1c',
+  },
+  shiftTimeSep: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 10,
+    color: '#bbb',
+  },
+  shiftTimeEnd: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 12,
+    color: '#888',
+  },
+  shiftInfo: {
+    flex: 1,
+  },
+  shiftTitle: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 13,
+    color: '#333',
+  },
+  shiftDesc: {
+    marginTop: 2,
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    color: '#aaa',
+  },
+  shiftBadge: {
+    paddingVertical: 3,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    backgroundColor: '#fdf0f0',
+  },
+  shiftBadgeText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 11,
+    color: '#9b1c1c',
+  },
+
+  // ── "Déclarer une indisponibilité" bottom sheet ──
+  // Same modal shell as the rest of the app (fade-in, dimmed backdrop, white
+  // panel with rounded top corners) instead of the web's centred dialog.
+  sheetBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  sheet: {
+    maxHeight: '88%',
+    paddingTop: 18,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    backgroundColor: colors.white,
+  },
+  sheetHeader: {
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  sheetTitle: {
+    flex: 1,
+    fontFamily: fontFamilies.bold,
+    fontSize: 14,
+    color: colors.orangeDark,
+  },
+  sheetClose: {
+    padding: 4,
+  },
+  sheetScroll: {
+    flexShrink: 1,
+  },
+  modalField: {
+    marginBottom: 14,
+  },
+  modalFieldRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 14,
+  },
+  modalFieldHalf: {
+    flex: 1,
+  },
+  modalLabelRow: {
+    marginBottom: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  modalLabel: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 11,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    color: '#888',
+  },
+  modalOptional: {
+    fontFamily: fontFamilies.regular,
+    textTransform: 'none',
+    letterSpacing: 0,
+    color: '#bbb',
+  },
+  modalInput: {
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    backgroundColor: colors.white,
+    fontFamily: fontFamilies.regular,
+    fontSize: 13,
+    color: '#333',
+  },
+  modalActions: {
+    marginTop: 4,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  btnCancel: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    backgroundColor: colors.white,
+  },
+  btnCancelText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 13,
+    color: '#888',
+  },
+  btnSave: {
+    flex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    paddingVertical: 10,
+    borderRadius: 9,
+    backgroundColor: '#DC2626',
+  },
+  btnSaveText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 13,
+    color: colors.white,
+  },
+});
+
+// Extra invoices page (src/pages/extras/components/Factures.jsx). The design is
+// a statistics row, a tab/search toolbar and an invoice list that is empty until
+// the extra has billed prestations.
+export const extraFactures = StyleSheet.create({
+  pageHeadingSpacing: {
+    marginBottom: 16,
+  },
+
+  // ── Statistics cards ──
+  statsRow: {
+    marginBottom: 16,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  statCard: {
+    flex: 1,
+    minWidth: 160,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#ecddd6',
+    backgroundColor: colors.white,
+  },
+  statCardBlueActive: {
+    borderWidth: 1.5,
+    borderColor: '#1565C0',
+  },
+  statCardGreenActive: {
+    borderWidth: 1.5,
+    borderColor: '#15803D',
+  },
+  statTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statIconTile: {
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 9,
+  },
+  statIconTileBlue: {
+    backgroundColor: 'rgba(21,101,192,0.094)',
+  },
+  statIconTileGreen: {
+    backgroundColor: 'rgba(21,128,61,0.094)',
+  },
+  statIconTileOrange: {
+    backgroundColor: 'rgba(212,122,49,0.094)',
+  },
+  statLabel: {
+    flexShrink: 1,
+    fontFamily: fontFamilies.bold,
+    fontSize: 10,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    color: '#999',
+  },
+  statValue: {
+    marginTop: 10,
+    fontFamily: fontSerif,
+    fontWeight: '800',
+    fontSize: 22,
+  },
+  statValueBlue: {
+    color: '#1565C0',
+  },
+  statValueGreen: {
+    color: '#15803D',
+  },
+  statValueOrange: {
+    color: colors.orange,
+  },
+  statSub: {
+    marginTop: 3,
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    color: '#aaa',
+  },
+
+  // ── Tabs + search ──
+  toolbar: {
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  tabs: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    padding: 4,
+    borderRadius: 11,
+    backgroundColor: '#F5EDE8',
+  },
+  tab: {
+    paddingVertical: 7,
+    paddingHorizontal: 13,
+    borderRadius: 8,
+  },
+  tabActive: {
+    backgroundColor: colors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  tabText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 12,
+    color: '#888',
+  },
+  tabTextActive: {
+    fontFamily: fontFamilies.bold,
+    color: colors.orange,
+  },
+  searchBox: {
+    flexGrow: 1,
+    minWidth: 200,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 11,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    backgroundColor: colors.white,
+  },
+  searchInput: {
+    flex: 1,
+    margin: 0,
+    paddingVertical: 8,
+    paddingHorizontal: 0,
+    fontFamily: fontFamilies.regular,
+    fontSize: 12,
+    color: '#333',
+    includeFontPadding: false,
+  },
+
+  // ── Empty state ──
+  emptyCard: {
+    paddingVertical: 52,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#ecddd6',
+    backgroundColor: colors.white,
+  },
+  emptyIconTile: {
+    width: 52,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+    backgroundColor: colors.palePink,
+  },
+  emptyTitle: {
+    marginTop: 10,
+    fontFamily: fontFamilies.bold,
+    fontSize: 14,
+    color: colors.orangeDark,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    marginTop: 4,
+    maxWidth: 320,
+    fontFamily: fontFamilies.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#aaa',
+    textAlign: 'center',
+  },
+});
+
+// Extra messages page (src/pages/extras/components/Messages.jsx). The design is
+// a two-pane card; under 768px it shows the conversation list pane only, which
+// is the layout used here. The "Nouveau report" dialog uses the app bottom sheet.
+export const messages = StyleSheet.create({
+  pageHeadingSpacing: {
+    marginBottom: 16,
+  },
+
+  // ── Messages shell ──
+  shell: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#ecddd6',
+    backgroundColor: colors.white,
+    overflow: 'hidden',
+  },
+  shellHeader: {
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0e4dd',
+  },
+  shellTitle: {
+    marginBottom: 12,
+    fontFamily: fontSerif,
+    fontWeight: 'bold',
+    fontSize: 17,
+    color: colors.orangeDark,
+  },
+
+  // ── Messages / Reports tabs ──
+  tabs: {
+    marginBottom: 10,
+    padding: 3,
+    flexDirection: 'row',
+    borderRadius: 10,
+    backgroundColor: '#F5EDE8',
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    borderRadius: 8,
+  },
+  tabActive: {
+    backgroundColor: colors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  tabText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 11,
+    color: '#888',
+  },
+  tabTextActive: {
+    fontFamily: fontFamilies.bold,
+    color: colors.orange,
+  },
+
+  // ── Search + new report ──
+  searchRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  searchBox: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: '#F5EDE8',
+  },
+  searchInput: {
+    flex: 1,
+    margin: 0,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    fontFamily: fontFamilies.regular,
+    fontSize: 12,
+    color: '#333',
+    includeFontPadding: false,
+  },
+  btnNewReport: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    backgroundColor: colors.orange,
+  },
+
+  // ── List pane ──
+  list: {
+    flex: 1,
+  },
+  emptyList: {
+    paddingVertical: 30,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  emptyIcon: {
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#ccc',
+    textAlign: 'center',
+  },
+  emptySubText: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    color: '#ccc',
+  },
+
+  // ── "Nouveau report" bottom sheet ──
+  sheetBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  sheet: {
+    maxHeight: '88%',
+    paddingTop: 18,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    backgroundColor: colors.white,
+  },
+  sheetHeader: {
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  sheetTitle: {
+    flex: 1,
+    fontFamily: fontFamilies.bold,
+    fontSize: 14,
+    color: colors.orangeDark,
+  },
+  sheetClose: {
+    padding: 4,
+  },
+  sheetScroll: {
+    flexShrink: 1,
+  },
+  field: {
+    marginBottom: 14,
+  },
+  fieldLast: {
+    marginBottom: 18,
+  },
+  fieldLabel: {
+    marginBottom: 6,
+    fontFamily: fontFamilies.bold,
+    fontSize: 11,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    color: '#888',
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  chip: {
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    backgroundColor: colors.white,
+  },
+  chipActive: {
+    borderColor: colors.orange,
+    backgroundColor: colors.orange,
+  },
+  chipText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 11,
+    color: '#888',
+  },
+  chipTextActive: {
+    color: colors.white,
+  },
+  input: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    backgroundColor: colors.white,
+    fontFamily: fontFamilies.regular,
+    fontSize: 13,
+    color: '#333',
+  },
+  textarea: {
+    minHeight: 90,
+    textAlignVertical: 'top',
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  btnCancel: {
+    flex: 1,
+    paddingVertical: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    backgroundColor: colors.white,
+  },
+  btnCancelText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 13,
+    color: '#888',
+  },
+  btnSend: {
+    flex: 2,
+    paddingVertical: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderRadius: 10,
+    backgroundColor: colors.orange,
+  },
+  btnSendText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 13,
+    color: colors.white,
+  },
+});
+
+// Extra notifications page (src/pages/extras/components/Notifications.jsx):
+// header with unread badge, search, category chips, select-all bar, list and
+// footer. The row detail and the "Par page" select use the app bottom sheet.
+export const notifications = StyleSheet.create({
+  pageHeadingSpacing: {
+    marginBottom: 16,
+  },
+
+  // ── Card shell ──
+  card: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#ecddd6',
+    backgroundColor: colors.white,
+    overflow: 'hidden',
+  },
+  header: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0e4dd',
+  },
+  headerTop: {
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  headerText: {
+    flexShrink: 1,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  title: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 15,
+    color: colors.orangeDark,
+  },
+  unreadBadge: {
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    borderRadius: 20,
+    backgroundColor: '#F43F5E',
+  },
+  unreadBadgeText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 10,
+    color: colors.white,
+  },
+  subtitle: {
+    marginTop: 2,
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    color: '#A07850',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  btnMarkAll: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ecddd6',
+    backgroundColor: colors.white,
+  },
+  btnMarkAllText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 11,
+    color: colors.orangeDark,
+  },
+  btnBulkDelete: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    backgroundColor: '#FFF2F2',
+  },
+  btnBulkDeleteText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 11,
+    color: '#E53E3E',
+  },
+
+  // ── Page size select ──
+  pageSizeRow: {
+    marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  pageSizeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: '#e0d0c8',
+    backgroundColor: '#FAF6F4',
+  },
+  pageSizeLabel: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 11,
+    color: '#7A4A2A',
+  },
+  pageSizeValue: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 11,
+    color: '#5C3D1E',
+  },
+
+  // ── Search ──
+  searchBox: {
+    marginBottom: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    backgroundColor: '#FAF6F4',
+  },
+  searchInput: {
+    flex: 1,
+    margin: 0,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    fontFamily: fontFamilies.regular,
+    fontSize: 12,
+    color: '#1A0F00',
+    includeFontPadding: false,
+  },
+
+  // ── Category chips ──
+  chipsContent: {
+    gap: 6,
+    paddingBottom: 2,
+  },
+  chip: {
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  chipActive: {
+    backgroundColor: colors.orange,
+  },
+  chipInactive: {
+    backgroundColor: '#F0E8E3',
+  },
+  chipText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 11,
+    color: '#7A4A2A',
+  },
+  chipTextActive: {
+    color: colors.white,
+  },
+
+  // ── Select all ──
+  selectAllBar: {
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0e4dd',
+    backgroundColor: '#FDF8F5',
+  },
+  checkbox: {
+    width: 14,
+    height: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 3,
+    borderWidth: 1.5,
+    borderColor: '#D8C6BD',
+    backgroundColor: colors.white,
+  },
+  checkboxChecked: {
+    borderColor: colors.orange,
+    backgroundColor: colors.orange,
+  },
+  selectAllText: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    color: '#A07850',
+  },
+
+  // ── Notification rows ──
+  row: {
+    paddingVertical: 12,
+    paddingRight: 14,
+    paddingLeft: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5EDE7',
+    borderLeftWidth: 3,
+  },
+  rowUnread: {
+    backgroundColor: '#F7E7DE',
+    borderLeftColor: colors.orangeDark,
+  },
+  rowRead: {
+    backgroundColor: colors.white,
+    borderLeftColor: 'transparent',
+  },
+  rowSelected: {
+    backgroundColor: '#FFF4EC',
+  },
+  dotColumn: {
+    width: 20,
+    paddingTop: 4,
+    alignItems: 'center',
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.orangeDark,
+  },
+  readDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E0D0C8',
+  },
+  rowBody: {
+    flex: 1,
+  },
+  rowTop: {
+    marginBottom: 3,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  rowTopLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    flexWrap: 'wrap',
+  },
+  typeBadge: {
+    paddingVertical: 2,
+    paddingHorizontal: 7,
+    borderRadius: 20,
+    backgroundColor: colors.orangeDark,
+  },
+  typeBadgeRead: {
+    backgroundColor: '#EEEEEE',
+  },
+  typeBadgeText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 9,
+    letterSpacing: 0.3,
+    color: colors.white,
+  },
+  typeBadgeTextRead: {
+    color: '#999',
+  },
+  rowTitle: {
+    flexShrink: 1,
+    fontFamily: fontFamilies.bold,
+    fontSize: 13,
+    color: '#1A0F00',
+  },
+  rowTitleRead: {
+    fontFamily: fontFamilies.regular,
+    color: '#5C3D1E',
+  },
+  rowMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  rowDate: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 10,
+    color: '#bbb',
+  },
+  rowDelete: {
+    paddingHorizontal: 2,
+  },
+  rowPreview: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#7A4A2A',
+  },
+  rowPreviewRead: {
+    color: '#A07850',
+  },
+  emptyText: {
+    paddingVertical: 30,
+    fontFamily: fontFamilies.regular,
+    fontSize: 12,
+    color: '#bbb',
+    textAlign: 'center',
+  },
+
+  // ── Footer ──
+  footer: {
+    paddingVertical: 7,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f0e4dd',
+    backgroundColor: '#FDF8F5',
+  },
+  footerText: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 10,
+    color: '#C0A090',
+  },
+  pageNav: {
+    padding: 2,
+  },
+
+  // ── Bottom sheets (notification detail, page size) ──
+  sheetBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  sheet: {
+    maxHeight: '88%',
+    paddingTop: 18,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    backgroundColor: colors.white,
+  },
+  sheetHeader: {
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  sheetTitle: {
+    flex: 1,
+    fontFamily: fontFamilies.bold,
+    fontSize: 14,
+    color: colors.orangeDark,
+  },
+  sheetClose: {
+    padding: 4,
+  },
+  sheetScroll: {
+    flexShrink: 1,
+  },
+
+  // Detail sheet
+  detailHeader: {
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
+  },
+  detailIcon: {
+    width: 46,
+    height: 46,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 23,
+    backgroundColor: 'rgba(185,98,44,0.094)',
+  },
+  detailHeaderText: {
+    flex: 1,
+  },
+  detailBadge: {
+    alignSelf: 'flex-start',
+    marginBottom: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 9,
+    borderRadius: 20,
+    backgroundColor: colors.orangeDark,
+  },
+  detailBadgeText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 9,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    color: colors.white,
+  },
+  detailTitle: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 15,
+    lineHeight: 20,
+    color: '#1A0F00',
+  },
+  detailMessage: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 14,
+    lineHeight: 24,
+    color: '#3A2A1A',
+  },
+  detailFooter: {
+    marginTop: 18,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#f0e4dd',
+  },
+  detailMetaRow: {
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  detailMetaDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: colors.orangeDark,
+  },
+  detailMetaText: {
+    flexShrink: 1,
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    color: '#A07850',
+  },
+  detailActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  btnDanger: {
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    backgroundColor: '#FFF2F2',
+  },
+  btnDangerText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 12,
+    color: '#E53E3E',
+  },
+  btnPrimary: {
+    paddingVertical: 7,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+    backgroundColor: colors.orangeDark,
+  },
+  btnPrimaryText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 12,
+    color: colors.white,
+  },
+
+  // Page size sheet
+  optionRow: {
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0e4dd',
+  },
+  optionText: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 14,
+    color: '#333',
+  },
+  optionTextActive: {
+    fontFamily: fontFamilies.bold,
+    color: colors.orange,
+  },
+});
+
+// Extra unavailability page (src/pages/extras/components/Disponibilite.css).
+// Desktop renders two columns of fields and a card grid; the mobile layout is a
+// single stack, so the fields keep their design order (date / start / end / reason).
+export const disponibilite = StyleSheet.create({
+  // Spacing below the shared "Espace extra" page heading.
+  pageHeadingSpacing: {
+    marginBottom: 16,
+  },
+
+  // ── "Vous êtes disponible par défaut" notice ──
+  notice: {
+    marginBottom: 18,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#FFE082',
+    backgroundColor: '#FFF8E1',
+  },
+  noticeText: {
+    flex: 1,
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#B45309',
+  },
+  noticeStrong: {
+    fontFamily: fontFamilies.bold,
+  },
+
+  // ── Cards ──
+  card: {
+    marginBottom: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 22,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ecddd6',
+    backgroundColor: colors.white,
+  },
+  cardTitle: {
+    marginBottom: 16,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0e4dd',
+    fontFamily: fontFamilies.bold,
+    fontSize: 11,
+    color: colors.orangeDark,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+
+  // ── Form ──
+  formGrid: {
+    gap: 14,
+  },
+  formRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
+  },
+  field: {
+    flex: 1,
+    gap: 5,
+  },
+  fieldLabel: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 11,
+    color: '#999',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  fieldOptional: {
+    fontFamily: fontFamilies.regular,
+    textTransform: 'none',
+    letterSpacing: 0,
+    color: '#bbb',
+  },
+  inputWrap: {
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    borderRadius: 7,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    backgroundColor: colors.white,
+  },
+  input: {
+    flex: 1,
+    margin: 0,
+    paddingVertical: 9,
+    paddingHorizontal: 0,
+    fontFamily: fontFamilies.regular,
+    fontSize: 13,
+    color: '#333',
+    includeFontPadding: false,
+  },
+  // Trigger of the themed date / time pickers, matches the form inputs.
+  pickerInput: {
+    borderRadius: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  pickerText: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 13,
+    color: '#333',
+  },
+  formActions: {
+    marginTop: 14,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  submitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingVertical: 9,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: '#DC2626',
+  },
+  submitBtnPressed: {
+    opacity: 0.85,
+  },
+  submitText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 13,
+    color: colors.white,
+  },
+
+  // ── Declared unavailability list ──
+  sectionHeader: {
+    marginBottom: 14,
+    paddingBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0e4dd',
+  },
+  sectionTitle: {
+    flexShrink: 1,
+    fontFamily: fontFamilies.bold,
+    fontSize: 11,
+    color: colors.orangeDark,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  sectionCount: {
+    paddingVertical: 2,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: '#faf6f4',
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 11,
+    color: '#aaa',
+  },
+  emptyState: {
+    paddingVertical: 20,
+    fontFamily: fontFamilies.regular,
+    fontSize: 13,
+    color: '#bbb',
+    textAlign: 'center',
+  },
+  slotList: {
+    gap: 12,
+  },
+  slot: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ecddd6',
+    backgroundColor: '#faf6f4',
+  },
+  slotContent: {
+    flex: 1,
+  },
+  slotTypeRow: {
+    marginBottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  slotDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#DC2626',
+  },
+  slotTypeLabel: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 12,
+    color: '#DC2626',
+  },
+  slotDate: {
+    marginBottom: 3,
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 12,
+    color: '#555',
+  },
+  slotTime: {
+    marginBottom: 3,
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    color: '#aaa',
+  },
+  slotNote: {
+    marginTop: 2,
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    fontStyle: 'italic',
+    color: '#bbb',
+  },
+  slotDays: {
+    marginTop: 6,
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 11,
+    color: colors.orangeDark,
+  },
+  slotDelete: {
+    padding: 4,
+    borderRadius: 4,
+  },
+});
 export const extraRecapGlobal = StyleSheet.create({});
 export const mission = StyleSheet.create({
   // ── Segmented Tabs ──

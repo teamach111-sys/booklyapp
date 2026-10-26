@@ -6,11 +6,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import {
-  Calendar,
   Check,
   ChevronDown,
   CircleMinus,
@@ -23,6 +21,7 @@ import {
 } from 'lucide-react-native';
 import { useClientTheme } from '../theme/ClientThemeContext';
 import { createBrandStyles } from '../theme/clientStyles';
+import DatePicker from '../../../components/DatePicker';
 
 const serifFont = Platform.select({
   ios: 'Georgia',
@@ -109,33 +108,33 @@ export default function ClientHistorique() {
           </Pressable>
 
           {/* Date from */}
-          <View style={styles.dateInputWrap}>
-            <Calendar size={11} color="#BBBBBB" />
-            <TextInput
-              accessibilityLabel="Date de début (mm/dd/yyyy)"
-              onChangeText={setDateFrom}
-              placeholder="mm/dd/yyyy"
-              placeholderTextColor="#BBBBBB"
-              style={styles.dateInput}
-              value={dateFrom}
-            />
-          </View>
+          <DatePicker
+            accessibilityLabel="Date de début"
+            allowClear
+            colors={colors}
+            onChange={setDateFrom}
+            outputFormat="iso"
+            placeholder="JJ/MM/AAAA"
+            style={styles.dateInputWrap}
+            textStyle={styles.dateInput}
+            value={dateFrom}
+          />
 
           {/* Arrow */}
           <Text style={styles.arrowText}>→</Text>
 
           {/* Date to */}
-          <View style={styles.dateInputWrap}>
-            <Calendar size={11} color="#BBBBBB" />
-            <TextInput
-              accessibilityLabel="Date de fin (mm/dd/yyyy)"
-              onChangeText={setDateTo}
-              placeholder="mm/dd/yyyy"
-              placeholderTextColor="#BBBBBB"
-              style={styles.dateInput}
-              value={dateTo}
-            />
-          </View>
+          <DatePicker
+            accessibilityLabel="Date de fin"
+            allowClear
+            colors={colors}
+            onChange={setDateTo}
+            outputFormat="iso"
+            placeholder="JJ/MM/AAAA"
+            style={styles.dateInputWrap}
+            textStyle={styles.dateInput}
+            value={dateTo}
+          />
 
           {/* Actualiser Button */}
           <View style={styles.refreshBtnCol}>
