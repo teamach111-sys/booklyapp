@@ -1,12 +1,20 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { ChevronDown, X } from 'lucide-react-native';
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { Check, ChevronDown, X } from 'lucide-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import { colors, formStyles } from '../../styles';
 import AuthLayout from './AuthLayout';
 
 const registerStyles = formStyles.clientRegistration;
 const loginStyles = formStyles.login;
+const pickerStyles = formStyles.optionPicker;
 
 const fields = [
   { name: 'name', label: 'Nom', placeholder: 'Votre nom' },
@@ -163,32 +171,57 @@ function SelectField({
         </Text>
         <ChevronDown size={18} color={colors.orangeDark} />
       </Pressable>
-      {open ? (
-        <View style={registerStyles.optionList}>
-          {options.map(option => {
-            const optionValue =
-              typeof option === 'string' ? option : option.value;
-            const optionLabel =
-              typeof option === 'string' ? option : option.label;
-            const isSelected = optionValue === value;
+      <Modal
+        animationType="fade"
+        onRequestClose={onToggle}
+        transparent
+        visible={open}
+      >
+        <Pressable
+          accessibilityLabel="Fermer la liste"
+          accessibilityRole="button"
+          onPress={onToggle}
+          style={pickerStyles.backdrop}
+        >
+          <Pressable
+            onPress={event => event.stopPropagation()}
+            style={pickerStyles.sheet}
+          >
+            <Text style={pickerStyles.title}>{label}</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {options.map(option => {
+                const optionValue =
+                  typeof option === 'string' ? option : option.value;
+                const optionLabel =
+                  typeof option === 'string' ? option : option.label;
+                const isSelected = optionValue === value;
 
-            return (
-              <Pressable
-                key={optionValue}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isSelected }}
-                onPress={() => onChange(name, optionValue)}
-                style={[
-                  registerStyles.option,
-                  isSelected && registerStyles.selectedOption,
-                ]}
-              >
-                <Text style={registerStyles.optionText}>{optionLabel}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      ) : null}
+                return (
+                  <Pressable
+                    key={optionValue}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                    onPress={() => onChange(name, optionValue)}
+                    style={pickerStyles.option}
+                  >
+                    <Text
+                      style={[
+                        pickerStyles.optionText,
+                        isSelected && pickerStyles.optionTextActive,
+                      ]}
+                    >
+                      {optionLabel}
+                    </Text>
+                    {isSelected ? (
+                      <Check size={16} color={colors.orange} />
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }

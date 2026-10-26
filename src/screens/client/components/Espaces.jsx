@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   Alert,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -19,10 +18,10 @@ import {
   Plus,
   Power,
   Trash2,
-  X,
 } from 'lucide-react-native';
 import { useClientTheme } from '../theme/ClientThemeContext';
 import { createBrandStyles } from '../theme/clientStyles';
+import BottomSheet from './BottomSheet';
 
 const serifFont = Platform.select({
   ios: 'Georgia',
@@ -354,54 +353,24 @@ export default function Espaces() {
         </Text>
       </View>
 
-      {/* ── Bottom Sheet Modal (Slide-Up matching Messages & Co-owners) ── */}
-      <Modal
-        animationType="slide"
-        onRequestClose={closeModal}
-        transparent
+      {/* ── Shared bottom sheet (same surface as the select pickers) ── */}
+      <BottomSheet
+        maxHeight="90%"
+        onClose={closeModal}
+        subtitle={
+          modalMode === 'create'
+            ? 'Ajouter un nouveau site'
+            : 'Modifier les informations du site'
+        }
+        title={modalMode === 'create' ? 'Nouvel espace' : 'Modifier l’espace'}
         visible={modalMode !== null}
       >
-        <Pressable onPress={closeModal} style={styles.modalOverlay}>
-          <View pointerEvents="none" style={styles.modalScrim} />
-          <Pressable
-            onPress={event => event.stopPropagation()}
-            style={styles.modalContent}
-          >
-            {/* Modal Header */}
-            <View style={styles.modalHeader}>
-              <View style={styles.modalHeaderLeft}>
-                <View style={styles.modalHeaderIconWrap}>
-                  <Plus size={16} color={colors.orange} strokeWidth={2.5} />
-                </View>
-                <View style={styles.modalTitleBlock}>
-                  <Text style={styles.modalTitle}>
-                    {modalMode === 'create'
-                      ? 'Nouvel espace'
-                      : 'Modifier l’espace'}
-                  </Text>
-                  <Text style={styles.modalSubtitle}>
-                    {modalMode === 'create'
-                      ? 'Ajouter un nouveau site'
-                      : 'Modifier les informations du site'}
-                  </Text>
-                </View>
-              </View>
-              <Pressable
-                accessibilityLabel="Fermer la modal"
-                accessibilityRole="button"
-                onPress={closeModal}
-                style={styles.modalClose}
-              >
-                <X size={20} color="#888888" />
-              </Pressable>
-            </View>
-
-            {/* Modal Form */}
-            <ScrollView
-              contentContainerStyle={styles.modalFormContent}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
+        {/* Modal Form */}
+        <ScrollView
+          contentContainerStyle={styles.modalFormContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
               {/* Field 1: Nom du site */}
               <View style={styles.formField}>
                 <Text style={styles.fieldLabel}>SITE *</Text>
@@ -490,10 +459,8 @@ export default function Espaces() {
                   </Text>
                 </Pressable>
               </View>
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        </ScrollView>
+      </BottomSheet>
     </View>
   );
 }
@@ -777,66 +744,7 @@ const createStyles = colors => StyleSheet.create({
     lineHeight: 17,
   },
 
-  /* ── Bottom Sheet Modal (matching Messages & Co-owners) ── */
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  modalScrim: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  modalContent: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '90%',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: -4 },
-    elevation: 10,
-    overflow: 'hidden',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0E4DD',
-  },
-  modalHeaderLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  modalHeaderIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: '#FDF3EE',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalTitleBlock: {
-    flex: 1,
-  },
-  modalTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.orangeDark,
-    fontFamily: serifFont,
-  },
-  modalSubtitle: {
-    fontSize: 11,
-    color: '#AAAAAA',
-    marginTop: 1,
-  },
-  modalClose: {
-    padding: 4,
-  },
+  /* ── Modal form ── */
   modalFormContent: {
     paddingVertical: 18,
     paddingHorizontal: 20,

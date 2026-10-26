@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   Alert,
-  Modal,
   Pressable,
   ScrollView,
   Text,
@@ -39,6 +38,7 @@ import {
 } from 'lucide-react-native';
 import { prestationsStylesByBrand } from './styles';
 import { useClientTheme } from '../theme/ClientThemeContext';
+import BottomSheet from './BottomSheet';
 
 const statusTabs = [
   'Prestations ajoutées',
@@ -515,41 +515,31 @@ function SelectField({
           <ChevronDown size={compact ? 14 : 17} color="#888" />
         </Pressable>
       </View>
-      <Modal
-        animationType="slide"
-        onRequestClose={() => setOpen(false)}
-        transparent
+      <BottomSheet
+        onClose={() => setOpen(false)}
+        title={label}
         visible={open}
       >
-        <Pressable onPress={() => setOpen(false)} style={styles.overlay}>
-          <View pointerEvents="none" style={styles.overlayScrim} />
-          <Pressable
-            onPress={event => event.stopPropagation()}
-            style={styles.pickerSheet}
-          >
-            <Text style={styles.pickerTitle}>{label}</Text>
-            <ScrollView>
-              {options.map(option => (
-                <Pressable
-                  key={option}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: value === option }}
-                  onPress={() => {
-                    onSelect(option);
-                    setOpen(false);
-                  }}
-                  style={styles.pickerOption}
-                >
-                  <Text style={styles.pickerOptionText}>{option}</Text>
-                  {value === option ? (
-                    <Check size={17} color={colors.orangeDark} />
-                  ) : null}
-                </Pressable>
-              ))}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {options.map(option => (
+            <Pressable
+              key={option}
+              accessibilityRole="button"
+              accessibilityState={{ selected: value === option }}
+              onPress={() => {
+                onSelect(option);
+                setOpen(false);
+              }}
+              style={styles.pickerOption}
+            >
+              <Text style={styles.pickerOptionText}>{option}</Text>
+              {value === option ? (
+                <Check size={17} color={colors.orangeDark} />
+              ) : null}
+            </Pressable>
+          ))}
+        </ScrollView>
+      </BottomSheet>
     </>
   );
 }
@@ -1907,21 +1897,12 @@ export default function Prestations({ missions, setMissions }) {
     const to = item.endTime || '—';
 
     return (
-      <Modal
-        animationType="slide"
-        onRequestClose={() => setConversationOpen(false)}
-        transparent
+      <BottomSheet
+        maxHeight="90%"
+        onClose={() => setConversationOpen(false)}
+        sheetStyle={styles.convSheet}
         visible
       >
-        <Pressable
-          onPress={() => setConversationOpen(false)}
-          style={styles.overlay}
-        >
-          <View pointerEvents="none" style={styles.overlayScrim} />
-          <Pressable
-            onPress={event => event.stopPropagation()}
-            style={styles.convModal}
-          >
             <View style={styles.convHeader}>
               <View style={styles.convAvatar}>
                 <Text style={styles.convAvatarText}>
@@ -2055,9 +2036,7 @@ export default function Prestations({ missions, setMissions }) {
                 </View>
               </View>
             )}
-          </Pressable>
-        </Pressable>
-      </Modal>
+      </BottomSheet>
     );
   }
 
@@ -2066,22 +2045,11 @@ export default function Prestations({ missions, setMissions }) {
       return null;
     }
     return (
-      <Modal
-        animationType="slide"
-        onRequestClose={() => setCancelTarget(null)}
-        transparent
+      <BottomSheet
+        onClose={() => setCancelTarget(null)}
+        title="Annuler la mission"
         visible
       >
-        <Pressable
-          onPress={() => setCancelTarget(null)}
-          style={styles.overlay}
-        >
-          <View pointerEvents="none" style={styles.overlayScrim} />
-          <Pressable
-            onPress={event => event.stopPropagation()}
-            style={styles.cancelModal}
-          >
-            <Text style={styles.cancelTitle}>Annuler la mission</Text>
             <Text style={styles.cancelText}>
               <Text style={styles.cancelStrong}>{cancelTarget.title}</Text> —
               Les extras et admins seront notifiés.
@@ -2112,9 +2080,7 @@ export default function Prestations({ missions, setMissions }) {
                 <Text style={styles.cancelConfirmText}>Confirmer</Text>
               </Pressable>
             </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      </BottomSheet>
     );
   }
 

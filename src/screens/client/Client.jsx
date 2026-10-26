@@ -525,7 +525,7 @@ function ClientDashboard({ navigation }) {
                 accessibilityLabel="Changer de site"
                 accessibilityRole="button"
                 accessibilityState={{ expanded: spaceOpen }}
-                onPress={() => setSpaceOpen(open => !open)}
+                onPress={() => setSpaceOpen(true)}
                 style={layoutStyles.drawerSpaceTrigger}
               >
                 <View style={layoutStyles.drawerSpaceDot} />
@@ -543,48 +543,64 @@ function ClientDashboard({ navigation }) {
                   }
                 />
               </Pressable>
-              {spaceOpen ? (
-                <View style={layoutStyles.drawerSpaceMenu}>
-                  {drawerSites.map(site => {
-                    const isActive = site.id === activeSite.id;
-                    return (
-                      <Pressable
-                        key={site.id}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: isActive }}
-                        onPress={() => {
-                          setActiveSiteId(site.id);
-                          setSpaceOpen(false);
-                        }}
-                        style={[
-                          layoutStyles.drawerSpaceOption,
-                          isActive && layoutStyles.drawerSpaceOptionActive,
-                        ]}
-                      >
-                        <View
-                          style={[
-                            layoutStyles.drawerSpaceDot,
-                            !isActive && layoutStyles.drawerSpaceDotMuted,
-                          ]}
-                        />
-                        <Text
-                          numberOfLines={1}
-                          style={[
-                            layoutStyles.drawerSpaceOptionName,
-                            isActive &&
-                              layoutStyles.drawerSpaceOptionNameActive,
-                          ]}
-                        >
-                          {site.name}
-                        </Text>
-                        <Text style={layoutStyles.drawerSpaceOptionCity}>
-                          {site.city}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              ) : null}
+              <Modal
+                animationType="fade"
+                onRequestClose={() => setSpaceOpen(false)}
+                transparent
+                visible={spaceOpen}
+              >
+                <Pressable
+                  accessibilityLabel="Fermer la liste"
+                  accessibilityRole="button"
+                  onPress={() => setSpaceOpen(false)}
+                  style={layoutStyles.spacePickerBackdrop}
+                >
+                  <Pressable
+                    onPress={event => event.stopPropagation()}
+                    style={layoutStyles.spacePickerSheet}
+                  >
+                    <Text style={layoutStyles.spacePickerTitle}>Site actif</Text>
+                    <ScrollView showsVerticalScrollIndicator={false}>
+                      {drawerSites.map(site => {
+                        const isActive = site.id === activeSite.id;
+                        return (
+                          <Pressable
+                            key={site.id}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: isActive }}
+                            onPress={() => {
+                              setActiveSiteId(site.id);
+                              setSpaceOpen(false);
+                            }}
+                            style={layoutStyles.spacePickerOption}
+                          >
+                            <View style={layoutStyles.spacePickerOptionInfo}>
+                              <Text
+                                numberOfLines={1}
+                                style={[
+                                  layoutStyles.spacePickerOptionName,
+                                  isActive &&
+                                    layoutStyles.spacePickerOptionNameActive,
+                                ]}
+                              >
+                                {site.name}
+                              </Text>
+                              <Text
+                                style={layoutStyles.spacePickerOptionCity}
+                              >
+                                {site.city}
+                              </Text>
+                            </View>
+                            {isActive ? (
+                              <Check size={16} color={colors.orange} />
+                            ) : null}
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+                  </Pressable>
+                </Pressable>
+              </Modal>
             </View>
             <ScrollView
               contentContainerStyle={layoutStyles.drawerList}

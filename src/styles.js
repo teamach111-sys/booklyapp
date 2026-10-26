@@ -1990,6 +1990,46 @@ export const formStyles = {
       borderRadius: 10,
     },
   }),
+  // Mobile stand-in for a web <select>: options shown in a bottom sheet.
+  optionPicker: StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      backgroundColor: 'rgba(0,0,0,0.4)',
+    },
+    sheet: {
+      maxHeight: '70%',
+      paddingTop: 18,
+      paddingBottom: 24,
+      paddingHorizontal: 20,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      backgroundColor: colors.white,
+    },
+    title: {
+      marginBottom: 12,
+      color: colors.orangeDark,
+      fontFamily: fontFamilies.bold,
+      fontSize: 14,
+    },
+    option: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: '#f0e4dd',
+    },
+    optionText: {
+      color: '#333',
+      fontFamily: fontFamilies.regular,
+      fontSize: 14,
+    },
+    optionTextActive: {
+      color: colors.orange,
+      fontFamily: fontFamilies.bold,
+    },
+  }),
 };
 
 // Client dashboard shell styles are palette-driven so the same markup renders
@@ -2168,9 +2208,6 @@ export const createClientLayoutStyles = colors => StyleSheet.create({
     borderRadius: 4,
     backgroundColor: colors.white,
   },
-  drawerSpaceDotMuted: {
-    backgroundColor: 'rgba(255,255,255,0.4)',
-  },
   drawerSpaceName: {
     flex: 1,
     color: colors.white,
@@ -2185,39 +2222,52 @@ export const createClientLayoutStyles = colors => StyleSheet.create({
   drawerSpaceChevronOpen: {
     transform: [{ rotate: '180deg' }],
   },
-  drawerSpaceMenu: {
-    marginTop: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 8,
-    overflow: 'hidden',
-    backgroundColor: colors.orange,
+  // Active-site options, shown as a bottom sheet like the other selects.
+  spacePickerBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  drawerSpaceOption: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+  spacePickerSheet: {
+    maxHeight: '70%',
+    paddingTop: 18,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    backgroundColor: colors.white,
+  },
+  spacePickerTitle: {
+    marginBottom: 12,
+    color: colors.orangeDark,
+    fontFamily: fontFamilies.bold,
+    fontSize: 14,
+  },
+  spacePickerOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0e4dd',
   },
-  drawerSpaceOptionActive: {
-    backgroundColor: colors.orangeDark,
-  },
-  drawerSpaceOptionName: {
+  spacePickerOptionInfo: {
     flex: 1,
-    color: 'rgba(255,255,255,0.8)',
-    ...typography.labels.regular,
-    fontSize: 13,
   },
-  drawerSpaceOptionNameActive: {
-    color: colors.white,
-    ...typography.labels.bold,
-    fontSize: 13,
+  spacePickerOptionName: {
+    color: '#333',
+    fontFamily: fontFamilies.regular,
+    fontSize: 14,
   },
-  drawerSpaceOptionCity: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 11,
-    ...typography.body.regular,
+  spacePickerOptionNameActive: {
+    color: colors.orange,
+    fontFamily: fontFamilies.bold,
+  },
+  spacePickerOptionCity: {
+    marginTop: 2,
+    color: '#999',
+    fontFamily: fontFamilies.regular,
+    fontSize: 12,
   },
   drawerScroll: {
     flex: 1,

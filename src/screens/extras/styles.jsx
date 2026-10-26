@@ -187,12 +187,12 @@ export const extras = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 10,
-    backgroundColor: colors.white,
+    backgroundColor: '#E53935',
   },
   drawerBadgeText: {
-    color: colors.orange,
+    color: colors.white,
     ...typography.labels.bold,
-    fontSize: 11,
+    fontSize: 10,
   },
   drawerFooter: {
     padding: 14,
@@ -234,6 +234,29 @@ export const extras = StyleSheet.create({
   bottomTabActive: {
     borderTopWidth: 2,
     borderTopColor: colors.orange,
+  },
+  bottomTabIconWrap: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomTabBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -10,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    backgroundColor: '#E53935',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomTabBadgeText: {
+    color: colors.white,
+    fontSize: 9,
+    fontWeight: 'bold',
+    lineHeight: 12,
   },
   bottomTabText: {
     color: colors.muted,

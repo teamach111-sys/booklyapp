@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -10,6 +11,7 @@ import {
 } from 'react-native';
 import {
   Calendar,
+  Check,
   ChevronDown,
   CircleMinus,
   Clock,
@@ -97,7 +99,7 @@ export default function ClientHistorique() {
           <Pressable
             accessibilityLabel={`Filtrer par type : ${selectedTypeObj.label}`}
             accessibilityRole="button"
-            onPress={() => setShowTypeDropdown(current => !current)}
+            onPress={() => setShowTypeDropdown(true)}
             style={styles.dropdownBtn}
           >
             <Text numberOfLines={1} style={styles.dropdownBtnText}>
@@ -156,44 +158,57 @@ export default function ClientHistorique() {
           </View>
         </View>
 
-        {/* Dropdown Options List */}
-        {showTypeDropdown ? (
-          <View style={styles.dropdownMenu}>
-            <ScrollView
-              nestedScrollEnabled
-              showsVerticalScrollIndicator={false}
-              style={styles.dropdownScroll}
+        {/* Type options bottom sheet */}
+        <Modal
+          animationType="fade"
+          onRequestClose={() => setShowTypeDropdown(false)}
+          transparent
+          visible={showTypeDropdown}
+        >
+          <Pressable
+            accessibilityLabel="Fermer la liste"
+            accessibilityRole="button"
+            onPress={() => setShowTypeDropdown(false)}
+            style={styles.pickerBackdrop}
+          >
+            <Pressable
+              onPress={event => event.stopPropagation()}
+              style={styles.pickerSheet}
             >
-              {ACTIVITY_TYPES.map(item => {
-                const isSelected = selectedType === item.key;
-                return (
-                  <Pressable
-                    key={item.key}
-                    accessibilityLabel={item.label}
-                    accessibilityRole="button"
-                    onPress={() => {
-                      setSelectedType(item.key);
-                      setShowTypeDropdown(false);
-                    }}
-                    style={[
-                      styles.dropdownOption,
-                      isSelected && styles.dropdownOptionActive,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.dropdownOptionText,
-                        isSelected && styles.dropdownOptionTextActive,
-                      ]}
+              <Text style={styles.pickerTitle}>Type d'activité</Text>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {ACTIVITY_TYPES.map(item => {
+                  const isSelected = selectedType === item.key;
+                  return (
+                    <Pressable
+                      key={item.key}
+                      accessibilityLabel={item.label}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                      onPress={() => {
+                        setSelectedType(item.key);
+                        setShowTypeDropdown(false);
+                      }}
+                      style={styles.pickerOption}
                     >
-                      {item.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
-        ) : null}
+                      <Text
+                        style={[
+                          styles.pickerOptionText,
+                          isSelected && styles.pickerOptionTextActive,
+                        ]}
+                      >
+                        {item.label}
+                      </Text>
+                      {isSelected ? (
+                        <Check size={16} color={colors.orange} />
+                      ) : null}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </Modal>
       </View>
 
       {/* ── Content: Activity List or Empty State (matching screenshot-1) ── */}
@@ -310,33 +325,43 @@ const createStyles = colors => StyleSheet.create({
     fontWeight: '500',
     flexShrink: 1,
   },
-  dropdownMenu: {
+
+  /* ── Type options bottom sheet ── */
+  pickerBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  pickerSheet: {
+    maxHeight: '70%',
+    paddingTop: 18,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: '#E0D0C8',
-    borderRadius: 8,
-    overflow: 'hidden',
-    marginTop: 4,
   },
-  dropdownScroll: {
-    maxHeight: 180,
-  },
-  dropdownOption: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FAF3EF',
-  },
-  dropdownOptionActive: {
-    backgroundColor: '#FDF3EE',
-  },
-  dropdownOptionText: {
-    fontSize: 11,
-    color: '#555555',
-  },
-  dropdownOptionTextActive: {
-    color: colors.orange,
+  pickerTitle: {
+    marginBottom: 12,
+    fontSize: 14,
     fontWeight: '700',
+    color: colors.orangeDark,
+  },
+  pickerOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0e4dd',
+  },
+  pickerOptionText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  pickerOptionTextActive: {
+    fontWeight: '700',
+    color: colors.orange,
   },
   dateInputWrap: {
     flexDirection: 'row',

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Alert,
+  Modal,
   Pressable,
   ScrollView,
   Text,
@@ -38,6 +39,7 @@ import AuthLayout from './AuthLayout';
 
 const styles = formStyles.extraRegistration;
 const loginForm = formStyles.login;
+const pickerStyles = formStyles.optionPicker;
 
 // Total wizard steps without the optional skills questionnaire (step 6).
 const baseStepCount = 6;
@@ -557,30 +559,55 @@ function SelectField({
           style={open ? styles.selectArrowOpen : undefined}
         />
       </Pressable>
-      {open ? (
-        <View style={styles.optionList}>
-          {options.map(option => {
-            const selected = option === value;
-            return (
-              <Pressable
-                key={option}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-                onPress={() => {
-                  onChange(option);
-                  setOpen(false);
-                }}
-                style={[
-                  styles.option,
-                  selected && styles.selectedOption,
-                ]}
-              >
-                <Text style={styles.optionText}>{option}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      ) : null}
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setOpen(false)}
+        transparent
+        visible={open}
+      >
+        <Pressable
+          accessibilityLabel="Fermer la liste"
+          accessibilityRole="button"
+          onPress={() => setOpen(false)}
+          style={pickerStyles.backdrop}
+        >
+          <Pressable
+            onPress={event => event.stopPropagation()}
+            style={pickerStyles.sheet}
+          >
+            <Text style={pickerStyles.title}>{label}</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {options.map(option => {
+                const selected = option === value;
+                return (
+                  <Pressable
+                    key={option}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    onPress={() => {
+                      onChange(option);
+                      setOpen(false);
+                    }}
+                    style={pickerStyles.option}
+                  >
+                    <Text
+                      style={[
+                        pickerStyles.optionText,
+                        selected && pickerStyles.optionTextActive,
+                      ]}
+                    >
+                      {option}
+                    </Text>
+                    {selected ? (
+                      <Check size={16} color={colors.orange} />
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }

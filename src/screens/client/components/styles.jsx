@@ -1159,36 +1159,6 @@ const createPrestationsStyles = colors => StyleSheet.create({
   },
 
   /* ---------- Superpositions ---------- */
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  overlayScrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'transparent',
-  },
-  pickerSheet: {
-    width: '100%',
-    minHeight: 520,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    backgroundColor: colors.white,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: -4 },
-    elevation: 10,
-  },
-  pickerTitle: {
-    paddingVertical: 12,
-    color: '#999',
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.35,
-    textTransform: 'uppercase',
-  },
   pickerOption: {
     minHeight: 43,
     flexDirection: 'row',
@@ -1204,19 +1174,10 @@ const createPrestationsStyles = colors => StyleSheet.create({
   },
 
   /* ---------- Conversation ---------- */
-  convModal: {
-    width: '100%',
+  convSheet: {
     minHeight: 520,
-    overflow: 'hidden',
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: 40,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: -4 },
-    elevation: 10,
+    paddingTop: 0,
+    paddingBottom: 0,
   },
   convHeader: {
     flexDirection: 'row',
@@ -1408,27 +1369,6 @@ const createPrestationsStyles = colors => StyleSheet.create({
   },
 
   /* ---------- Annulation ---------- */
-  cancelModal: {
-    width: '100%',
-    minHeight: 520,
-    paddingHorizontal: 28,
-    paddingVertical: 24,
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: 40,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: -4 },
-    elevation: 10,
-  },
-  cancelTitle: {
-    marginBottom: 6,
-    color: '#1A1A1A',
-    fontSize: 15,
-    fontWeight: '700',
-  },
   cancelText: {
     marginBottom: 16,
     color: '#888',
@@ -1830,40 +1770,6 @@ const createMessagesStyles = colors => StyleSheet.create({
   },
 
   /* ---------- Modals ---------- */
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  modalScrim: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  modalContent: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '90%',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: -4 },
-    elevation: 10,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#333',
-  },
-  modalClose: {
-    padding: 4,
-  },
   modalTabs: {
     flexDirection: 'row',
     paddingHorizontal: 20,
@@ -1902,6 +1808,14 @@ const createMessagesStyles = colors => StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#FAF6F4',
+  },
+  emptyContacts: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  emptyContactsText: {
+    color: '#AAAAAA',
+    fontSize: 13,
   },
   contactAvatar: {
     width: 40,

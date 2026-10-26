@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -9,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import {
+  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -149,7 +151,7 @@ export default function Factures() {
             <Pressable
               accessibilityLabel={`Période: ${selectedPeriod}`}
               accessibilityRole="button"
-              onPress={() => setShowPeriodDropdown(current => !current)}
+              onPress={() => setShowPeriodDropdown(true)}
               style={styles.periodBtn}
             >
               <Text numberOfLines={1} style={styles.periodText}>
@@ -194,38 +196,57 @@ export default function Factures() {
           </View>
         </View>
 
-        {/* Optional Period Dropdown Menu */}
-        {showPeriodDropdown ? (
-          <View style={styles.periodDropdownList}>
-            {PERIODS.map((period, index) => {
-              const isSelected = selectedPeriodIndex === index;
-              return (
-                <Pressable
-                  key={period}
-                  accessibilityLabel={`Sélectionner ${period}`}
-                  accessibilityRole="button"
-                  onPress={() => {
-                    setSelectedPeriodIndex(index);
-                    setShowPeriodDropdown(false);
-                  }}
-                  style={[
-                    styles.periodDropdownItem,
-                    isSelected && styles.periodDropdownItemActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.periodDropdownText,
-                      isSelected && styles.periodDropdownTextActive,
-                    ]}
-                  >
-                    {period}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : null}
+        {/* Period options bottom sheet */}
+        <Modal
+          animationType="fade"
+          onRequestClose={() => setShowPeriodDropdown(false)}
+          transparent
+          visible={showPeriodDropdown}
+        >
+          <Pressable
+            accessibilityLabel="Fermer la liste"
+            accessibilityRole="button"
+            onPress={() => setShowPeriodDropdown(false)}
+            style={styles.pickerBackdrop}
+          >
+            <Pressable
+              onPress={event => event.stopPropagation()}
+              style={styles.pickerSheet}
+            >
+              <Text style={styles.pickerTitle}>Période</Text>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {PERIODS.map((period, index) => {
+                  const isSelected = selectedPeriodIndex === index;
+                  return (
+                    <Pressable
+                      key={period}
+                      accessibilityLabel={`Sélectionner ${period}`}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                      onPress={() => {
+                        setSelectedPeriodIndex(index);
+                        setShowPeriodDropdown(false);
+                      }}
+                      style={styles.pickerOption}
+                    >
+                      <Text
+                        style={[
+                          styles.pickerOptionText,
+                          isSelected && styles.pickerOptionTextActive,
+                        ]}
+                      >
+                        {period}
+                      </Text>
+                      {isSelected ? (
+                        <Check size={16} color={colors.orange} />
+                      ) : null}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </Modal>
 
         {/* Row 2: Status Pills + Reset Button */}
         <View style={styles.filterBottomRow}>
@@ -466,30 +487,42 @@ const createStyles = colors => StyleSheet.create({
     fontWeight: '700',
     color: colors.orangeDark,
   },
-  periodDropdownList: {
+  /* ── Period options bottom sheet ── */
+  pickerBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  pickerSheet: {
+    maxHeight: '70%',
+    paddingTop: 18,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: '#E0D0C8',
-    borderRadius: 10,
-    overflow: 'hidden',
-    marginTop: 2,
   },
-  periodDropdownItem: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FAF3EF',
-  },
-  periodDropdownItemActive: {
-    backgroundColor: '#FDF3EE',
-  },
-  periodDropdownText: {
-    fontSize: 12,
-    color: '#555555',
-  },
-  periodDropdownTextActive: {
-    color: colors.orange,
+  pickerTitle: {
+    marginBottom: 12,
+    fontSize: 14,
     fontWeight: '700',
+    color: colors.orangeDark,
+  },
+  pickerOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0e4dd',
+  },
+  pickerOptionText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  pickerOptionTextActive: {
+    fontWeight: '700',
+    color: colors.orange,
   },
   searchInputWrap: {
     flex: 1,

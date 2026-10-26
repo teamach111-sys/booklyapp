@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react-native';
 import { useClientTheme } from '../theme/ClientThemeContext';
+import BottomSheet from './BottomSheet';
 import { createBrandStyles } from '../theme/clientStyles';
 
 const serifFont = Platform.select({
@@ -186,7 +187,7 @@ export default function Notifications() {
             <Pressable
               accessibilityLabel={`Afficher ${perPage} par page`}
               accessibilityRole="button"
-              onPress={() => setShowPerPageMenu(current => !current)}
+              onPress={() => setShowPerPageMenu(true)}
               style={styles.perPagePill}
             >
               <ListFilter size={12} color="#A07850" />
@@ -197,34 +198,53 @@ export default function Notifications() {
           </View>
         </View>
 
-        {/* Per page options dropdown */}
-        {showPerPageMenu ? (
-          <View style={styles.perPageDropdown}>
-            {['5', '10', '20', '50'].map(val => (
-              <Pressable
-                key={val}
-                accessibilityRole="button"
-                onPress={() => {
-                  setPerPage(val);
-                  setShowPerPageMenu(false);
-                }}
-                style={[
-                  styles.perPageOption,
-                  perPage === val && styles.perPageOptionActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.perPageOptionText,
-                    perPage === val && styles.perPageOptionTextActive,
-                  ]}
-                >
-                  {val} par page
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
+        {/* Per page options bottom sheet */}
+        <Modal
+          animationType="fade"
+          onRequestClose={() => setShowPerPageMenu(false)}
+          transparent
+          visible={showPerPageMenu}
+        >
+          <Pressable
+            accessibilityLabel="Fermer la liste"
+            accessibilityRole="button"
+            onPress={() => setShowPerPageMenu(false)}
+            style={styles.pickerBackdrop}
+          >
+            <Pressable
+              onPress={event => event.stopPropagation()}
+              style={styles.pickerSheet}
+            >
+              <Text style={styles.pickerTitle}>Notifications par page</Text>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {['5', '10', '20', '50'].map(val => (
+                  <Pressable
+                    key={val}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: perPage === val }}
+                    onPress={() => {
+                      setPerPage(val);
+                      setShowPerPageMenu(false);
+                    }}
+                    style={styles.pickerOption}
+                  >
+                    <Text
+                      style={[
+                        styles.pickerOptionText,
+                        perPage === val && styles.pickerOptionTextActive,
+                      ]}
+                    >
+                      {val} par page
+                    </Text>
+                    {perPage === val ? (
+                      <Check size={16} color={colors.orange} />
+                    ) : null}
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </Modal>
 
         {/* Search Bar */}
         <View style={styles.searchWrap}>
@@ -443,26 +463,15 @@ export default function Notifications() {
         </View>
       </View>
 
-      {/* ── Notification Detail Modal (matching screenshot-2) ── */}
-      <Modal
-        animationType="fade"
-        onRequestClose={() => setActiveNotification(null)}
-        transparent
+      {/* ── Notification Detail Modal (same sheet as the select pickers) ── */}
+      <BottomSheet
+        maxHeight="85%"
+        onClose={() => setActiveNotification(null)}
+        sheetStyle={styles.modalSheet}
         visible={activeNotification !== null}
       >
-        <Pressable
-          onPress={() => setActiveNotification(null)}
-          style={styles.modalOverlay}
-        >
-          <View pointerEvents="none" style={styles.modalScrim} />
           {activeNotification ? (
-            <Pressable
-              onPress={event => event.stopPropagation()}
-              style={styles.modalCard}
-            >
-              {/* Orange Top Accent Line */}
-              <View style={styles.modalTopBar} />
-
+            <View>
               {/* Modal Header */}
               <View style={styles.modalHeader}>
                 <View style={styles.modalHeaderIconWrap}>
@@ -529,10 +538,9 @@ export default function Notifications() {
                   </Pressable>
                 </View>
               </View>
-            </Pressable>
+            </View>
           ) : null}
-        </Pressable>
-      </Modal>
+      </BottomSheet>
     </View>
   );
 }
@@ -628,31 +636,46 @@ const createStyles = colors => StyleSheet.create({
     fontWeight: '700',
     color: '#5C3D1E',
   },
-  perPageDropdown: {
+  /* ── Notification detail sheet ── */
+  modalSheet: {
+    paddingTop: 0,
+  },
+  /* ── Per page options bottom sheet ── */
+  pickerBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  pickerSheet: {
+    maxHeight: '70%',
+    paddingTop: 18,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: '#E0D0C8',
-    borderRadius: 8,
-    marginHorizontal: 14,
-    marginBottom: 8,
-    overflow: 'hidden',
   },
-  perPageOption: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FAF3EF',
-  },
-  perPageOptionActive: {
-    backgroundColor: '#FDF3EE',
-  },
-  perPageOptionText: {
-    fontSize: 12,
-    color: '#5C3D1E',
-  },
-  perPageOptionTextActive: {
-    color: colors.orange,
+  pickerTitle: {
+    marginBottom: 12,
+    fontSize: 14,
     fontWeight: '700',
+    color: colors.orangeDark,
+  },
+  pickerOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0e4dd',
+  },
+  pickerOptionText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  pickerOptionTextActive: {
+    fontWeight: '700',
+    color: colors.orange,
   },
 
   /* ── Search Bar ── */
@@ -895,32 +918,7 @@ const createStyles = colors => StyleSheet.create({
     color: '#A07850',
   },
 
-  /* ── Modal (matching screenshot-2) ── */
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalScrim: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  modalCard: {
-    width: '100%',
-    maxWidth: 480,
-    backgroundColor: colors.white,
-    borderRadius: 14,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  modalTopBar: {
-    height: 3,
-    backgroundColor: colors.orange,
-  },
+  /* ── Modal ── */
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',

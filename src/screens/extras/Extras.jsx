@@ -36,7 +36,7 @@ import Profile from './components/Profile';
 // design is implemented.
 const sections = [
   { key: 'profile', label: 'Profil', icon: UserRound },
-  { key: 'prestations', label: 'Prestations', icon: BriefcaseBusiness },
+  { key: 'prestations', label: 'Prestations', icon: BriefcaseBusiness, badge: 1 },
   { key: 'unavailability', label: 'Indisponibilités', icon: Ban },
   { key: 'calendar', label: 'Calendrier', icon: CalendarDays },
   { key: 'invoices', label: 'Mes factures', icon: Receipt },
@@ -124,10 +124,17 @@ export default function ExtrasScreen({ navigation }) {
                   active && styles.bottomTabActive,
                 ]}
               >
-                <Icon
-                  size={19}
-                  color={active ? colors.orangeDark : colors.muted}
-                />
+                <View style={styles.bottomTabIconWrap}>
+                  <Icon
+                    size={19}
+                    color={active ? colors.orangeDark : colors.muted}
+                  />
+                  {section.badge ? (
+                    <View style={styles.bottomTabBadge}>
+                      <Text style={styles.bottomTabBadgeText}>{section.badge}</Text>
+                    </View>
+                  ) : null}
+                </View>
                 <Text
                   numberOfLines={1}
                   style={[

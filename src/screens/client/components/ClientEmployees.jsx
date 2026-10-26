@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   Alert,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -18,10 +17,10 @@ import {
   EyeOff,
   Plus,
   UserRound,
-  X,
 } from 'lucide-react-native';
 import { useClientTheme } from '../theme/ClientThemeContext';
 import { createBrandStyles } from '../theme/clientStyles';
+import BottomSheet from './BottomSheet';
 
 const serifFont = Platform.select({
   ios: 'Georgia',
@@ -287,49 +286,22 @@ export default function ClientEmployees() {
         </View>
       )}
 
-      {/* ── Bottom Sheet Modal (Slide-Up matching Messages.jsx) ── */}
-      <Modal
-        animationType="slide"
-        onRequestClose={closeModal}
-        transparent
+      {/* ── Shared bottom sheet (same surface as the select pickers) ── */}
+      <BottomSheet
+        maxHeight="90%"
+        onClose={closeModal}
+        subtitle={
+          modalMode === 'create' ? 'Rattaché au site Dashboard Client 02' : undefined
+        }
+        title={modalMode === 'create' ? 'Nouvel employé' : 'Modifier l’employé'}
         visible={modalMode !== null}
       >
-        <Pressable onPress={closeModal} style={styles.modalOverlay}>
-          <View pointerEvents="none" style={styles.modalScrim} />
-          <Pressable
-            onPress={event => event.stopPropagation()}
-            style={styles.modalContent}
-          >
-            {/* Modal Header */}
-            <View style={styles.modalHeader}>
-              <View style={styles.modalTitleBlock}>
-                <Text style={styles.modalTitle}>
-                  {modalMode === 'create'
-                    ? 'Nouvel employé'
-                    : 'Modifier l’employé'}
-                </Text>
-                {modalMode === 'create' ? (
-                  <Text style={styles.modalSubtitle}>
-                    Rattaché au site Dashboard Client 02
-                  </Text>
-                ) : null}
-              </View>
-              <Pressable
-                accessibilityLabel="Fermer la modal"
-                accessibilityRole="button"
-                onPress={closeModal}
-                style={styles.modalClose}
-              >
-                <X size={20} color="#888" />
-              </Pressable>
-            </View>
-
-            {/* Modal Form Scrollable */}
-            <ScrollView
-              contentContainerStyle={styles.modalFormContent}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
+        {/* Modal Form Scrollable */}
+        <ScrollView
+          contentContainerStyle={styles.modalFormContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
               {/* Row 1: Prénom + Nom */}
               <View style={styles.formRow}>
                 <View style={styles.formCol}>
@@ -472,10 +444,8 @@ export default function ClientEmployees() {
                   </Text>
                 </Pressable>
               </View>
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        </ScrollView>
+      </BottomSheet>
     </View>
   );
 }
@@ -644,53 +614,7 @@ const createStyles = colors => StyleSheet.create({
     justifyContent: 'center',
   },
 
-  /* ── Bottom Sheet Modal (matching Messages.jsx) ── */
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  modalScrim: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  modalContent: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '90%',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: -4 },
-    elevation: 10,
-    overflow: 'hidden',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0E4DD',
-  },
-  modalTitleBlock: {
-    flex: 1,
-    paddingRight: 8,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.orangeDark,
-    fontFamily: serifFont,
-  },
-  modalSubtitle: {
-    fontSize: 11,
-    color: '#AAAAAA',
-    marginTop: 2,
-  },
-  modalClose: {
-    padding: 4,
-  },
+  /* ── Modal form ── */
   modalFormContent: {
     paddingVertical: 18,
     paddingHorizontal: 20,

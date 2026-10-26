@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useClientTheme } from '../theme/ClientThemeContext';
 import { createBrandStyles } from '../theme/clientStyles';
+import BottomSheet from './BottomSheet';
 
 const weekdays = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
 
@@ -413,37 +414,19 @@ export default function Calendrier() {
         </View>
       ) : null}
 
-      {/* 5. Day Detail Modal */}
-      <Modal
-        animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
-        transparent
+      {/* 5. Day Detail Modal (same sheet as the select pickers) */}
+      <BottomSheet
+        onClose={() => setModalVisible(false)}
+        showClose
+        title={formatModalDate(selectedDate)}
         visible={modalVisible}
       >
-        <Pressable
-          onPress={() => setModalVisible(false)}
-          style={styles.modalOverlay}
-        >
-          <Pressable
-            onPress={e => e.stopPropagation()}
-            style={styles.modalCard}
-          >
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setModalVisible(false)}
-              style={styles.modalBackBtn}
-            >
-              <Text style={styles.modalBackText}>‹ Retour au planning</Text>
-            </Pressable>
-            <Text style={styles.modalTitle}>
-              {formatModalDate(selectedDate)}
-            </Text>
-            <Text style={styles.modalEmptyText}>
-              Aucune prestation ce jour.
-            </Text>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalEmptyText}>
+            Aucune prestation ce jour.
+          </Text>
+        </View>
+      </BottomSheet>
     </View>
   );
 }
@@ -808,41 +791,8 @@ const createStyles = colors => StyleSheet.create({
   },
 
   /* ── Day Detail Modal ── */
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(20, 12, 6, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalCard: {
-    backgroundColor: '#FFFAF6',
-    borderRadius: 16,
-    width: '100%',
-    maxWidth: 480,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: '#ECDDD6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  modalBackBtn: {
-    alignSelf: 'flex-start',
-    marginBottom: 12,
-  },
-  modalBackText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.orangeDark,
-  },
-  modalTitle: {
-    fontSize: 19,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    marginBottom: 10,
+  modalContent: {
+    paddingHorizontal: 20,
   },
   modalEmptyText: {
     fontSize: 13,
