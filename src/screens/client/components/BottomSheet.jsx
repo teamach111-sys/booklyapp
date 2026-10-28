@@ -77,32 +77,32 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   sheet: {
-    paddingTop: 18,
-    paddingBottom: 24,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     overflow: 'hidden',
   },
   header: {
-    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingHorizontal: 26,
     marginBottom: 12,
   },
   headerWithClose: {
-    paddingRight: 46,
+    paddingRight: 56,
   },
   title: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   subtitle: {
-    marginTop: 3,
-    fontSize: 11,
+    marginTop: 4,
+    fontSize: 12,
     color: '#AAAAAA',
   },
   close: {
     position: 'absolute',
-    top: 12,
-    right: 12,
-    padding: 4,
+    top: 14,
+    right: 14,
+    padding: 6,
+    zIndex: 10,
   },
 });

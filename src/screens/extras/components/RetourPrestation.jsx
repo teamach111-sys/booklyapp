@@ -1,292 +1,379 @@
-import { useState } from 'react';
+/**
+ * =====================================================================
+ * INVENTORY WIRING SPECIFICATION (staffly-frontend/inventory.md)
+ * =====================================================================
+ * ### Screen: Extras Portal : RetourPrestation
+ * **Associated Route/Context**: `/extras (Tab/Modal: RetourPrestation)`  
+ * **Total Discovered Backend Calls**: 5
+ * 
+ * | Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+ * | :---: | :--- | :--- | :---: | :--- | :--- | :--- | :--- | :---: |
+ * | [`RetourPrestation.jsx:57`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/RetourPrestation.jsx#L57) | User Action Handler (`RetourPrestation`) | `RetourPrestation` | `GET` | `/missions/${missionId}/retour` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`RetourPrestation.jsx:75`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/RetourPrestation.jsx#L75) | Form Submit / Create Button (`saveField`) | `saveField` | `PUT` | `/missions/${missionId}/retour` | `patch` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`RetourPrestation.jsx:121`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/RetourPrestation.jsx#L121) | File Upload / Change Event (`handleFileSelect`) | `handleFileSelect` | `POST` | `/missions/${missionId}/retour/photos` | `formData` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`RetourPrestation.jsx:142`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/RetourPrestation.jsx#L142) | Delete / Cancel Button (`removePhoto`) | `removePhoto` | `DELETE` | `/missions/${missionId}/retour/photos/${photoId}` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`RetourPrestation.jsx:162`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/RetourPrestation.jsx#L162) | User Action Handler (`handleSend`) | `handleSend` | `POST` | `/missions/${missionId}/retour/send` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * 
+ * =====================================================================
+ */
+
+import { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
+  Image,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import {
+  pick,
+  types,
+  isErrorWithCode,
+  errorCodes,
+} from '@react-native-documents/picker';
+import {
   ArrowLeft,
-  ClipboardList,
-  MessageSquare,
+  Camera,
+  Check,
   Send,
-  Smile,
   Star,
-  UtensilsCrossed,
+  Trash2,
 } from 'lucide-react-native';
 import { colors } from '../../../styles';
-import { retourPrestation as styles } from './styles';
+import clientService from '../../../api/clientService';
 
-export default function RetourPrestation({ mission, onBack, onSubmitted }) {
-  const [restesAlimentaires, setRestesAlimentaires] = useState('');
-  const [satisfactionNote, setSatisfactionNote] = useState(0);
-  const [satisfactionCommentaire, setSatisfactionCommentaire] = useState('');
-  const [compteRenduGeneral, setCompteRenduGeneral] = useState('');
-  const [checklistProblemes, setChecklistProblemes] = useState('');
-  const [isSent, setIsSent] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+export default function RetourPrestation({ missionId, onBack }) {
+  const [loading, setLoading] = useState(true);
+  const [mission, setMission] = useState(null);
+  const [retour, setRetour] = useState(null);
+  const [photos, setPhotos] = useState([]);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [sending, setSending] = useState(false);
 
-  function handleSend() {
-    if (satisfactionNote === 0) {
-      Alert.alert(
-        'Note requise',
-        "La note de satisfaction (1 à 5 étoiles) est obligatoire avant l'envoi du retour.",
-      );
+  const isSent = retour?.statut === 'envoye';
+
+  const loadRetour = useCallback(async () => {
+    if (!missionId) {
+      setLoading(false);
       return;
     }
+    setLoading(true);
+    try {
+      const data = await clientService.getMissionRetour(missionId);
+      setMission(data?.mission || null);
+      setRetour(data?.retour || null);
+      setPhotos(Array.isArray(data?.photos) ? data.photos : []);
+      if (data?.retour?.satisfaction_note) {
+        setRating(data.retour.satisfaction_note);
+      }
+      if (data?.retour?.commentaire) {
+        setComment(data.retour.commentaire);
+      }
+    } catch (err) {
+      Alert.alert('Erreur', err?.message || 'Impossible de charger le retour.');
+    } finally {
+      setLoading(false);
+    }
+  }, [missionId]);
 
-    setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
-      setIsSent(true);
-      Alert.alert(
-        'Retour envoyé',
-        'Votre compte rendu de prestation a été transmis avec succès.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              if (onSubmitted) {
-                onSubmitted({
-                  missionId: mission?.id,
-                  satisfactionNote,
-                  satisfactionCommentaire,
-                  restesAlimentaires,
-                  compteRenduGeneral,
-                  checklistProblemes,
-                });
-              } else if (onBack) {
-                onBack();
-              }
-            },
-          },
-        ],
-      );
-    }, 400);
+  useEffect(() => {
+    loadRetour();
+  }, [loadRetour]);
+
+  const saveField = async patch => {
+    if (isSent) return;
+    setRetour(prev => ({ ...prev, ...patch }));
+    try {
+      await clientService.saveMissionRetour(missionId, patch);
+    } catch {
+      // Non-blocking
+    }
+  };
+
+  const handlePickPhoto = async () => {
+    if (isSent || uploading) return;
+    try {
+      const [file] = await pick({ type: [types.images] });
+      if (!file) return;
+
+      setUploading(true);
+      const formData = new FormData();
+      formData.append('photos[]', {
+        uri: file.uri,
+        name: file.name || 'retour_photo.jpg',
+        type: file.type || 'image/jpeg',
+      });
+      formData.append('categorie', 'general');
+
+      const res = await clientService.uploadRetourPhotos(missionId, formData);
+      setPhotos(prev => [...prev, ...(res?.photos || [])]);
+      Alert.alert('Succès', 'Photo ajoutée au retour.');
+    } catch (err) {
+      if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
+        return;
+      }
+      Alert.alert('Erreur', err?.message || "Erreur lors de l'envoi de la photo.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemovePhoto = async photoId => {
+    try {
+      await clientService.removeRetourPhoto(missionId, photoId);
+      setPhotos(prev => prev.filter(p => p.id !== photoId));
+    } catch (err) {
+      Alert.alert('Erreur', err?.message || 'Impossible de supprimer la photo.');
+    }
+  };
+
+  const handleSend = async () => {
+    if (!rating) {
+      Alert.alert('Note requise', 'Veuillez attribuer une note de satisfaction (1 à 5 étoiles).');
+      return;
+    }
+    setSending(true);
+    try {
+      await saveField({ satisfaction_note: rating, commentaire: comment });
+      await clientService.sendMissionRetour(missionId);
+      Alert.alert('Succès', 'Retour de prestation validé et envoyé !', [
+        { text: 'OK', onPress: () => (onBack ? onBack() : loadRetour()) },
+      ]);
+    } catch (err) {
+      Alert.alert('Erreur', err?.message || "Erreur lors de l'envoi du retour.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={{ padding: 40, alignItems: 'center' }}>
+        <ActivityIndicator size="small" color={colors.orange} />
+      </View>
+    );
   }
 
-  const missionTitle = mission?.prestation_nom || mission?.title || '';
-
   return (
-    <View>
-      {/* Header matching screenshot-2 */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 12,
-          marginBottom: 20,
-          flexWrap: 'wrap',
-        }}
-      >
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 14 }}>
+      {onBack ? (
         <Pressable
-          accessibilityRole="button"
           onPress={onBack}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 6,
-            borderWidth: 1.5,
-            borderColor: '#e0d0c8',
-            borderRadius: 8,
-            paddingVertical: 8,
-            paddingHorizontal: 14,
-            backgroundColor: 'transparent',
-          }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
         >
-          <ArrowLeft size={13} color="#888" />
-          <Text
-            style={{
-              fontSize: 12,
-              fontWeight: '600',
-              color: '#888',
-            }}
-          >
+          <ArrowLeft size={18} color={colors.brown} />
+          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.brown }}>
             Retour
           </Text>
         </Pressable>
+      ) : null}
 
-        <View style={{ flex: 1, minWidth: 150 }}>
-          <Text
+      <View
+        style={{
+          backgroundColor: '#FFF',
+          borderRadius: 14,
+          padding: 16,
+          borderWidth: 1,
+          borderColor: '#F0E4DD',
+          gap: 12,
+        }}
+      >
+        <Text style={{ fontSize: 16, fontWeight: '700', color: colors.brown }}>
+          Retour de prestation — {mission?.prestation_nom || `Mission #${missionId}`}
+        </Text>
+        <Text style={{ fontSize: 13, color: '#666' }}>
+          Date : {mission?.date_debut || '—'}
+        </Text>
+
+        {isSent ? (
+          <View
             style={{
-              fontSize: 17,
-              fontWeight: 'bold',
-              color: colors.brown,
-              fontFamily: 'serif',
+              padding: 10,
+              borderRadius: 8,
+              backgroundColor: '#EAF5EA',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
             }}
           >
-            Retour prestation — {missionTitle}
-          </Text>
-        </View>
-
-        <View style={isSent ? styles.badgeEnvoye : styles.badgeAttendu}>
-          <Text
-            style={{
-              fontSize: 10,
-              fontWeight: 'bold',
-              color: isSent ? '#2e7d32' : '#f57f17',
-            }}
-          >
-            {isSent ? 'Envoyé' : 'Attendu'}
-          </Text>
-        </View>
-      </View>
-
-      {/* 1. RESTES ALIMENTAIRES */}
-      <View style={styles.card}>
-        <View style={styles.cardTitle}>
-          <UtensilsCrossed size={14} color={colors.brown} />
-          <Text style={styles.cardTitleText}>Restes alimentaires</Text>
-        </View>
-        <Text style={styles.inputLabel}>Commentaire libre</Text>
-        <TextInput
-          editable={!isSent}
-          multiline
-          numberOfLines={4}
-          onChangeText={setRestesAlimentaires}
-          placeholder="Indiquer s'il y avait trop ou pas assez de nourriture, ce qu'il restait en fin de prestation, les quantités approximatives, les produits les plus consommés ainsi que toute information utile pour améliorer les prochaines prestations."
-          placeholderTextColor="#bbb"
-          style={styles.textArea}
-          value={restesAlimentaires}
-        />
-      </View>
-
-      {/* 2. SATISFACTION DU CLIENT */}
-      <View style={styles.card}>
-        <View style={styles.cardTitle}>
-          <Smile size={14} color={colors.brown} />
-          <Text style={styles.cardTitleText}>Satisfaction du client</Text>
-          <View style={styles.badgeRequired}>
-            <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#f57f17' }}>
-              Obligatoire
+            <Check size={16} color="#2E7D32" />
+            <Text style={{ color: '#2E7D32', fontSize: 13, fontWeight: '600' }}>
+              Ce retour a été envoyé et clôturé.
             </Text>
           </View>
-        </View>
+        ) : null}
 
-        <Text style={styles.inputLabel}>Note de 1 à 5 étoiles</Text>
-        <View style={styles.starRow}>
-          {[1, 2, 3, 4, 5].map(star => {
-            const filled = star <= satisfactionNote;
-            return (
+        {/* Rating */}
+        <View style={{ marginTop: 8 }}>
+          <Text style={{ fontSize: 13, fontWeight: '700', color: colors.brown, marginBottom: 8 }}>
+            Note de satisfaction *
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {[1, 2, 3, 4, 5].map(star => (
               <Pressable
                 key={star}
-                accessibilityLabel={`${star} étoile${star > 1 ? 's' : ''}`}
-                accessibilityRole="button"
                 disabled={isSent}
-                onPress={() => setSatisfactionNote(star)}
-                style={styles.starButton}
+                onPress={() => {
+                  setRating(star);
+                  saveField({ satisfaction_note: star });
+                }}
               >
                 <Star
-                  color={filled ? '#f59e0b' : '#e0d0c8'}
-                  fill={filled ? '#f59e0b' : 'none'}
-                  size={24}
+                  size={28}
+                  color={star <= rating ? '#F59E0B' : '#DDD'}
+                  fill={star <= rating ? '#F59E0B' : 'transparent'}
                 />
               </Pressable>
-            );
-          })}
+            ))}
+          </View>
         </View>
 
-        {satisfactionNote === 0 && (
-          <Text style={styles.starHelperText}>
-            Le retour ne peut pas être envoyé tant que la note n'est pas renseignée.
+        {/* Comment */}
+        <View style={{ marginTop: 8 }}>
+          <Text style={{ fontSize: 13, fontWeight: '700', color: colors.brown, marginBottom: 6 }}>
+            Commentaire / Remarques
           </Text>
-        )}
-
-        <Text style={styles.inputLabel}>Commentaire complémentaire</Text>
-        <TextInput
-          editable={!isSent}
-          multiline
-          numberOfLines={3}
-          onChangeText={setSatisfactionCommentaire}
-          placeholder="Précisions sur la satisfaction du client..."
-          placeholderTextColor="#bbb"
-          style={styles.textArea}
-          value={satisfactionCommentaire}
-        />
-      </View>
-
-      {/* 3. RETOUR GLOBAL */}
-      <View style={styles.card}>
-        <View style={styles.cardTitle}>
-          <MessageSquare size={14} color={colors.brown} />
-          <Text style={styles.cardTitleText}>Retour global</Text>
+          <TextInput
+            editable={!isSent}
+            multiline
+            numberOfLines={4}
+            placeholder="Détaillez le déroulement de la mission..."
+            placeholderTextColor="#AAA"
+            value={comment}
+            onChangeText={setComment}
+            onBlur={() => saveField({ commentaire: comment })}
+            style={{
+              backgroundColor: '#FAF6F4',
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: '#F0E4DD',
+              padding: 12,
+              fontSize: 13,
+              minHeight: 80,
+              textAlignVertical: 'top',
+              color: '#333',
+            }}
+          />
         </View>
-        <Text style={styles.inputLabel}>Compte rendu général de la prestation</Text>
-        <TextInput
-          editable={!isSent}
-          multiline
-          numberOfLines={4}
-          onChangeText={setCompteRenduGeneral}
-          placeholder="Déroulé général, incidents éventuels, points d'amélioration, remarques sur l'équipe et l'organisation..."
-          placeholderTextColor="#bbb"
-          style={styles.textArea}
-          value={compteRenduGeneral}
-        />
-      </View>
 
-      {/* 4. CHECK-LIST DE FERMETURE */}
-      <View style={styles.card}>
-        <View style={styles.cardTitle}>
-          <ClipboardList size={14} color={colors.brown} />
-          <Text style={styles.cardTitleText}>Check-list de fermeture</Text>
+        {/* Photos list */}
+        <View style={{ marginTop: 8 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 8,
+            }}
+          >
+            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.brown }}>
+              Photos ({photos.length})
+            </Text>
+            {!isSent ? (
+              <Pressable
+                disabled={uploading}
+                onPress={handlePickPhoto}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6,
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  borderRadius: 8,
+                  backgroundColor: '#F5EDE8',
+                }}
+              >
+                {uploading ? (
+                  <ActivityIndicator size="small" color={colors.orange} />
+                ) : (
+                  <>
+                    <Camera size={15} color={colors.orangeDark} />
+                    <Text style={{ fontSize: 12, fontWeight: '600', color: colors.orangeDark }}>
+                      Ajouter une photo
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+            ) : null}
+          </View>
+
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {photos.map(p => (
+              <View
+                key={p.id}
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 8,
+                  overflow: 'hidden',
+                  backgroundColor: '#F5F5F5',
+                  position: 'relative',
+                }}
+              >
+                {p.url ? (
+                  <Image
+                    source={{ uri: p.url }}
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                ) : (
+                  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    <Camera size={24} color="#BBB" />
+                  </View>
+                )}
+                {!isSent ? (
+                  <Pressable
+                    onPress={() => handleRemovePhoto(p.id)}
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      backgroundColor: 'rgba(0,0,0,0.6)',
+                      borderRadius: 10,
+                      padding: 4,
+                    }}
+                  >
+                    <Trash2 size={12} color="#FFF" />
+                  </Pressable>
+                ) : null}
+              </View>
+            ))}
+          </View>
         </View>
-        <Text style={styles.checklistEmpty}>
-          Aucune check-list définie pour ce poste.
-        </Text>
-        <Text style={styles.inputLabel}>
-          Commentaire si une étape n'a pas pu être réalisée
-        </Text>
-        <TextInput
-          editable={!isSent}
-          multiline
-          numberOfLines={3}
-          onChangeText={setChecklistProblemes}
-          placeholder="Ex. : réapprovisionnement micro-kitchens impossible, stock non livré."
-          placeholderTextColor="#bbb"
-          style={styles.textArea}
-          value={checklistProblemes}
-        />
-      </View>
 
-      {/* 5. Sticky Bottom Summary Bar */}
-      <View style={styles.stickyBottom}>
-        <Text style={styles.summaryText}>
-          Satisfaction client :{' '}
-          {satisfactionNote > 0 ? (
-            <Text style={{ fontWeight: 'bold' }}>{satisfactionNote}/5</Text>
-          ) : (
-            '——'
-          )}{' '}
-          · Check-list : <Text style={{ fontWeight: 'bold' }}>0/0 étapes</Text>
-        </Text>
-
+        {/* Send button */}
         {!isSent ? (
           <Pressable
-            accessibilityRole="button"
-            disabled={submitting}
+            disabled={sending}
             onPress={handleSend}
-            style={[
-              styles.btnSend,
-              satisfactionNote === 0 && styles.btnSendDisabled,
-            ]}
+            style={{
+              marginTop: 14,
+              backgroundColor: colors.orange,
+              borderRadius: 10,
+              paddingVertical: 12,
+              alignItems: 'center',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              gap: 8,
+            }}
           >
-            <Send size={13} color={colors.white} />
-            <Text style={styles.btnSendText}>
-              {submitting ? 'Envoi...' : 'Envoyer le retour'}
-            </Text>
+            {sending ? (
+              <ActivityIndicator size="small" color="#FFF" />
+            ) : (
+              <>
+                <Send size={16} color="#FFF" />
+                <Text style={{ color: '#FFF', fontSize: 14, fontWeight: '700' }}>
+                  Envoyer le retour
+                </Text>
+              </>
+            )}
           </Pressable>
-        ) : (
-          <View
-            style={[
-              styles.btnSend,
-              { backgroundColor: '#2e7d32', opacity: 1 },
-            ]}
-          >
-            <Text style={styles.btnSendText}>Retour déjà envoyé</Text>
-          </View>
-        )}
+        ) : null}
       </View>
-    </View>
+    </ScrollView>
   );
 }

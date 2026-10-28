@@ -1,3 +1,25 @@
+/**
+ * =====================================================================
+ * INVENTORY WIRING SPECIFICATION (staffly-frontend/inventory.md)
+ * =====================================================================
+ * ### Screen: Shared Portal Component : Messages
+ * **Associated Route/Context**: `Shared Component across Dashboards`  
+ * **Total Discovered Backend Calls**: 9
+ * 
+ * | Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+ * | :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+ * | [`Messages.jsx:99`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/Messages.jsx#L99) | Initial Page / Component Mount Lifecycle (`useEffect`) | `useEffect hook` | `GET` | `/messages/contacts?tab=${tab}&search=${encodeURIComponent(search` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`Messages.jsx:170`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/Messages.jsx#L170) | Form Submit / Create Button (`submit`) | `submit` | `POST` | `/messages/report` | `form` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Messages.jsx:231`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/Messages.jsx#L231) | Initial Page / Component Mount Lifecycle (`useEffect`) | `useEffect hook` | `GET` | `/messages/discussion/${partner.id}` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`Messages.jsx:243`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/Messages.jsx#L243) | User Action Handler (`send`) | `send` | `POST` | `/messages` | `{receiver_id:partner.id` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Messages.jsx:349`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/Messages.jsx#L349) | User Action Handler (`ReportThread`) | `ReportThread` | `GET` | `/messages/reports/${report.id}/thread` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`Messages.jsx:358`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/Messages.jsx#L358) | User Action Handler (`reply`) | `reply` | `POST` | `/messages/reports/${report.id}/reply` | `{content:input.trim()` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`Messages.jsx:365`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/Messages.jsx#L365) | User Action Handler (`close`) | `close` | `PATCH` | `/messages/reports/${report.id}/close` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`Messages.jsx:465`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/Messages.jsx#L465) | User Action Handler (`Messages`) | `Messages` | `GET` | `/messages/conversations` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Messages.jsx:473`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/Messages.jsx#L473) | User Action Handler (`Messages`) | `Messages` | `GET` | `/messages/my-reports` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * 
+ * =====================================================================
+ */
 import { useState } from 'react';
 import {
   Alert,
@@ -207,6 +229,7 @@ export default function Messages() {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
               style={styles.sheetScroll}
+              contentContainerStyle={{ paddingHorizontal: 4 }}
             >
               <View style={styles.field}>
                 <Text style={styles.fieldLabel}>Type</Text>

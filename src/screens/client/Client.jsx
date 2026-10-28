@@ -1,4 +1,62 @@
-import { useMemo, useState } from 'react';
+/*
+### Screen: Shared Billing : ExtraClientRates
+**Associated Route/Context**: `Shared Component across Dashboards`  
+**Total Discovered Backend Calls**: 5
+
+| Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+| :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+| [`ExtraClientRates.jsx:17`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/billing/ExtraClientRates.jsx#L17) | User Action Handler (`ExtraClientRates`) | `ExtraClientRates` | `GET` | `/admin/extra/${extraId}/client-rates` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+| [`ExtraClientRates.jsx:26`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/billing/ExtraClientRates.jsx#L26) | Initial Page / Component Mount Lifecycle (`useEffect`) | `useEffect hook` | `GET` | `/admin/clients` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+| [`ExtraClientRates.jsx:32`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/billing/ExtraClientRates.jsx#L32) | Initial Page / Component Mount Lifecycle (`useEffect`) | `useEffect hook` | `GET` | `/admin/extra/${extraId}/rates` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+| [`ExtraClientRates.jsx:43`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/billing/ExtraClientRates.jsx#L43) | User Action Handler (`handleAdd`) | `handleAdd` | `PUT` | `/admin/extra/${extraId}/client-rates/${form.client_id}` | `{` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+| [`ExtraClientRates.jsx:60`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/billing/ExtraClientRates.jsx#L60) | Delete / Cancel Button (`handleDelete`) | `handleDelete` | `DELETE` | `/admin/extra/${extraId}/client-rates/${rate.id}` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+
+
+*/
+
+/*
+### Screen: Shared Billing : ClientBillingSettings
+**Associated Route/Context**: `Shared Component across Dashboards`  
+**Total Discovered Backend Calls**: 2
+
+| Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+| :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+| [`ClientBillingSettings.jsx:17`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/billing/ClientBillingSettings.jsx#L17) | Initial Page / Component Mount Lifecycle (`useEffect`) | `useEffect hook` | `GET` | `/admin/clients/${clientId}/billing` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+| [`ClientBillingSettings.jsx:44`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/billing/ClientBillingSettings.jsx#L44) | Form Submit / Create Button (`handleSave`) | `handleSave` | `PUT` | `/admin/clients/${clientId}/billing` | `{` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+
+
+*/
+
+/*
+### Screen: Inscription Client / Établissement
+**Associated Route/Context**: `/inscription/client`  
+**Total Discovered Backend Calls**: 2
+
+| Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+| :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+| [`Clients.jsx:123`](file:///C:/Users/Workspace/staffly-frontend/src/pages/inscription/Clients.jsx#L123) | Form Submit / Create Button (`handleSubmit`) | `handleSubmit` | `POST` | `/envoyerVerficationEmail` | `{` | Bearer token (localStorage) via clientAxios interceptor | Confirmed |
+| [`Clients.jsx:103`](file:///C:/Users/Workspace/staffly-frontend/src/pages/inscription/Clients.jsx#L103) | Form Submit / Create Button (`handleSubmit`) | `handleSubmit` | `POST` | `${import.meta.env.VITE_API_URL}/register/client` | `None` | Public (No auth) | Confirmed |
+
+
+*/
+
+/**
+ * =====================================================================
+ * INVENTORY WIRING SPECIFICATION (staffly-frontend/inventory.md)
+ * =====================================================================
+ * ### Screen: Client Portal : Shell & Navigation
+ * **Associated Route/Context**: `/client`  
+ * **Total Discovered Backend Calls**: 3
+ * 
+ * | Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+ * | :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+ * | [`Client.jsx:166`](file:///C:/Users/Workspace/staffly-frontend/src/pages/client/Client.jsx#L166) | Background Polling Interval (`poll`) | `poll` | `GET` | `/notifications/unread-count?site_id=${selectedSpace.id}` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`Client.jsx:181`](file:///C:/Users/Workspace/staffly-frontend/src/pages/client/Client.jsx#L181) | Background Polling Interval (`poll`) | `poll` | `GET` | `/messages/conversations` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Client.jsx:193`](file:///C:/Users/Workspace/staffly-frontend/src/pages/client/Client.jsx#L193) | Auth Action Button (`handleLogout`) | `handleLogout` | `POST` | `/logout` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * 
+ * =====================================================================
+ */
+import { useEffect, useMemo, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -30,9 +88,14 @@ import {
 } from 'lucide-react-native';
 import { clientShellStylesByBrand } from './theme/clientStyles';
 import { ClientThemeProvider, useClientTheme } from './theme/ClientThemeContext';
+import { SitesProvider, useClientSites } from './state/SitesContext';
+import { useAuth } from '../../context/AuthContext';
+import clientService from '../../api/clientService';
+import authService from '../../api/authService';
+import { getToken } from '../../utils/Authstorage';
 import Calendrier from './components/Calendrier';
 import Profile from './components/Profile';
-import Prestations, { demoMissions } from './components/Prestations';
+import Prestations from './components/Prestations';
 import Messages from './components/Messages';
 import ClientCoOwners from './components/ClientCoOwners';
 import ClientEmployees from './components/ClientEmployees';
@@ -104,10 +167,8 @@ const clientIdentity = {
   status: 'Actif',
 };
 
-// Sites offered by the drawer's active-site selector (design `space-section`).
-const drawerSites = [
-  { id: 'site-1', name: 'Dashboard Client 02', city: 'Ile de France' },
-];
+// Sites offered by the drawer's active-site selector come from
+// SitesProvider (GET /client/profile -> spaces), not from demo data.
 
 const emptyContent = {
   coOwners: {
@@ -213,6 +274,8 @@ function EmptyState({ title, description, icon: Icon, action }) {
 
 function ClientDashboard({ navigation }) {
   const { partner, colors } = useClientTheme();
+  const { user, signOut } = useAuth();
+  const { selectableSites, activeSite, setActiveSiteId } = useClientSites();
   const { layout: layoutStyles, navigation: navigationStyles, content: contentStyles } =
     clientShellStylesByBrand[partner];
   const sections = useMemo(() => createSections(colors.brandName), [colors.brandName]);
@@ -220,21 +283,77 @@ function ClientDashboard({ navigation }) {
   const [activeSection, setActiveSection] = useState('profile');
   const [menuOpen, setMenuOpen] = useState(false);
   const [spaceOpen, setSpaceOpen] = useState(false);
-  const [activeSiteId, setActiveSiteId] = useState(drawerSites[0].id);
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const [collections, setCollections] = useState({
     coOwners: [],
     employees: [],
     sites: [],
     services: [],
   });
-  const [missions, setMissions] = useState(demoMissions);
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState('');
 
+  const clientIdentity = useMemo(() => {
+    const fn = user?.firstname || '';
+    const ln = user?.name || '';
+    const fullName = `${fn} ${ln}`.trim() || user?.email || 'Client';
+    const comp =
+      user?.client?.raison_sociale ||
+      user?.raison_sociale ||
+      user?.company ||
+      'Mon entreprise';
+    const inits = `${fn[0] || ''}${ln[0] || ''}`.toUpperCase() || 'CL';
+    return {
+      initials: inits,
+      name: fullName,
+      company: comp,
+      status: 'Actif',
+    };
+  }, [user]);
+
+  // Poll unread notifications count
+  useEffect(() => {
+    let mounted = true;
+    const pollNotifs = async () => {
+      try {
+        const res = await clientService.getUnreadNotificationCount(activeSite?.id);
+        if (mounted && res?.count !== undefined) {
+          setUnreadNotifs(res.count);
+        }
+      } catch {}
+    };
+    pollNotifs();
+    const interval = setInterval(pollNotifs, 30000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [activeSite?.id]);
+
+  // Poll unread messages count
+  useEffect(() => {
+    let mounted = true;
+    const pollMessages = async () => {
+      try {
+        const res = await clientService.getConversations();
+        if (mounted && Array.isArray(res)) {
+          setUnreadMessages(
+            res.reduce((sum, c) => sum + (c.unread_count || 0), 0),
+          );
+        }
+      } catch {}
+    };
+    pollMessages();
+    const interval = setInterval(pollMessages, 30000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   const currentSection =
     sections.find(section => section.key === activeSection) || sections[0];
-  const activeSite =
-    drawerSites.find(site => site.id === activeSiteId) || drawerSites[0];
   const sectionDetails = emptyContent[activeSection];
   const showCreateForm = creating && Boolean(sectionDetails?.action);
 
@@ -243,8 +362,25 @@ function ClientDashboard({ navigation }) {
     setSpaceOpen(false);
   }
 
+  // Clear the session before leaving: the login screen sends an authenticated
+  // user straight back to a dashboard, so navigating without signing out just
+  // bounces here again.
+  async function handleLogout() {
+    try {
+      const token = getToken();
+      if (token) {
+        await authService.logout(token).catch(() => {});
+      }
+    } finally {
+      await signOut();
+      navigation?.reset({ index: 0, routes: [{ name: 'Login' }] });
+    }
+  }
+
   function selectSection(key) {
     setActiveSection(key);
+    if (key === 'notifications') setUnreadNotifs(0);
+    if (key === 'messages') setUnreadMessages(0);
     setMenuOpen(false);
     setSpaceOpen(false);
     setCreating(false);
@@ -364,7 +500,7 @@ function ClientDashboard({ navigation }) {
       return <Calendrier />;
     }
     if (activeSection === 'services') {
-      return <Prestations missions={missions} setMissions={setMissions} />;
+      return <Prestations activeSite={activeSite} />;
     }
     if (activeSection === 'messages') {
       return <Messages />;
@@ -411,9 +547,29 @@ function ClientDashboard({ navigation }) {
             accessibilityLabel="Afficher les notifications"
             accessibilityRole="button"
             onPress={() => selectSection('notifications')}
-            style={layoutStyles.headerAction}
+            style={[layoutStyles.headerAction, { position: 'relative' }]}
           >
             <Bell size={19} color={colors.brown} />
+            {unreadNotifs > 0 ? (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 4,
+                  right: 4,
+                  minWidth: 16,
+                  height: 16,
+                  borderRadius: 8,
+                  backgroundColor: colors.orangeDark,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingHorizontal: 3,
+                }}
+              >
+                <Text style={{ color: '#FFF', fontSize: 10, fontWeight: '700' }}>
+                  {unreadNotifs > 99 ? '99+' : unreadNotifs}
+                </Text>
+              </View>
+            ) : null}
           </Pressable>
         </View>
 
@@ -437,6 +593,7 @@ function ClientDashboard({ navigation }) {
             const section = sections.find(item => item.key === key);
             const Icon = section.icon;
             const active = activeSection === key;
+            const badgeCount = key === 'messages' ? unreadMessages : 0;
             return (
               <Pressable
                 key={key}
@@ -448,10 +605,32 @@ function ClientDashboard({ navigation }) {
                   active && navigationStyles.bottomTabActive,
                 ]}
               >
-                <Icon
-                  size={19}
-                  color={active ? colors.orangeDark : colors.muted}
-                />
+                <View style={{ position: 'relative' }}>
+                  <Icon
+                    size={19}
+                    color={active ? colors.orangeDark : colors.muted}
+                  />
+                  {badgeCount > 0 ? (
+                    <View
+                      style={{
+                        position: 'absolute',
+                        top: -4,
+                        right: -8,
+                        minWidth: 15,
+                        height: 15,
+                        borderRadius: 7.5,
+                        backgroundColor: colors.orangeDark,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        paddingHorizontal: 2,
+                      }}
+                    >
+                      <Text style={{ color: '#FFF', fontSize: 9, fontWeight: '700' }}>
+                        {badgeCount > 99 ? '99+' : badgeCount}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
                 <Text
                   style={[
                     navigationStyles.bottomTabText,
@@ -530,10 +709,10 @@ function ClientDashboard({ navigation }) {
               >
                 <View style={layoutStyles.drawerSpaceDot} />
                 <Text numberOfLines={1} style={layoutStyles.drawerSpaceName}>
-                  {activeSite.name}
+                  {activeSite?.name || 'Aucun site'}
                 </Text>
                 <Text style={layoutStyles.drawerSpaceCity}>
-                  {activeSite.city}
+                  {activeSite?.city || activeSite?.region || ''}
                 </Text>
                 <ChevronDown
                   size={14}
@@ -561,11 +740,17 @@ function ClientDashboard({ navigation }) {
                   >
                     <Text style={layoutStyles.spacePickerTitle}>Site actif</Text>
                     <ScrollView showsVerticalScrollIndicator={false}>
-                      {drawerSites.map(site => {
-                        const isActive = site.id === activeSite.id;
+                      {selectableSites.length === 0 ? (
+                        <Text style={layoutStyles.spacePickerOptionCity}>
+                          Aucun site actif. Ajoutez-en un depuis « Sites ».
+                        </Text>
+                      ) : null}
+                      {selectableSites.map(site => {
+                        const isActive = String(site.id) === String(activeSite?.id);
                         return (
                           <Pressable
                             key={site.id}
+                            accessibilityLabel={`Site actif ${site.name}`}
                             accessibilityRole="button"
                             accessibilityState={{ selected: isActive }}
                             onPress={() => {
@@ -588,7 +773,7 @@ function ClientDashboard({ navigation }) {
                               <Text
                                 style={layoutStyles.spacePickerOptionCity}
                               >
-                                {site.city}
+                                {site.city || site.region}
                               </Text>
                             </View>
                             {isActive ? (
@@ -642,7 +827,7 @@ function ClientDashboard({ navigation }) {
             <View style={layoutStyles.drawerFooter}>
               <Pressable
                 accessibilityRole="button"
-                onPress={() => navigation?.navigate('Login')}
+                onPress={handleLogout}
                 style={layoutStyles.drawerLogout}
               >
                 <LogOut size={18} color="rgba(255,255,255,0.75)" />
@@ -657,9 +842,16 @@ function ClientDashboard({ navigation }) {
 }
 
 export default function ClientScreen({ route, navigation }) {
+  // Deep links and restored sessions arrive without the route param, so fall
+  // back to the platform stored on the account before defaulting to bookly.
+  const { user } = useAuth();
+  const partner = route?.params?.partner ?? user?.platform_partner;
+
   return (
-    <ClientThemeProvider partner={route?.params?.partner}>
-      <ClientDashboard navigation={navigation} />
+    <ClientThemeProvider partner={partner}>
+      <SitesProvider>
+        <ClientDashboard navigation={navigation} />
+      </SitesProvider>
     </ClientThemeProvider>
   );
 }

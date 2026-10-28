@@ -1,3 +1,20 @@
+/**
+ * =====================================================================
+ * INVENTORY WIRING SPECIFICATION (staffly-frontend/inventory.md)
+ * =====================================================================
+ * ### Screen: Extras Portal : Disponibilite
+ * **Associated Route/Context**: `/extras (Tab/Modal: Disponibilite)`  
+ * **Total Discovered Backend Calls**: 4
+ * 
+ * | Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+ * | :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+ * | [`Disponibilite.jsx:65`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/Disponibilite.jsx#L65) | Initial Page / Component Mount Lifecycle (`useEffect`) | `useEffect hook` | `GET` | `/extra/my-availabilities` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Disponibilite.jsx:76`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/Disponibilite.jsx#L76) | User Action Handler (`handleAdd`) | `handleAdd` | `POST` | `/extra/availability` | `{ availabilities: [{ ...form` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Disponibilite.jsx:80`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/Disponibilite.jsx#L80) | User Action Handler (`handleAdd`) | `handleAdd` | `GET` | `/extra/my-availabilities` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Disponibilite.jsx:91`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/Disponibilite.jsx#L91) | Delete / Cancel Button (`handleDelete`) | `handleDelete` | `DELETE` | `/extra/availability/' + id` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * 
+ * =====================================================================
+ */
 import { useState } from 'react';
 import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { Info, Plus, Trash2 } from 'lucide-react-native';

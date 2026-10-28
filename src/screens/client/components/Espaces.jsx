@@ -1,5 +1,37 @@
+/**
+ * =====================================================================
+ * INVENTORY WIRING SPECIFICATION (staffly-frontend/inventory.md)
+ * =====================================================================
+ * ### Screen: Client Portal : Espaces
+ * **Associated Route/Context**: `/client (Tab/Modal: Espaces)`  
+ * **Total Discovered Backend Calls**: 4
+ * 
+ * | Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+ * | :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+ * | [`Espaces.jsx:93`](file:///C:/Users/Workspace/staffly-frontend/src/pages/client/components/Espaces.jsx#L93) | Form Submit / Create Button (`handleSubmit`) | `handleSubmit` | `POST` | `/client/spaces` | `{` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Espaces.jsx:224`](file:///C:/Users/Workspace/staffly-frontend/src/pages/client/components/Espaces.jsx#L224) | Form Submit / Create Button (`handleSave`) | `handleSave` | `PUT` | `/client/spaces/${space.id}` | `{` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`Espaces.jsx:244`](file:///C:/Users/Workspace/staffly-frontend/src/pages/client/components/Espaces.jsx#L244) | Delete / Cancel Button (`handleDelete`) | `handleDelete` | `DELETE` | `/client/spaces/${space.id}` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`Espaces.jsx:255`](file:///C:/Users/Workspace/staffly-frontend/src/pages/client/components/Espaces.jsx#L255) | Toggle Switch / Status Change (`handleToggle`) | `handleToggle` | `PATCH` | `/client/spaces/${space.id}/toggle` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * 
+ * =====================================================================
+ */
+// Sites (espaces) — shared by both platforms (bookly and staffly).
+//
+// The list lives in SitesProvider so the drawer's "Site actif" selector and
+// every site-scoped screen agree on one selection. This page is where sites
+// are created, renamed, enabled/disabled and deleted.
+//
+// Backend (Api/Client.php):
+//   POST   /client/spaces                 { space_name, adresse, space_city }
+//   PUT    /client/spaces/{id}            partial — only edited fields
+//   PATCH  /client/spaces/{id}/toggle     is_active 0 <-> 1
+//   DELETE /client/spaces/{id}            422 if it is the last site or has missions
+//
+// One component serves both brands through useClientTheme().
+
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Platform,
   Pressable,
@@ -19,9 +51,20 @@ import {
   Power,
   Trash2,
 } from 'lucide-react-native';
+
+import { fetchClient } from '../../../api/fetchClient';
+import { describeApiError } from '../../../utils/apiError';
 import { useClientTheme } from '../theme/ClientThemeContext';
 import { createBrandStyles } from '../theme/clientStyles';
+import { useClientSites } from '../state/SitesContext';
 import BottomSheet from './BottomSheet';
+import {
+  EMPTY_SITE_FORM,
+  buildSiteCreateBody,
+  buildSiteUpdateBody,
+  siteToForm,
+  validateSiteForm,
+} from './siteModel';
 
 const serifFont = Platform.select({
   ios: 'Georgia',
@@ -29,146 +72,227 @@ const serifFont = Platform.select({
   default: 'Georgia',
 });
 
-const defaultSites = [
-  {
-    id: 'site-1',
-    name: 'Dashboard Client 02',
-    address: '1 Rue du Test 02, Paris',
-    city: 'Ile de France',
-    isActive: true,
-    isCurrent: true,
-  },
-];
-
 export default function Espaces() {
   const { partner, colors } = useClientTheme();
   const styles = stylesByBrand[partner];
 
-  const [sites, setSites] = useState(defaultSites);
+  const {
+    sites,
+    activeSiteId,
+    setActiveSiteId,
+    loading,
+    error: loadError,
+    reload,
+  } = useClientSites();
+
   const [modalMode, setModalMode] = useState(null); // 'create' | 'edit' | null
-  const [editingId, setEditingId] = useState(null);
+  const [editingSite, setEditingSite] = useState(null);
+  const [form, setForm] = useState(EMPTY_SITE_FORM);
+  const [initialForm, setInitialForm] = useState(EMPTY_SITE_FORM);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [busyId, setBusyId] = useState(null);
+  const [feedback, setFeedback] = useState(null);
 
-  // Form fields
-  const [siteName, setSiteName] = useState('');
-  const [siteAddress, setSiteAddress] = useState('');
-  const [siteCity, setSiteCity] = useState('Ile de France');
+  const setField = (key, value) => {
+    setForm(current => ({ ...current, [key]: value }));
+    setFieldErrors(current => {
+      if (!current[key]) {
+        return current;
+      }
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  };
 
-  function resetForm() {
-    setSiteName('');
-    setSiteAddress('');
-    setSiteCity('Ile de France');
-    setEditingId(null);
-    setModalMode(null);
-  }
-
-  function openCreateModal() {
-    resetForm();
+  function openCreate() {
+    setForm(EMPTY_SITE_FORM);
+    setInitialForm(EMPTY_SITE_FORM);
+    setEditingSite(null);
+    setFieldErrors({});
+    setFeedback(null);
     setModalMode('create');
   }
 
-  function openEditModal(site) {
-    setEditingId(site.id);
-    setSiteName(site.name || '');
-    setSiteAddress(site.address || '');
-    setSiteCity(site.city || 'Ile de France');
+  function openEdit(site) {
+    const nextForm = siteToForm(site);
+    setForm(nextForm);
+    setInitialForm(nextForm);
+    setEditingSite(site);
+    setFieldErrors({});
+    setFeedback(null);
     setModalMode('edit');
   }
 
   function closeModal() {
-    resetForm();
+    setModalMode(null);
+    setEditingSite(null);
+    setForm(EMPTY_SITE_FORM);
+    setFieldErrors({});
   }
 
-  function handleSubmit() {
-    const trimmedName = siteName.trim();
-    if (!trimmedName) {
-      Alert.alert('Champ requis', 'Veuillez saisir le nom du site.');
+  async function handleSubmit() {
+    const errors = validateSiteForm(form);
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
-    if (modalMode === 'create') {
-      const newSite = {
-        id: Date.now().toString(),
-        name: trimmedName,
-        address: siteAddress.trim() || '1 Rue du Test 02, Paris',
-        city: siteCity.trim() || 'Ile de France',
-        isActive: true,
-        isCurrent: sites.length === 0,
-      };
-      setSites(current => [...current, newSite]);
+    setSaving(true);
+    setFeedback(null);
+
+    try {
+      if (modalMode === 'create') {
+        await fetchClient('/client/spaces', {
+          method: 'POST',
+          body: buildSiteCreateBody(form),
+        });
+      } else {
+        const body = buildSiteUpdateBody(form, initialForm);
+        // Nothing changed: no point sending an empty body.
+        if (Object.keys(body).length > 0) {
+          await fetchClient(`/client/spaces/${editingSite.id}`, {
+            method: 'PUT',
+            body,
+          });
+        }
+      }
+
       closeModal();
-    } else if (modalMode === 'edit') {
-      setSites(current =>
-        current.map(item =>
-          item.id === editingId
-            ? {
-                ...item,
-                name: trimmedName,
-                address: siteAddress.trim(),
-                city: siteCity.trim(),
-              }
-            : item,
-        ),
-      );
-      closeModal();
+      setFeedback({
+        type: 'success',
+        message: modalMode === 'create' ? 'Site ajouté.' : 'Site mis à jour.',
+      });
+      await reload({ silent: true });
+    } catch (requestError) {
+      setFeedback({ type: 'error', message: describeApiError(requestError) });
+    } finally {
+      setSaving(false);
     }
   }
 
-  function handleSelectActive(id) {
-    setSites(current =>
-      current.map(item => ({
-        ...item,
-        isCurrent: item.id === id,
-      })),
-    );
-  }
+  function confirmToggle(site) {
+    const disabling = site.isActive;
 
-  function handleToggleActive(id, currentStatus) {
-    setSites(current =>
-      current.map(item =>
-        item.id === id
-          ? {
-              ...item,
-              isActive: !currentStatus,
-              isCurrent: currentStatus ? false : item.isCurrent,
-            }
-          : item,
-      ),
-    );
-  }
-
-  function handleDelete(id, name) {
     Alert.alert(
-      'Supprimer le site',
-      `Êtes-vous sûr de vouloir supprimer ${name} ? Cette action est irréversible.`,
+      disabling ? 'Désactiver le site' : 'Activer le site',
+      disabling
+        ? `« ${site.name} » ne sera plus proposé comme site actif.`
+        : `« ${site.name} » pourra de nouveau être sélectionné.`,
       [
         { text: 'Annuler', style: 'cancel' },
         {
-          text: 'Supprimer',
-          style: 'destructive',
-          onPress: () => {
-            setSites(current => {
-              const remaining = current.filter(item => item.id !== id);
-              if (
-                remaining.length > 0 &&
-                !remaining.some(item => item.isCurrent)
-              ) {
-                remaining[0].isCurrent = true;
-              }
-              return remaining;
-            });
-          },
+          text: disabling ? 'Désactiver' : 'Activer',
+          style: disabling ? 'destructive' : 'default',
+          onPress: () => toggleSite(site),
         },
       ],
     );
   }
 
+  async function toggleSite(site) {
+    setBusyId(site.id);
+    setFeedback(null);
+
+    try {
+      const response = await fetchClient(`/client/spaces/${site.id}/toggle`, {
+        method: 'PATCH',
+      });
+      setFeedback({
+        type: 'success',
+        message: response?.message || 'Statut mis à jour.',
+      });
+      await reload({ silent: true });
+    } catch (requestError) {
+      setFeedback({ type: 'error', message: describeApiError(requestError) });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  function confirmDelete(site) {
+    Alert.alert(
+      'Supprimer le site',
+      `Supprimer « ${site.name} » ? Cette action est irréversible.`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: () => deleteSite(site),
+        },
+      ],
+    );
+  }
+
+  async function deleteSite(site) {
+    setBusyId(site.id);
+    setFeedback(null);
+
+    try {
+      await fetchClient(`/client/spaces/${site.id}`, { method: 'DELETE' });
+      setFeedback({ type: 'success', message: 'Site supprimé.' });
+      await reload({ silent: true });
+    } catch (requestError) {
+      setFeedback({ type: 'error', message: describeApiError(requestError) });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.loadingBlock}>
+        <ActivityIndicator color={colors.orange} size="large" />
+        <Text style={styles.loadingText}>Chargement des sites…</Text>
+      </View>
+    );
+  }
+
   const totalSites = sites.length;
-  const activeSites = sites.filter(s => s.isActive).length;
-  const inactiveSites = sites.filter(s => !s.isActive).length;
+  const activeSites = sites.filter(site => site.isActive).length;
+  const inactiveSites = totalSites - activeSites;
+
+  const banner = feedback ? (
+    <View
+      style={[
+        styles.banner,
+        feedback.type === 'error' ? styles.bannerError : styles.bannerSuccess,
+      ]}
+    >
+      <Text
+        style={[
+          styles.bannerText,
+          feedback.type === 'error'
+            ? styles.bannerTextError
+            : styles.bannerTextSuccess,
+        ]}
+      >
+        {feedback.message}
+      </Text>
+    </View>
+  ) : null;
+
+  if (loadError) {
+    return (
+      <View style={styles.container}>
+        <View style={[styles.banner, styles.bannerError]}>
+          <Text style={[styles.bannerText, styles.bannerTextError]}>{loadError}</Text>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => reload()}
+          style={styles.retryButton}
+        >
+          <Text style={styles.retryButtonText}>Réessayer</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {/* ── Subheader: "Mes espaces" / "{activeSites} actif" + "+ Ajouter un site" ── */}
       <View style={styles.subHeaderRow}>
         <View style={styles.subHeaderTitles}>
           <Text style={styles.subHeaderTitle}>Mes espaces</Text>
@@ -179,7 +303,7 @@ export default function Espaces() {
         <Pressable
           accessibilityLabel="Ajouter un site"
           accessibilityRole="button"
-          onPress={openCreateModal}
+          onPress={openCreate}
           style={styles.addButton}
         >
           <Plus size={14} color={colors.white} strokeWidth={2.5} />
@@ -187,29 +311,23 @@ export default function Espaces() {
         </Pressable>
       </View>
 
-      {/* ── 3 Stat Cards Row ── */}
+      {banner}
+
       <View style={styles.statsRow}>
         <View style={[styles.statCard, styles.statCardPrimary]}>
-          <Text style={[styles.statNum, styles.statNumPrimary]}>
-            {totalSites}
-          </Text>
+          <Text style={[styles.statNum, styles.statNumPrimary]}>{totalSites}</Text>
           <Text style={styles.statLabel}>Total sites</Text>
         </View>
         <View style={[styles.statCard, styles.statCardSuccess]}>
-          <Text style={[styles.statNum, styles.statNumSuccess]}>
-            {activeSites}
-          </Text>
+          <Text style={[styles.statNum, styles.statNumSuccess]}>{activeSites}</Text>
           <Text style={styles.statLabel}>Actifs</Text>
         </View>
         <View style={[styles.statCard, styles.statCardMuted]}>
-          <Text style={[styles.statNum, styles.statNumMuted]}>
-            {inactiveSites}
-          </Text>
+          <Text style={[styles.statNum, styles.statNumMuted]}>{inactiveSites}</Text>
           <Text style={styles.statLabel}>Désactivés</Text>
         </View>
       </View>
 
-      {/* ── Content: Sites Cards List or Empty State ── */}
       {sites.length === 0 ? (
         <View style={styles.emptyCard}>
           <View style={styles.emptyIconWrap}>
@@ -223,13 +341,21 @@ export default function Espaces() {
       ) : (
         <View style={styles.sitesList}>
           {sites.map(site => {
-            const isSelected = site.isCurrent;
+            const isSelected = String(site.id) === String(activeSiteId);
+            const busy = busyId === site.id;
+
             return (
               <Pressable
                 key={site.id}
-                accessibilityLabel={`Sélectionner ${site.name}`}
+                accessibilityLabel={
+                  site.isActive
+                    ? `Sélectionner ${site.name}`
+                    : `${site.name} est désactivé`
+                }
                 accessibilityRole="button"
-                onPress={() => handleSelectActive(site.id)}
+                accessibilityState={{ selected: isSelected }}
+                disabled={!site.isActive}
+                onPress={() => setActiveSiteId(site.id)}
                 style={[
                   styles.siteCard,
                   isSelected && styles.siteCardActive,
@@ -239,7 +365,6 @@ export default function Espaces() {
                 {isSelected ? <View style={styles.activeAccentBar} /> : null}
 
                 <View style={styles.siteCardBody}>
-                  {/* Top Row: Icon + Name/Badges + Actions */}
                   <View style={styles.siteHeaderRow}>
                     <View style={styles.siteIconWrap}>
                       <Building2 size={18} color={colors.orange} />
@@ -253,9 +378,7 @@ export default function Espaces() {
                         {site.isActive ? (
                           <View style={styles.statusBadgeActive}>
                             <CheckCircle2 size={11} color="#15803D" />
-                            <Text style={styles.statusBadgeActiveText}>
-                              Actif
-                            </Text>
+                            <Text style={styles.statusBadgeActiveText}>Actif</Text>
                           </View>
                         ) : (
                           <View style={styles.statusBadgeInactive}>
@@ -274,30 +397,34 @@ export default function Espaces() {
 
                     <View style={styles.actionsRow}>
                       <Pressable
-                        accessibilityLabel="Modifier le site"
+                        accessibilityLabel={`Modifier ${site.name}`}
                         accessibilityRole="button"
-                        onPress={e => {
-                          e.stopPropagation();
-                          openEditModal(site);
+                        onPress={event => {
+                          event?.stopPropagation?.();
+                          openEdit(site);
                         }}
                         style={styles.actionBtn}
                       >
-                        <Edit3 size={12} color={colors.orangeDark} />
+                        <Edit3 size={12} color={colors.orange} />
                       </Pressable>
                       <Pressable
                         accessibilityLabel={
-                          site.isActive ? 'Désactiver le site' : 'Activer le site'
+                          site.isActive
+                            ? `Désactiver ${site.name}`
+                            : `Activer ${site.name}`
                         }
                         accessibilityRole="button"
-                        onPress={e => {
-                          e.stopPropagation();
-                          handleToggleActive(site.id, site.isActive);
+                        disabled={busy}
+                        onPress={event => {
+                          event?.stopPropagation?.();
+                          confirmToggle(site);
                         }}
                         style={[
                           styles.actionBtn,
                           site.isActive
                             ? styles.actionBtnPowerActive
                             : styles.actionBtnPowerInactive,
+                          busy && styles.disabled,
                         ]}
                       >
                         <Power
@@ -306,34 +433,35 @@ export default function Espaces() {
                         />
                       </Pressable>
                       <Pressable
-                        accessibilityLabel="Supprimer le site"
+                        accessibilityLabel={`Supprimer ${site.name}`}
                         accessibilityRole="button"
-                        onPress={e => {
-                          e.stopPropagation();
-                          handleDelete(site.id, site.name);
+                        disabled={busy}
+                        onPress={event => {
+                          event?.stopPropagation?.();
+                          confirmDelete(site);
                         }}
-                        style={[styles.actionBtn, styles.actionBtnDelete]}
+                        style={[
+                          styles.actionBtn,
+                          styles.actionBtnDelete,
+                          busy && styles.disabled,
+                        ]}
                       >
                         <Trash2 size={12} color="#9B1C1C" />
                       </Pressable>
                     </View>
                   </View>
 
-                  {/* Region Row */}
                   <View style={styles.metaRow}>
-                    <Navigation
-                      size={12}
-                      color="#BBBBBB"
-                      style={styles.metaIcon}
-                    />
-                    <Text style={styles.metaRegion}>{site.city}</Text>
+                    <Navigation size={12} color="#BBBBBB" style={styles.metaIcon} />
+                    <Text style={styles.metaRegion}>
+                      {site.region || site.city || '—'}
+                    </Text>
                   </View>
 
-                  {/* Address Row */}
                   <View style={styles.metaRow}>
                     <MapPin size={12} color="#BBBBBB" style={styles.metaIcon} />
                     <Text numberOfLines={1} style={styles.metaAddress}>
-                      {site.address}
+                      {site.address || 'Adresse non renseignée'}
                     </Text>
                   </View>
                 </View>
@@ -343,17 +471,15 @@ export default function Espaces() {
         </View>
       )}
 
-      {/* ── Info Tip Banner ── */}
       <View style={styles.infoBanner}>
         <CheckCircle2 size={14} color="#1565C0" style={styles.infoBannerIcon} />
         <Text style={styles.infoBannerText}>
-          Cliquez sur une carte pour la sélectionner comme site actif. Utilisez
-          ✏ pour modifier, le bouton d’alimentation pour activer / désactiver,
-          et 🗑 pour supprimer.
+          Cliquez sur une carte pour la sélectionner comme site actif. Utilisez ✏
+          pour modifier, le bouton d’alimentation pour activer / désactiver, et 🗑
+          pour supprimer.
         </Text>
       </View>
 
-      {/* ── Shared bottom sheet (same surface as the select pickers) ── */}
       <BottomSheet
         maxHeight="90%"
         onClose={closeModal}
@@ -365,100 +491,98 @@ export default function Espaces() {
         title={modalMode === 'create' ? 'Nouvel espace' : 'Modifier l’espace'}
         visible={modalMode !== null}
       >
-        {/* Modal Form */}
         <ScrollView
           contentContainerStyle={styles.modalFormContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-              {/* Field 1: Nom du site */}
-              <View style={styles.formField}>
-                <Text style={styles.fieldLabel}>SITE *</Text>
-                <View style={styles.inputWrap}>
-                  <Building2
-                    size={14}
-                    color="#CCCCCC"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    accessibilityLabel="Nom du site"
-                    onChangeText={setSiteName}
-                    placeholder="Nom du site (ex : Siège social, Boutique Marais...)"
-                    placeholderTextColor="#BBBBBB"
-                    style={styles.textInputWithIcon}
-                    value={siteName}
-                  />
-                </View>
-              </View>
+          <View style={styles.formField}>
+            <Text style={styles.fieldLabel}>SITE *</Text>
+            <View style={styles.inputWrap}>
+              <Building2 size={14} color="#CCCCCC" style={styles.inputIcon} />
+              <TextInput
+                accessibilityLabel="Nom du site"
+                onChangeText={value => setField('name', value)}
+                placeholder="Nom du site (ex : Siège social, Boutique Marais...)"
+                placeholderTextColor="#BBBBBB"
+                style={[
+                  styles.textInputWithIcon,
+                  fieldErrors.name && styles.textInputError,
+                ]}
+                value={form.name}
+              />
+            </View>
+            {fieldErrors.name ? (
+              <Text style={styles.fieldErrorText}>{fieldErrors.name}</Text>
+            ) : null}
+          </View>
 
-              {/* Field 2: Adresse du site */}
-              <View style={styles.formField}>
-                <Text style={styles.fieldLabel}>
-                  ADRESSE DU SITE{' '}
-                  <Text style={styles.fieldLabelOptional}>(OPTIONNEL)</Text>
-                </Text>
-                <View style={styles.inputWrap}>
-                  <MapPin size={14} color="#CCCCCC" style={styles.inputIcon} />
-                  <TextInput
-                    accessibilityLabel="Adresse du site"
-                    onChangeText={setSiteAddress}
-                    placeholder="12 rue de la Paix, 75001 Ile de France"
-                    placeholderTextColor="#BBBBBB"
-                    style={styles.textInputWithIcon}
-                    value={siteAddress}
-                  />
-                </View>
-              </View>
+          <View style={styles.formField}>
+            <Text style={styles.fieldLabel}>
+              ADRESSE DU SITE{' '}
+              <Text style={styles.fieldLabelOptional}>(OPTIONNEL)</Text>
+            </Text>
+            <View style={styles.inputWrap}>
+              <MapPin size={14} color="#CCCCCC" style={styles.inputIcon} />
+              <TextInput
+                accessibilityLabel="Adresse du site"
+                onChangeText={value => setField('address', value)}
+                placeholder="12 rue de la Paix, 75001 Paris"
+                placeholderTextColor="#BBBBBB"
+                style={styles.textInputWithIcon}
+                value={form.address}
+              />
+            </View>
+          </View>
 
-              {/* Field 3: Ville */}
-              <View style={styles.formField}>
-                <Text style={styles.fieldLabel}>
-                  VILLE{' '}
-                  <Text style={styles.fieldLabelOptional}>
-                    (ILE DE FRANCE PAR DÉFAUT)
-                  </Text>
-                </Text>
-                <View style={styles.inputWrap}>
-                  <Navigation
-                    size={14}
-                    color="#CCCCCC"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    accessibilityLabel="Ville"
-                    onChangeText={setSiteCity}
-                    placeholder="Ile de France"
-                    placeholderTextColor="#BBBBBB"
-                    style={styles.textInputWithIcon}
-                    value={siteCity}
-                  />
-                </View>
-              </View>
+          <View style={styles.formField}>
+            <Text style={styles.fieldLabel}>
+              VILLE{' '}
+              <Text style={styles.fieldLabelOptional}>
+                (ILE DE FRANCE PAR DÉFAUT)
+              </Text>
+            </Text>
+            <View style={styles.inputWrap}>
+              <Navigation size={14} color="#CCCCCC" style={styles.inputIcon} />
+              <TextInput
+                accessibilityLabel="Ville"
+                onChangeText={value => setField('region', value)}
+                placeholder="Ile de France"
+                placeholderTextColor="#BBBBBB"
+                style={styles.textInputWithIcon}
+                value={form.region}
+              />
+            </View>
+          </View>
 
-              {/* Modal Actions */}
-              <View style={styles.modalActions}>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={closeModal}
-                  style={styles.cancelBtn}
-                >
-                  <Text style={styles.cancelBtnText}>Annuler</Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={handleSubmit}
-                  style={styles.submitBtn}
-                >
-                  {modalMode === 'create' ? (
-                    <Plus size={14} color={colors.white} strokeWidth={2.5} />
-                  ) : null}
-                  <Text style={styles.submitBtnText}>
-                    {modalMode === 'create'
-                      ? 'Ajouter l’espace'
-                      : 'Enregistrer'}
-                  </Text>
-                </Pressable>
-              </View>
+          <View style={styles.modalActions}>
+            <Pressable
+              accessibilityLabel="Annuler"
+              accessibilityRole="button"
+              disabled={saving}
+              onPress={closeModal}
+              style={styles.cancelBtn}
+            >
+              <Text style={styles.cancelBtnText}>Annuler</Text>
+            </Pressable>
+            <Pressable
+              accessibilityLabel={
+                modalMode === 'create' ? 'Créer le site' : 'Enregistrer le site'
+              }
+              accessibilityRole="button"
+              disabled={saving}
+              onPress={handleSubmit}
+              style={[styles.submitBtn, saving && styles.disabled]}
+            >
+              <Text style={styles.submitBtnText}>
+                {saving
+                  ? 'Enregistrement…'
+                  : modalMode === 'create'
+                    ? 'Créer'
+                    : 'Enregistrer'}
+              </Text>
+            </Pressable>
+          </View>
         </ScrollView>
       </BottomSheet>
     </View>
@@ -470,26 +594,27 @@ const createStyles = colors => StyleSheet.create({
     gap: 16,
   },
 
-  /* ── Subheader Row ── */
+  /* ── Subheader ── */
   subHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    gap: 12,
+    flexWrap: 'wrap',
   },
   subHeaderTitles: {
-    gap: 2,
+    flexShrink: 1,
   },
   subHeaderTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
-    color: colors.orangeDark,
+    color: colors.brown,
     fontFamily: serifFont,
   },
   subHeaderSubtitle: {
     fontSize: 12,
     color: '#AAAAAA',
-    fontWeight: '500',
+    marginTop: 2,
   },
   addButton: {
     flexDirection: 'row',
@@ -503,71 +628,88 @@ const createStyles = colors => StyleSheet.create({
   addButtonText: {
     color: colors.white,
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
   },
 
-  /* ── Empty State Card ── */
-  emptyCard: {
-    backgroundColor: colors.white,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#ECDDD6',
-    paddingVertical: 40,
-    paddingHorizontal: 20,
+  /* ── States ── */
+  loadingBlock: {
+    paddingVertical: 56,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 12,
   },
-  emptyIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#FAF5F2',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.brown,
-    marginBottom: 6,
-    fontFamily: serifFont,
-  },
-  emptySubtitle: {
+  loadingText: {
+    color: '#888',
     fontSize: 13,
-    color: '#888888',
-    textAlign: 'center',
+  },
+  banner: {
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  bannerError: {
+    backgroundColor: '#FCEDEA',
+    borderColor: '#F0C2BC',
+  },
+  bannerSuccess: {
+    backgroundColor: colors.successLight,
+    borderColor: colors.successBorder,
+  },
+  bannerText: {
+    fontSize: 13,
     lineHeight: 18,
-    maxWidth: 280,
+  },
+  bannerTextError: {
+    color: '#A02A1C',
+  },
+  bannerTextSuccess: {
+    color: colors.success,
+  },
+  retryButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 9,
+    backgroundColor: colors.orange,
+  },
+  retryButtonText: {
+    color: colors.white,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  disabled: {
+    opacity: 0.6,
   },
 
-  /* ── 3 Stat Cards Row ── */
+  /* ── Stat cards ── */
   statsRow: {
     flexDirection: 'row',
     gap: 10,
   },
   statCard: {
     flex: 1,
-    backgroundColor: colors.white,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ECDDD6',
-    borderTopWidth: 3,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statCardPrimary: {
-    borderTopColor: colors.orange,
+    backgroundColor: '#FDF3EE',
+    borderColor: '#F2DCCB',
   },
   statCardSuccess: {
-    borderTopColor: '#15803D',
+    backgroundColor: '#F1F9F2',
+    borderColor: '#CDEBD3',
   },
   statCardMuted: {
-    borderTopColor: '#9CA3AF',
+    backgroundColor: '#F7F4F2',
+    borderColor: '#E9E1DB',
   },
   statNum: {
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: '700',
     fontFamily: serifFont,
   },
   statNumPrimary: {
@@ -577,51 +719,82 @@ const createStyles = colors => StyleSheet.create({
     color: '#15803D',
   },
   statNumMuted: {
-    color: '#9CA3AF',
+    color: '#9A8F88',
   },
   statLabel: {
     fontSize: 11,
-    fontWeight: '600',
     color: '#AAAAAA',
     marginTop: 2,
   },
 
-  /* ── Sites List ── */
+  /* ── Empty state ── */
+  emptyCard: {
+    paddingVertical: 50,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FDF9F7',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#ECDDD6',
+  },
+  emptyIconWrap: {
+    marginBottom: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.orangeDark,
+  },
+  emptySubtitle: {
+    fontSize: 12,
+    color: '#AAAAAA',
+    marginTop: 4,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+
+  /* ── Site cards ── */
   sitesList: {
-    gap: 14,
+    gap: 10,
   },
   siteCard: {
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#ECDDD6',
     backgroundColor: colors.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#ECDDD6',
     overflow: 'hidden',
   },
   siteCardActive: {
-    borderColor: colors.orange,
-    backgroundColor: '#FDF9F7',
+    borderColor: '#F0DCAE',
+    backgroundColor: '#FDF8F2',
   },
   siteCardDisabled: {
-    opacity: 0.65,
+    opacity: 0.7,
   },
   activeAccentBar: {
-    height: 3,
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
     backgroundColor: colors.orange,
   },
   siteCardBody: {
-    paddingVertical: 16,
-    paddingHorizontal: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     gap: 8,
   },
   siteHeaderRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 10,
-    marginBottom: 4,
+    gap: 12,
   },
   siteIconWrap: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: 10,
     backgroundColor: '#FDF3EE',
     alignItems: 'center',
@@ -639,109 +812,108 @@ const createStyles = colors => StyleSheet.create({
   badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    marginTop: 3,
+    gap: 6,
+    marginTop: 5,
+    flexWrap: 'wrap',
   },
   statusBadgeActive: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: 4,
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    borderRadius: 20,
+    backgroundColor: '#EAF5EA',
   },
   statusBadgeActiveText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#15803D',
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#2E7D32',
   },
   statusBadgeInactive: {
-    backgroundColor: '#F3F4F6',
-    paddingVertical: 1,
-    paddingHorizontal: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 8,
     borderRadius: 20,
+    backgroundColor: '#F0E4DD',
   },
   statusBadgeInactiveText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#9CA3AF',
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#9A8F88',
   },
   enCoursBadge: {
-    backgroundColor: colors.orange,
-    paddingVertical: 1,
-    paddingHorizontal: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 8,
     borderRadius: 20,
-    marginLeft: 4,
+    backgroundColor: '#F5E2B8',
   },
   enCoursBadgeText: {
     fontSize: 9,
-    fontWeight: '700',
-    color: colors.white,
+    fontWeight: '800',
+    color: '#8A6511',
   },
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
   },
   actionBtn: {
-    width: 30,
-    height: 30,
+    width: 28,
+    height: 28,
     borderRadius: 8,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: '#E0D0C8',
     backgroundColor: colors.white,
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionBtnPowerActive: {
-    borderColor: '#FCA5A5',
-    backgroundColor: '#FEF2F2',
+    borderColor: '#F3D2D2',
   },
   actionBtnPowerInactive: {
-    borderColor: '#BBF7D0',
-    backgroundColor: '#F0FDF4',
+    borderColor: '#CDEBD3',
   },
   actionBtnDelete: {
-    borderColor: '#FCA5A5',
-    backgroundColor: '#FEF2F2',
+    borderColor: '#F3D2D2',
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
+    gap: 6,
   },
   metaIcon: {
-    flexShrink: 0,
+    marginTop: 1,
   },
   metaRegion: {
     fontSize: 12,
-    color: '#666666',
-    fontWeight: '500',
+    color: '#999999',
   },
   metaAddress: {
     fontSize: 12,
-    color: '#666666',
+    color: '#BBBBBB',
     flexShrink: 1,
   },
 
-  /* ── Info Tip Banner ── */
+  /* ── Info banner ── */
   infoBanner: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 8,
-    backgroundColor: '#F0F7FF',
-    borderRadius: 8,
+    backgroundColor: '#F0F7FE',
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#BFDBFE',
-    paddingVertical: 10,
+    borderColor: '#D6E9FB',
     paddingHorizontal: 14,
-    marginTop: 4,
+    paddingVertical: 10,
   },
   infoBannerIcon: {
-    flexShrink: 0,
+    marginTop: 1,
   },
   infoBannerText: {
     flex: 1,
-    fontSize: 12,
-    color: '#1565C0',
+    fontSize: 11,
     lineHeight: 17,
+    color: '#4A6B85',
   },
 
   /* ── Modal form ── */
@@ -757,13 +929,11 @@ const createStyles = colors => StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#888888',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginBottom: 6,
+    marginBottom: 5,
   },
   fieldLabelOptional: {
     fontWeight: '400',
-    color: '#CCCCCC',
+    color: '#BBBBBB',
   },
   inputWrap: {
     position: 'relative',
@@ -771,19 +941,27 @@ const createStyles = colors => StyleSheet.create({
   },
   inputIcon: {
     position: 'absolute',
-    left: 10,
+    left: 11,
     zIndex: 1,
   },
   textInputWithIcon: {
     borderWidth: 1.5,
     borderColor: '#E0D0C8',
-    borderRadius: 8,
+    borderRadius: 9,
     paddingVertical: 9,
-    paddingLeft: 32,
-    paddingRight: 12,
+    paddingLeft: 34,
+    paddingRight: 11,
     fontSize: 13,
-    color: '#333333',
+    color: '#1A1A1A',
     backgroundColor: colors.white,
+  },
+  textInputError: {
+    borderColor: '#F87171',
+  },
+  fieldErrorText: {
+    fontSize: 11,
+    color: '#DC2626',
+    marginTop: 4,
   },
   modalActions: {
     flexDirection: 'row',
@@ -793,14 +971,12 @@ const createStyles = colors => StyleSheet.create({
     marginTop: 6,
   },
   cancelBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1.5,
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    borderRadius: 9,
+    borderWidth: 1,
     borderColor: '#E0D0C8',
     backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   cancelBtnText: {
     fontSize: 13,
@@ -808,18 +984,17 @@ const createStyles = colors => StyleSheet.create({
     color: '#888888',
   },
   submitBtn: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 8,
+    gap: 7,
+    paddingVertical: 9,
+    paddingHorizontal: 18,
+    borderRadius: 9,
     backgroundColor: colors.orange,
   },
   submitBtnText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.white,
   },
 });

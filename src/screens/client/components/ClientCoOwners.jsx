@@ -1,6 +1,35 @@
-import { useState } from 'react';
+/**
+ * =====================================================================
+ * INVENTORY WIRING SPECIFICATION (staffly-frontend/inventory.md)
+ * =====================================================================
+ * ### Screen: Client Portal : ClientCoOwners
+ * **Associated Route/Context**: `/client (Tab/Modal: ClientCoOwners)`  
+ * **Total Discovered Backend Calls**: 2
+ * 
+ * | Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+ * | :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+ * | [`ClientCoOwners.jsx:46`](file:///C:/Users/Workspace/staffly-frontend/src/pages/client/components/ClientCoOwners.jsx#L46) | Form Submit / Create Button (`handleSubmit`) | `handleSubmit` | `POST` | `/client/co-owners` | `{         firstname: form.firstname,         name:      form.name,         email:     form.email,         phone:     form.phone,         password:  form.password,         password_confirmation: form.password_confirmation,       }` | Bearer token (Authstorage / localStorage) | Confirmed (Resolved Service Call) |
+ * | [`ClientCoOwners.jsx:170`](file:///C:/Users/Workspace/staffly-frontend/src/pages/client/components/ClientCoOwners.jsx#L170) | Delete / Cancel Button (`handleRemove`) | `handleRemove` | `DELETE` | `/client/co-owners/${id}` | `coOwner.id` | Bearer token (Authstorage / localStorage) | Confirmed (Resolved Service Call) |
+ * 
+ * =====================================================================
+ */
+// Co-propriétaires — shared by both platforms (bookly and staffly).
+//
+// One component serves both brands through useClientTheme(), so a change here
+// lands on both clients at once.
+//
+// What the backend allows (see Api/Client.php):
+//   list  GET    /client/co-owners
+//   add   POST   /client/co-owners
+//   remove DELETE /client/co-owners/{id}
+// There is no update endpoint, so this screen does not offer editing — the
+// previous mock had an "edit" button that could never have saved anything.
+
+import { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
+  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -11,16 +40,25 @@ import {
 } from 'react-native';
 import {
   Check,
-  Edit3,
   Eye,
   EyeOff,
   Plus,
   Trash2,
   UserRound,
 } from 'lucide-react-native';
+
+import { fetchClient } from '../../../api/fetchClient';
+import { describeApiError, extractFieldErrors } from '../../../utils/apiError';
+import { toPhotoSrc } from '../../../utils/toPhotoSrc';
 import { useClientTheme } from '../theme/ClientThemeContext';
 import { createBrandStyles } from '../theme/clientStyles';
 import BottomSheet from './BottomSheet';
+import {
+  EMPTY_CO_OWNER_FORM,
+  buildCoOwnerBody,
+  normalizeCoOwners,
+  validateCoOwnerForm,
+} from './coOwnerModel';
 
 const serifFont = Platform.select({
   ios: 'Georgia',
@@ -28,177 +66,242 @@ const serifFont = Platform.select({
   default: 'Georgia',
 });
 
-const defaultCoOwners = [
-  {
-    id: 'demo-coprop-1',
-    firstName: 'Client',
-    lastName: '02',
-    fullName: 'Client 02',
-    email: 'client02@example.test',
-    phone: '06 11 11 00 02',
-    initials: 'CO',
-    status: 'ACTIF',
-  },
-];
-
 export default function ClientCoOwners() {
   const { partner, colors } = useClientTheme();
   const styles = stylesByBrand[partner];
 
-  const [coOwners, setCoOwners] = useState(defaultCoOwners);
+  const [coOwners, setCoOwners] = useState([]);
+  const [isPrimaryOwner, setIsPrimaryOwner] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-
-  // Form fields
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [form, setForm] = useState(EMPTY_CO_OWNER_FORM);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [feedback, setFeedback] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [failedPhotos, setFailedPhotos] = useState({});
 
-  function resetForm() {
-    setFirstName('');
-    setLastName('');
-    setEmail('');
-    setPhone('');
-    setPassword('');
-    setConfirmPassword('');
-    setShowPassword(false);
-    setEditingId(null);
-  }
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
 
-  function openCreateModal() {
-    resetForm();
-    setModalVisible(true);
-  }
+    try {
+      // The list never includes yourself, so "am I the account holder?" has to
+      // come from the profile — it decides whether removing is allowed.
+      const [listResult, profileResult] = await Promise.allSettled([
+        fetchClient('/client/co-owners'),
+        fetchClient('/client/profile'),
+      ]);
 
-  function openEditModal(coOwner) {
-    setEditingId(coOwner.id);
-    setFirstName(coOwner.firstName || '');
-    setLastName(coOwner.lastName || '');
-    setEmail(coOwner.email || '');
-    setPhone(coOwner.phone || '');
-    setPassword('');
-    setConfirmPassword('');
+      if (listResult.status !== 'fulfilled') {
+        throw listResult.reason;
+      }
+
+      setCoOwners(normalizeCoOwners(listResult.value));
+      setIsPrimaryOwner(
+        profileResult.status === 'fulfilled'
+          ? Boolean(profileResult.value?.personal_info?.is_primary_owner)
+          : false,
+      );
+    } catch (error) {
+      setLoadError(describeApiError(error));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const setField = (key, value) => {
+    setForm(current => ({ ...current, [key]: value }));
+    // Clear the field's error as soon as the user edits it.
+    setFieldErrors(current => {
+      if (!current[key]) {
+        return current;
+      }
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  };
+
+  function openCreate() {
+    setForm(EMPTY_CO_OWNER_FORM);
+    setFieldErrors({});
+    setFeedback(null);
     setShowPassword(false);
     setModalVisible(true);
   }
 
   function closeModal() {
-    resetForm();
     setModalVisible(false);
+    setForm(EMPTY_CO_OWNER_FORM);
+    setFieldErrors({});
+    setShowPassword(false);
   }
 
-  function handleSubmit() {
-    const trimmedFirst = firstName.trim();
-    const trimmedLast = lastName.trim();
-    const trimmedEmail = email.trim();
-
-    if (!trimmedFirst || !trimmedLast) {
-      Alert.alert('Champs requis', 'Veuillez renseigner le prénom et le nom.');
+  async function handleCreate() {
+    const errors = validateCoOwnerForm(form);
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
-    if (!trimmedEmail || !trimmedEmail.includes('@')) {
-      Alert.alert('Email invalide', 'Veuillez saisir une adresse email valide.');
-      return;
-    }
+    setSaving(true);
+    setFeedback(null);
+    setFieldErrors({});
 
-    if (!editingId) {
-      if (!password || password.length < 6) {
-        Alert.alert(
-          'Mot de passe requis',
-          'Le mot de passe doit comporter au moins 6 caractères.',
-        );
-        return;
-      }
-      if (password !== confirmPassword) {
-        Alert.alert(
-          'Erreur de confirmation',
-          'Les mots de passe ne correspondent pas.',
-        );
-        return;
-      }
+    try {
+      await fetchClient('/client/co-owners', {
+        method: 'POST',
+        body: buildCoOwnerBody(form),
+      });
 
-      const initials = (trimmedFirst[0] + trimmedLast[0]).toUpperCase();
-      const newCoOwner = {
-        id: Date.now().toString(),
-        firstName: trimmedFirst,
-        lastName: trimmedLast,
-        fullName: `${trimmedFirst} ${trimmedLast}`,
-        email: trimmedEmail,
-        phone: phone.trim(),
-        initials,
-        status: 'ACTIF',
-      };
-
-      setCoOwners(current => [newCoOwner, ...current]);
       closeModal();
-    } else {
-      if (password) {
-        if (password.length < 6) {
-          Alert.alert(
-            'Mot de passe',
-            'Le mot de passe doit comporter au moins 6 caractères.',
-          );
-          return;
-        }
-        if (password !== confirmPassword) {
-          Alert.alert(
-            'Erreur de confirmation',
-            'Les mots de passe ne correspondent pas.',
-          );
-          return;
-        }
+      setFeedback({
+        type: 'success',
+        message: 'Co-propriétaire créé avec succès !',
+      });
+      await load();
+    } catch (error) {
+      const fields = extractFieldErrors(error);
+      if (Object.keys(fields).length > 0) {
+        // Laravel's keys are snake_case; the form is camelCase.
+        setFieldErrors({
+          ...fields,
+          passwordConfirmation:
+            fields.passwordConfirmation || fields.password_confirmation,
+        });
+      } else {
+        setFeedback({ type: 'error', message: describeApiError(error) });
       }
-
-      const initials = (trimmedFirst[0] + trimmedLast[0]).toUpperCase();
-      setCoOwners(current =>
-        current.map(item =>
-          item.id === editingId
-            ? {
-                ...item,
-                firstName: trimmedFirst,
-                lastName: trimmedLast,
-                fullName: `${trimmedFirst} ${trimmedLast}`,
-                email: trimmedEmail,
-                phone: phone.trim(),
-                initials,
-              }
-            : item,
-        ),
-      );
-      closeModal();
+    } finally {
+      setSaving(false);
     }
   }
 
-  function handleDelete(id, name) {
+  function handleDelete(coOwner) {
     Alert.alert(
-      'Supprimer le co-propriétaire',
-      `Êtes-vous sûr de vouloir supprimer ${name} ? Cette action est irréversible.`,
+      'Retirer le co-propriétaire',
+      `Retirer ${coOwner.fullName} de l'entreprise ? Cette personne perdra tout accès.`,
       [
         { text: 'Annuler', style: 'cancel' },
         {
-          text: 'Supprimer',
+          text: 'Retirer',
           style: 'destructive',
-          onPress: () => {
-            setCoOwners(current => current.filter(item => item.id !== id));
-          },
+          onPress: () => removeCoOwner(coOwner),
         },
       ],
     );
   }
 
+  async function removeCoOwner(coOwner) {
+    setDeletingId(coOwner.id);
+    setFeedback(null);
+
+    try {
+      await fetchClient(`/client/co-owners/${coOwner.id}`, { method: 'DELETE' });
+      setFeedback({ type: 'success', message: 'Co-propriétaire retiré.' });
+      await load();
+    } catch (error) {
+      setFeedback({ type: 'error', message: describeApiError(error) });
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  const renderRow = coOwner => {
+    const showPhoto =
+      coOwner.photoUrl && !failedPhotos[coOwner.id];
+
+    return (
+      <View
+        key={coOwner.id}
+        style={[styles.coOwnerCard, coOwner.isPrimary && styles.coOwnerCardPrimary]}
+      >
+        <View style={styles.avatarWrap}>
+          {showPhoto ? (
+            <Image
+              onError={() =>
+                setFailedPhotos(current => ({ ...current, [coOwner.id]: true }))
+              }
+              source={{ uri: toPhotoSrc(coOwner.photoUrl) }}
+              style={styles.avatarImage}
+            />
+          ) : (
+            <Text style={styles.avatarText}>{coOwner.initials}</Text>
+          )}
+        </View>
+
+        <View style={styles.infoCol}>
+          <View style={styles.nameRow}>
+            <Text numberOfLines={1} style={styles.nameText}>
+              {coOwner.fullName}
+            </Text>
+            <View
+              style={[
+                styles.statusBadge,
+                coOwner.isPrimary && styles.statusBadgePrimary,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusBadgeText,
+                  coOwner.isPrimary && styles.statusBadgeTextPrimary,
+                ]}
+              >
+                {coOwner.statusLabel}
+              </Text>
+            </View>
+          </View>
+          <Text numberOfLines={1} style={styles.emailText}>
+            {coOwner.email}
+          </Text>
+        </View>
+
+        {isPrimaryOwner && coOwner.canRemove ? (
+          <Pressable
+            accessibilityLabel={`Retirer ${coOwner.fullName}`}
+            accessibilityRole="button"
+            disabled={deletingId === coOwner.id}
+            onPress={() => handleDelete(coOwner)}
+            style={[
+              styles.actionBtn,
+              deletingId === coOwner.id && styles.disabled,
+            ]}
+          >
+            {deletingId === coOwner.id ? (
+              <ActivityIndicator color="#DC2626" size="small" />
+            ) : (
+              <Trash2 size={13} color="#DC2626" />
+            )}
+          </Pressable>
+        ) : null}
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingBlock}>
+        <ActivityIndicator color={colors.orange} size="large" />
+        <Text style={styles.loadingText}>Chargement des co-propriétaires…</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {/* ── Action Button (Full Button matching original design) ── */}
       <View style={styles.actionRow}>
         <Pressable
           accessibilityLabel="Ajouter un co-propriétaire"
           accessibilityRole="button"
-          onPress={openCreateModal}
+          onPress={openCreate}
           style={styles.addButton}
         >
           <Plus size={14} color={colors.white} strokeWidth={2.5} />
@@ -206,8 +309,39 @@ export default function ClientCoOwners() {
         </Pressable>
       </View>
 
-      {/* ── Content: Co-Owners List or Empty State ── */}
-      {coOwners.length === 0 ? (
+      {feedback ? (
+        <View
+          style={[
+            styles.banner,
+            feedback.type === 'error' ? styles.bannerError : styles.bannerSuccess,
+          ]}
+        >
+          <Text
+            style={[
+              styles.bannerText,
+              feedback.type === 'error'
+                ? styles.bannerTextError
+                : styles.bannerTextSuccess,
+            ]}
+          >
+            {feedback.message}
+          </Text>
+        </View>
+      ) : null}
+
+      {loadError ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyTitle}>Chargement impossible</Text>
+          <Text style={styles.emptySubtitle}>{loadError}</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={load}
+            style={styles.retryButton}
+          >
+            <Text style={styles.retryButtonText}>Réessayer</Text>
+          </Pressable>
+        </View>
+      ) : coOwners.length === 0 ? (
         <View style={styles.emptyCard}>
           <View style={styles.emptyIconWrap}>
             <UserRound size={22} color="#CCCCCC" strokeWidth={2} />
@@ -218,213 +352,179 @@ export default function ClientCoOwners() {
           </Text>
         </View>
       ) : (
-        <View style={styles.listContainer}>
-          {coOwners.map(item => (
-            <View key={item.id} style={styles.coOwnerCard}>
-              <View style={styles.avatarWrap}>
-                <Text style={styles.avatarText}>{item.initials}</Text>
-              </View>
-              <View style={styles.infoCol}>
-                <View style={styles.nameRow}>
-                  <Text numberOfLines={1} style={styles.nameText}>
-                    {item.fullName}
-                  </Text>
-                  <View style={styles.statusBadge}>
-                    <Text style={styles.statusBadgeText}>{item.status}</Text>
-                  </View>
-                </View>
-                <Text numberOfLines={1} style={styles.emailText}>
-                  {item.email}
-                </Text>
-                {item.phone ? (
-                  <Text numberOfLines={1} style={styles.phoneText}>
-                    {item.phone}
-                  </Text>
-                ) : null}
-              </View>
-              <View style={styles.actionsRow}>
-                <Pressable
-                  accessibilityLabel="Modifier"
-                  accessibilityRole="button"
-                  onPress={() => openEditModal(item)}
-                  style={styles.actionBtn}
-                >
-                  <Edit3 size={13} color={colors.orange} />
-                </Pressable>
-                <Pressable
-                  accessibilityLabel="Supprimer"
-                  accessibilityRole="button"
-                  onPress={() => handleDelete(item.id, item.fullName)}
-                  style={styles.actionBtn}
-                >
-                  <Trash2 size={13} color="#DC2626" />
-                </Pressable>
-              </View>
-            </View>
-          ))}
-        </View>
+        <View style={styles.listContainer}>{coOwners.map(renderRow)}</View>
       )}
 
-      {/* ── Shared bottom sheet (same surface as the select pickers) ── */}
       <BottomSheet
         maxHeight="90%"
         onClose={closeModal}
-        subtitle={
-          editingId
-            ? 'Modifier les informations d’accès'
-            : 'Accès complet à l’entreprise, identique au vôtre'
-        }
-        title={
-          editingId
-            ? 'Modifier le co-propriétaire'
-            : 'Nouveau co-propriétaire'
-        }
+        subtitle="Accès complet à l’entreprise, identique au vôtre"
+        title="Nouveau co-propriétaire"
         visible={modalVisible}
       >
-        {/* Modal Form Scrollable */}
         <ScrollView
           contentContainerStyle={styles.modalFormContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-              {/* Row 1: Prénom + Nom */}
-              <View style={styles.formRow}>
-                <View style={styles.formCol}>
-                  <Text style={styles.fieldLabel}>Prénom</Text>
-                  <TextInput
-                    accessibilityLabel="Prénom"
-                    autoCapitalize="words"
-                    onChangeText={setFirstName}
-                    placeholder="Prénom"
-                    placeholderTextColor="#BBBBBB"
-                    style={styles.textInput}
-                    value={firstName}
-                  />
-                </View>
-                <View style={styles.formCol}>
-                  <Text style={styles.fieldLabel}>Nom</Text>
-                  <TextInput
-                    accessibilityLabel="Nom"
-                    autoCapitalize="words"
-                    onChangeText={setLastName}
-                    placeholder="Nom"
-                    placeholderTextColor="#BBBBBB"
-                    style={styles.textInput}
-                    value={lastName}
-                  />
-                </View>
-              </View>
+          <View style={styles.formRow}>
+            <View style={styles.formCol}>
+              <Text style={styles.fieldLabel}>Prénom</Text>
+              <TextInput
+                accessibilityLabel="Prénom"
+                autoCapitalize="words"
+                onChangeText={value => setField('firstname', value)}
+                placeholder="Prénom"
+                placeholderTextColor="#BBBBBB"
+                style={[
+                  styles.textInput,
+                  fieldErrors.firstname && styles.textInputError,
+                ]}
+                value={form.firstname}
+              />
+              {fieldErrors.firstname ? (
+                <Text style={styles.fieldErrorText}>{fieldErrors.firstname}</Text>
+              ) : null}
+            </View>
+            <View style={styles.formCol}>
+              <Text style={styles.fieldLabel}>Nom</Text>
+              <TextInput
+                accessibilityLabel="Nom"
+                autoCapitalize="words"
+                onChangeText={value => setField('name', value)}
+                placeholder="Nom"
+                placeholderTextColor="#BBBBBB"
+                style={[styles.textInput, fieldErrors.name && styles.textInputError]}
+                value={form.name}
+              />
+              {fieldErrors.name ? (
+                <Text style={styles.fieldErrorText}>{fieldErrors.name}</Text>
+              ) : null}
+            </View>
+          </View>
 
-              {/* Field 2: Email */}
-              <View style={styles.formField}>
-                <Text style={styles.fieldLabel}>Email</Text>
+          <View style={styles.formField}>
+            <Text style={styles.fieldLabel}>Email</Text>
+            <TextInput
+              accessibilityLabel="Email"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              onChangeText={value => setField('email', value)}
+              placeholder="nom@exemple.com"
+              placeholderTextColor="#BBBBBB"
+              style={[styles.textInput, fieldErrors.email && styles.textInputError]}
+              value={form.email}
+            />
+            {fieldErrors.email ? (
+              <Text style={styles.fieldErrorText}>{fieldErrors.email}</Text>
+            ) : null}
+          </View>
+
+          <View style={styles.formField}>
+            <Text style={styles.fieldLabel}>
+              Téléphone <Text style={styles.fieldLabelOptional}>(optionnel)</Text>
+            </Text>
+            <TextInput
+              accessibilityLabel="Téléphone (optionnel)"
+              keyboardType="phone-pad"
+              onChangeText={value => setField('phone', value)}
+              placeholder="06 12 34 56 78"
+              placeholderTextColor="#BBBBBB"
+              style={styles.textInput}
+              value={form.phone}
+            />
+          </View>
+
+          <View style={styles.formRow}>
+            <View style={styles.formCol}>
+              <Text style={styles.fieldLabel}>Mot de passe</Text>
+              <View style={styles.passwordInputWrap}>
                 <TextInput
-                  accessibilityLabel="Email"
+                  accessibilityLabel="Mot de passe"
                   autoCapitalize="none"
-                  keyboardType="email-address"
-                  onChangeText={setEmail}
-                  placeholder="nom@exemple.com"
+                  onChangeText={value => setField('password', value)}
+                  placeholder="••••••••"
                   placeholderTextColor="#BBBBBB"
-                  style={styles.textInput}
-                  value={email}
+                  secureTextEntry={!showPassword}
+                  style={[
+                    styles.passwordInput,
+                    fieldErrors.password && styles.textInputError,
+                  ]}
+                  value={form.password}
                 />
+                <Pressable
+                  accessibilityLabel={
+                    showPassword
+                      ? 'Masquer le mot de passe'
+                      : 'Afficher le mot de passe'
+                  }
+                  accessibilityRole="button"
+                  onPress={() => setShowPassword(current => !current)}
+                  style={styles.passwordToggleBtn}
+                >
+                  {showPassword ? (
+                    <EyeOff size={15} color="#BBBBBB" />
+                  ) : (
+                    <Eye size={15} color="#BBBBBB" />
+                  )}
+                </Pressable>
               </View>
-
-              {/* Field 3: Téléphone (optionnel) */}
-              <View style={styles.formField}>
-                <Text style={styles.fieldLabel}>
-                  Téléphone <Text style={styles.fieldLabelOptional}>(optionnel)</Text>
+              {fieldErrors.password ? (
+                <Text style={styles.fieldErrorText}>{fieldErrors.password}</Text>
+              ) : null}
+            </View>
+            <View style={styles.formCol}>
+              <Text style={styles.fieldLabel}>Confirmer</Text>
+              <TextInput
+                accessibilityLabel="Confirmer le mot de passe"
+                autoCapitalize="none"
+                onChangeText={value => setField('passwordConfirmation', value)}
+                placeholder="••••••••"
+                placeholderTextColor="#BBBBBB"
+                secureTextEntry={!showPassword}
+                style={[
+                  styles.textInput,
+                  fieldErrors.password_confirmation && styles.textInputError,
+                ]}
+                value={form.passwordConfirmation}
+              />
+              {fieldErrors.password_confirmation ? (
+                <Text style={styles.fieldErrorText}>
+                  {fieldErrors.password_confirmation}
                 </Text>
-                <TextInput
-                  accessibilityLabel="Téléphone (optionnel)"
-                  keyboardType="phone-pad"
-                  onChangeText={setPhone}
-                  placeholder="06 12 34 56 78"
-                  placeholderTextColor="#BBBBBB"
-                  style={styles.textInput}
-                  value={phone}
-                />
-              </View>
+              ) : null}
+            </View>
+          </View>
 
-              {/* Row 4: Mot de passe + Confirmer */}
-              <View style={styles.formRow}>
-                <View style={styles.formCol}>
-                  <Text style={styles.fieldLabel}>
-                    {editingId ? 'Mot de passe (optionnel)' : 'Mot de passe'}
-                  </Text>
-                  <View style={styles.passwordInputWrap}>
-                    <TextInput
-                      accessibilityLabel="Mot de passe"
-                      autoCapitalize="none"
-                      onChangeText={setPassword}
-                      placeholder="••••••••"
-                      placeholderTextColor="#BBBBBB"
-                      secureTextEntry={!showPassword}
-                      style={styles.passwordInput}
-                      value={password}
-                    />
-                    <Pressable
-                      accessibilityLabel={
-                        showPassword
-                          ? 'Masquer le mot de passe'
-                          : 'Afficher le mot de passe'
-                      }
-                      accessibilityRole="button"
-                      onPress={() => setShowPassword(!showPassword)}
-                      style={styles.passwordToggleBtn}
-                    >
-                      {showPassword ? (
-                        <EyeOff size={15} color="#BBBBBB" />
-                      ) : (
-                        <Eye size={15} color="#BBBBBB" />
-                      )}
-                    </Pressable>
-                  </View>
-                </View>
-                <View style={styles.formCol}>
-                  <Text style={styles.fieldLabel}>Confirmer</Text>
-                  <TextInput
-                    accessibilityLabel="Confirmer le mot de passe"
-                    autoCapitalize="none"
-                    onChangeText={setConfirmPassword}
-                    placeholder="••••••••"
-                    placeholderTextColor="#BBBBBB"
-                    secureTextEntry={!showPassword}
-                    style={styles.textInput}
-                    value={confirmPassword}
-                  />
-                </View>
-              </View>
+          <Text style={styles.infoNote}>
+            Le compte sera activé immédiatement. Le co-propriétaire aura le même
+            accès que vous sur toute l’entreprise (tous les sites, employés,
+            prestations, factures...).
+          </Text>
 
-              {/* Note */}
-              <Text style={styles.infoNote}>
-                Le compte sera activé immédiatement. Le co-propriétaire aura le même
-                accès que vous sur toute l’entreprise (tous les sites, employés,
-                prestations, factures...).
+          <View style={styles.modalActions}>
+            <Pressable
+              accessibilityLabel="Annuler la création"
+              accessibilityRole="button"
+              disabled={saving}
+              onPress={closeModal}
+              style={styles.cancelBtn}
+            >
+              <Text style={styles.cancelBtnText}>Annuler</Text>
+            </Pressable>
+            <Pressable
+              accessibilityLabel="Créer le co-propriétaire"
+              accessibilityRole="button"
+              disabled={saving}
+              onPress={handleCreate}
+              style={[styles.submitBtn, saving && styles.disabled]}
+            >
+              <Check size={13} color={colors.white} strokeWidth={2.5} />
+              <Text style={styles.submitBtnText}>
+                {saving ? 'Création…' : 'Créer le co-propriétaire'}
               </Text>
-
-              {/* Modal Actions */}
-              <View style={styles.modalActions}>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={closeModal}
-                  style={styles.cancelBtn}
-                >
-                  <Text style={styles.cancelBtnText}>Annuler</Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={handleSubmit}
-                  style={styles.submitBtn}
-                >
-                  <Check size={13} color={colors.white} strokeWidth={2.5} />
-                  <Text style={styles.submitBtnText}>
-                    {editingId
-                      ? 'Enregistrer'
-                      : 'Créer le co-propriétaire'}
-                  </Text>
-                </Pressable>
-              </View>
+            </Pressable>
+          </View>
         </ScrollView>
       </BottomSheet>
     </View>
@@ -455,6 +555,57 @@ const createStyles = colors => StyleSheet.create({
     color: colors.white,
     fontSize: 13,
     fontWeight: '600',
+  },
+
+  /* ── States ── */
+  loadingBlock: {
+    paddingVertical: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    color: '#888',
+    fontSize: 13,
+  },
+  banner: {
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  bannerError: {
+    backgroundColor: '#FCEDEA',
+    borderColor: '#F0C2BC',
+  },
+  bannerSuccess: {
+    backgroundColor: colors.successLight,
+    borderColor: colors.successBorder,
+  },
+  bannerText: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  bannerTextError: {
+    color: '#A02A1C',
+  },
+  bannerTextSuccess: {
+    color: colors.success,
+  },
+  retryButton: {
+    marginTop: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 9,
+    backgroundColor: colors.orange,
+  },
+  retryButtonText: {
+    color: colors.white,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  disabled: {
+    opacity: 0.6,
   },
 
   /* ── Empty State Card ── */
@@ -501,6 +652,11 @@ const createStyles = colors => StyleSheet.create({
     paddingHorizontal: 16,
     gap: 12,
   },
+  coOwnerCardPrimary: {
+    backgroundColor: '#FDF8F2',
+    borderWidth: 1.5,
+    borderColor: '#F0DCAE',
+  },
   avatarWrap: {
     width: 40,
     height: 40,
@@ -508,6 +664,11 @@ const createStyles = colors => StyleSheet.create({
     backgroundColor: '#FDF3EE',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   avatarText: {
     fontSize: 14,
@@ -523,6 +684,7 @@ const createStyles = colors => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexWrap: 'wrap',
   },
   nameText: {
     fontSize: 14,
@@ -536,25 +698,21 @@ const createStyles = colors => StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#EAF5EA',
   },
+  statusBadgePrimary: {
+    backgroundColor: '#F5E2B8',
+  },
   statusBadgeText: {
     fontSize: 9,
     fontWeight: '800',
     color: '#2E7D32',
   },
+  statusBadgeTextPrimary: {
+    color: '#8A6511',
+  },
   emailText: {
     fontSize: 12,
     color: '#999999',
     marginTop: 2,
-  },
-  phoneText: {
-    fontSize: 11,
-    color: '#BBBBBB',
-    marginTop: 2,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
   },
   actionBtn: {
     width: 30,
@@ -602,6 +760,14 @@ const createStyles = colors => StyleSheet.create({
     fontSize: 13,
     color: '#1A1A1A',
     backgroundColor: colors.white,
+  },
+  textInputError: {
+    borderColor: '#F87171',
+  },
+  fieldErrorText: {
+    fontSize: 11,
+    color: '#DC2626',
+    marginTop: 4,
   },
   passwordInputWrap: {
     position: 'relative',

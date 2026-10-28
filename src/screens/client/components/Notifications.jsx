@@ -1,5 +1,28 @@
-import { useState } from 'react';
+/**
+ * =====================================================================
+ * INVENTORY WIRING SPECIFICATION (staffly-frontend/inventory.md)
+ * =====================================================================
+ * ### Screen: Shared Portal Component : NotificationsPanel
+ * **Associated Route/Context**: `Shared Component across Dashboards`  
+ * **Total Discovered Backend Calls**: 9
+ * 
+ * | Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+ * | :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+ * | [`NotificationsPanel.jsx:329`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/NotificationsPanel.jsx#L329) | User Action Handler (`handleBulkRead`) | `handleBulkRead` | `PATCH` | `/notifications/${id}/read` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`NotificationsPanel.jsx:339`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/NotificationsPanel.jsx#L339) | Delete / Cancel Button (`handleBulkDelete`) | `handleBulkDelete` | `DELETE` | `/notifications/${id}` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`NotificationsPanel.jsx:348`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/NotificationsPanel.jsx#L348) | Delete / Cancel Button (`handleBulkDelete`) | `handleBulkDelete` | `GET` | `url` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`NotificationsPanel.jsx:372`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/NotificationsPanel.jsx#L372) | Delete / Cancel Button (`handleBulkDelete`) | `handleBulkDelete` | `PATCH` | `siteId ? `/notifications/read-all?site_id=${siteId}` : '/notifications/read-all` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`NotificationsPanel.jsx:399`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/NotificationsPanel.jsx#L399) | User Action Handler (`handleOpen`) | `handleOpen` | `PATCH` | `/notifications/${notif.id}/read` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`NotificationsPanel.jsx:407`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/NotificationsPanel.jsx#L407) | User Action Handler (`handleReadAll`) | `handleReadAll` | `PATCH` | `siteId ? `/notifications/read-all?site_id=${siteId}` : '/notifications/read-all` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`NotificationsPanel.jsx:419`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/NotificationsPanel.jsx#L419) | Initial Page / Component Mount Lifecycle (`useEffect`) | `useEffect hook` | `POST` | `/notifications/targets` | `{ ids` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`NotificationsPanel.jsx:437`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/NotificationsPanel.jsx#L437) | User Action Handler (`handleGo`) | `handleGo` | `PATCH` | `/notifications/${notif.id}/read` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * | [`NotificationsPanel.jsx:447`](file:///C:/Users/Workspace/staffly-frontend/src/pages/components/NotificationsPanel.jsx#L447) | Delete / Cancel Button (`handleDelete`) | `handleDelete` | `DELETE` | `/notifications/${id}` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * 
+ * =====================================================================
+ */
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Modal,
   Platform,
   Pressable,
@@ -8,6 +31,7 @@ import {
   Text,
   TextInput,
   View,
+  Alert,
 } from 'react-native';
 import {
   Bell,
@@ -20,8 +44,15 @@ import {
   X,
 } from 'lucide-react-native';
 import { useClientTheme } from '../theme/ClientThemeContext';
+import { useClientSites } from '../state/SitesContext';
 import BottomSheet from './BottomSheet';
 import { createBrandStyles } from '../theme/clientStyles';
+import {
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  deleteNotification as deleteNotificationApi,
+} from '../../../api/clientService';
 
 const serifFont = Platform.select({
   ios: 'Georgia',
@@ -29,32 +60,41 @@ const serifFont = Platform.select({
   default: 'Georgia',
 });
 
-const defaultNotifications = [
-  {
-    id: 'notif-1',
-    category: 'Missions',
-    tag: 'MISSION',
-    title: 'Mission approuvée — Séminaire annuel de la direction',
-    description:
-      'Votre mission "Séminaire annuel de la direction" a été approuvée et est maintenant visible des extras.',
-    date: '12 oct.',
-    fullDate: 'lundi 12 octobre 2026 à 15:11',
-    isRead: false,
-    icon: 'briefcase',
-  },
-  {
-    id: 'notif-2',
-    category: 'Missions',
-    tag: 'MISSION',
-    title: 'Mission approuvée — Cocktail de lancement',
-    description:
-      'Votre mission "Cocktail de lancement de la nouvelle collection" a été approuvée et est maintenant visible des extras.',
-    date: '12 oct.',
-    fullDate: 'lundi 12 octobre 2026 à 11:24',
-    isRead: false,
-    icon: 'briefcase',
-  },
-];
+function normalizeNotification(raw) {
+  if (!raw) return null;
+  const data = raw.data || {};
+  const isRead =
+    raw.isRead !== undefined ? Boolean(raw.isRead) : Boolean(raw.read_at);
+  const title = raw.title || data.title || data.subject || 'Notification';
+  const description =
+    raw.description || raw.message || data.message || data.description || '';
+  const category =
+    raw.category ||
+    data.category ||
+    (raw.type && raw.type.includes('Mission') ? 'Missions' : 'Général');
+  const tag = raw.tag || data.tag || category.toUpperCase() || 'INFO';
+  const dateStr = raw.created_at
+    ? new Date(raw.created_at).toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'short',
+      })
+    : raw.date || '';
+  const fullDate = raw.created_at
+    ? new Date(raw.created_at).toLocaleString('fr-FR')
+    : raw.fullDate || '';
+
+  return {
+    ...raw,
+    id: raw.id,
+    title,
+    description,
+    category,
+    tag,
+    isRead,
+    date: dateStr,
+    fullDate,
+  };
+}
 
 const FILTER_TABS = [
   { key: 'all', label: 'Toutes' },
@@ -69,24 +109,52 @@ const FILTER_TABS = [
 export default function Notifications() {
   const { partner, colors } = useClientTheme();
   const styles = stylesByBrand[partner];
-  const [notifications, setNotifications] = useState(defaultNotifications);
+  const [notifications, setNotifications] = useState([]);
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeNotification, setActiveNotification] = useState(null);
   const [perPage, setPerPage] = useState('10');
   const [showPerPageMenu, setShowPerPageMenu] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  useEffect(() => {
+    setLoading(true);
+    getNotifications()
+      .then(data => {
+        if (Array.isArray(data)) setNotifications(data);
+        else if (Array.isArray(data?.data)) setNotifications(data.data);
+        else if (Array.isArray(data?.notifications)) setNotifications(data.notifications);
+        else if (Array.isArray(data?.items)) setNotifications(data.items);
+        else setNotifications([]);
+      })
+      .catch(err => {
+        console.error('Error loading notifications:', err);
+        Alert.alert(
+          'Erreur',
+          'Impossible de charger les notifications depuis le serveur. Vérifiez votre connexion.'
+        );
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const unreadCount = notifications.filter(n => {
+    if (n.isRead !== undefined) return !n.isRead;
+    if (n.lu !== undefined) return n.lu === 0 || n.lu === false;
+    if (n.read_at !== undefined) return !n.read_at;
+    return false;
+  }).length;
 
   function markAllAsRead() {
-    setNotifications(current => current.map(n => ({ ...n, isRead: true })));
+    setNotifications(current => current.map(n => ({ ...n, isRead: true, lu: 1, read_at: new Date().toISOString() })));
+    markAllNotificationsRead().catch(() => {});
   }
 
   function markAsRead(id) {
     setNotifications(current =>
-      current.map(n => (n.id === id ? { ...n, isRead: true } : n)),
+      current.map(n => (n.id === id ? { ...n, isRead: true, lu: 1, read_at: new Date().toISOString() } : n)),
     );
+    markNotificationRead(id).catch(() => {});
   }
 
   function deleteNotification(id) {
@@ -95,6 +163,7 @@ export default function Notifications() {
     if (activeNotification && activeNotification.id === id) {
       setActiveNotification(null);
     }
+    deleteNotificationApi(id).catch(() => {});
   }
 
   function deleteSelected() {
@@ -106,13 +175,14 @@ export default function Notifications() {
 
   function handleNotificationPress(notif) {
     markAsRead(notif.id);
-    setActiveNotification({ ...notif, isRead: true });
+    setActiveNotification({ ...notif, isRead: true, lu: 1 });
   }
 
   // Filtered list
   const filteredNotifications = notifications.filter(notif => {
+    const isReadNotif = notif.isRead !== undefined ? Boolean(notif.isRead) : notif.lu === 1 || notif.lu === true || Boolean(notif.read_at);
     // Tab filter
-    if (activeTab === 'unread' && notif.isRead) return false;
+    if (activeTab === 'unread' && isReadNotif) return false;
     if (
       activeTab !== 'all' &&
       activeTab !== 'unread' &&
@@ -587,11 +657,14 @@ const createStyles = colors => StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 20,
     backgroundColor: '#F43F5E',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   unreadBadgeText: {
     fontSize: 10,
     fontWeight: '700',
     color: colors.white,
+    includeFontPadding: false,
   },
   headerSubtitle: {
     fontSize: 11,

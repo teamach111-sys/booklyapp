@@ -1,3 +1,19 @@
+/**
+ * =====================================================================
+ * INVENTORY WIRING SPECIFICATION (staffly-frontend/inventory.md)
+ * =====================================================================
+ * ### Screen: Extras Portal : ExtraFactures
+ * **Associated Route/Context**: `/extras (Tab/Modal: ExtraFactures)`  
+ * **Total Discovered Backend Calls**: 3
+ * 
+ * | Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+ * | :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+ * | [`ExtraFactures.jsx:160`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/ExtraFactures.jsx#L160) | Initial Page / Component Mount Lifecycle (`useEffect`) | `useEffect hook` | `GET` | `/extra/invoices/' + invoiceId` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`ExtraFactures.jsx:305`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/ExtraFactures.jsx#L305) | User Action Handler (`ExtraFactures`) | `ExtraFactures` | `GET` | `/extra/invoices` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`ExtraFactures.jsx:38`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/ExtraFactures.jsx#L38) | User Action Handler (`svgToBase64`) | `svgToBase64` | `GET` | `url` | `None` | Public (No auth) | Inferred / Dynamic |
+ * 
+ * =====================================================================
+ */
 import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { CircleCheck, FileText, Search, Wallet } from 'lucide-react-native';

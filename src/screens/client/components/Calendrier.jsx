@@ -1,11 +1,74 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+/*
+### Screen: Extras Portal : Calendrier
+**Associated Route/Context**: `/extras (Tab/Modal: Calendrier)`  
+**Total Discovered Backend Calls**: 3
+
+| Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+| :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+| [`Calendrier.jsx:158`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/Calendrier.jsx#L158) | User Action Handler (`Calendrier`) | `Calendrier` | `GET` | `/extra/my-availabilities` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+| [`Calendrier.jsx:202`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/Calendrier.jsx#L202) | User Action Handler (`handleAdd`) | `handleAdd` | `POST` | `/extra/availability` | `{ availabilities:[{ available_date:form.available_date` | Bearer token (Authstorage / localStorage) | Confirmed |
+| [`Calendrier.jsx:213`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/Calendrier.jsx#L213) | Delete / Cancel Button (`handleDelete`) | `handleDelete` | `DELETE` | `/extra/availability/'+id` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+
+
+*/
+
+/*
+### Screen: Admin Portal : AdminCalendrierMissions
+**Associated Route/Context**: `/admin (Tab/Modal: AdminCalendrierMissions)`  
+**Total Discovered Backend Calls**: 1
+
+| Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+| :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+| [`AdminCalendrierMissions.jsx:162`](file:///C:/Users/Workspace/staffly-frontend/src/pages/admin/components/AdminCalendrierMissions.jsx#L162) | User Action Handler (`AdminCalendrierMissions`) | `AdminCalendrierMissions` | `GET` | `/admin/calendar/missions` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+
+
+*/
+
+/**
+ * =====================================================================
+ * INVENTORY WIRING SPECIFICATION (staffly-frontend/inventory.md)
+ * =====================================================================
+ * ### Screen: Client Portal : Calendrier
+ * **Associated Route/Context**: `/client (Tab/Modal: Calendrier)`  
+ * **Total Discovered Backend Calls**: 1
+ * 
+ * | Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+ * | :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+ * | [`Calendrier.jsx:195`](file:///C:/Users/Workspace/staffly-frontend/src/pages/client/components/Calendrier.jsx#L195) | Initial Page / Component Mount Lifecycle (`useEffect`) | `useEffect hook` | `GET` | `/client/calendar/missions` | `None` | Bearer token (Authstorage / localStorage) | Confirmed (Resolved Service Call) |
+ * 
+ * =====================================================================
+ */
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useClientTheme } from '../theme/ClientThemeContext';
 import { createBrandStyles } from '../theme/clientStyles';
 import BottomSheet from './BottomSheet';
+import { getClientCalendarMissions } from '../../../api/clientService';
 
 const weekdays = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
+
+const STATUS_CONFIG = {
+  upcoming: { label: 'Prestation à venir', color: '#e65100', dot: '#fb8c00' },
+  ongoing: { label: 'Prestation en cours', color: '#2e7d32', dot: '#43a047' },
+  past: { label: 'Prestation passée', color: '#757575', dot: '#bdbdbd' },
+};
+
+function getStatus(m) {
+  const now = new Date();
+  const start = new Date(m.date_debut);
+  const end = new Date(m.date_fin);
+  if (end < now) return 'past';
+  if (start <= now && end >= now) return 'ongoing';
+  return 'upcoming';
+}
 
 function startOfWeek(date) {
   const start = new Date(date);
@@ -31,7 +94,7 @@ function formatMonthTitle(date) {
 }
 
 function formatWeekRange(start, end) {
-  const startDay = start.getDate();
+  const startDay= start.getDate();
   const startMonth = start.toLocaleDateString('fr-FR', { month: 'short' });
   const endDay = end.getDate();
   const endMonth = end.toLocaleDateString('fr-FR', { month: 'short' });
@@ -55,7 +118,7 @@ function formatModalDate(date) {
   return `${capitalizedWeekday} ${day} ${capitalizedMonth}`;
 }
 
-export default function Calendrier() {
+export default function Calendrier({ selectedSpace, spaces = [] }) {
   const { partner, colors } = useClientTheme();
   const styles = stylesByBrand[partner];
   const [view, setView] = useState('month');
@@ -63,6 +126,15 @@ export default function Calendrier() {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [modalVisible, setModalVisible] = useState(false);
+  const [missions, setMissions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getClientCalendarMissions()
+      .then(data => setMissions(Array.isArray(data) ? data : []))
+      .catch(() => setMissions([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   // Month grid: 42 cells (6 weeks) starting from the Monday before/on the 1st
   const monthStart = new Date(

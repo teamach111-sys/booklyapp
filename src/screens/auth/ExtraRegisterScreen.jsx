@@ -1,4 +1,20 @@
-import { useState } from 'react';
+/**
+ * =====================================================================
+ * INVENTORY WIRING SPECIFICATION (staffly-frontend/inventory.md)
+ * =====================================================================
+ * ### Screen: Inscription Extra (Avec Quiz)
+ * **Associated Route/Context**: `/inscription/extra`  
+ * **Total Discovered Backend Calls**: 3
+ * 
+ * | Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+ * | :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+ * | [`RegisterExtra.jsx:231`](file:///C:/Users/Workspace/staffly-frontend/src/pages/inscription/RegisterExtra.jsx#L231) | Initial Page / Component Mount Lifecycle (`useEffect`) | `useEffect hook` | `GET` | `BASE_URL + '/qualifications/public` | `None` | Public (No auth) | Confirmed |
+ * | [`RegisterExtra.jsx:307`](file:///C:/Users/Workspace/staffly-frontend/src/pages/inscription/RegisterExtra.jsx#L307) | User Action Handler (`handleNextFromStep0`) | `handleNextFromStep0` | `POST` | `BASE_URL + '/check-email` | `None` | Public (No auth) | Confirmed |
+ * | [`RegisterExtra.jsx:373`](file:///C:/Users/Workspace/staffly-frontend/src/pages/inscription/RegisterExtra.jsx#L373) | Form Submit / Create Button (`handleSubmit`) | `handleSubmit` | `POST` | `BASE_URL + '/extra/register` | `formData` | Public (No auth) | Confirmed |
+ * 
+ * =====================================================================
+ */
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Modal,
@@ -37,6 +53,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import DatePicker from '../../components/DatePicker';
 import { clickableStyles, colors, formStyles } from '../../styles';
 import AuthLayout from './AuthLayout';
+import authService from '../../api/authService';
 
 const styles = formStyles.extraRegistration;
 const loginForm = formStyles.login;
@@ -670,9 +687,27 @@ export default function ExtraRegisterScreen({ navigation }) {
   const [ratings, setRatings] = useState({});
   const [accepted, setAccepted] = useState({});
   const [questionnaireAnswers, setQuestionnaireAnswers] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [catalogQualifications, setCatalogQualifications] = useState(null);
+
+  useEffect(() => {
+    authService
+      .getPublicQualifications()
+      .then(data => {
+        if (Array.isArray(data)) {
+          setCatalogQualifications(data.map(q => q.name || q.label || q));
+        }
+      })
+      .catch(() => {
+        // Fall back to default catalog
+      });
+  }, []);
 
   const updateValue = (name, value) => {
     setValues(current => ({ ...current, [name]: value }));
+    if (name === 'email') setEmailError('');
   };
   const toggleLanguage = language => {
     setValues(current => ({
@@ -744,17 +779,127 @@ export default function ExtraRegisterScreen({ navigation }) {
     }
   };
 
-  const goNext = () => {
+  const goNext = async () => {
     if (step === -1 && eligibility === 'none') {
       setStep(-2);
       return;
     }
+
+    // Step 0: Personal details -> check email availability before advancing
+    if (step === 0) {
+      const emailVal = values.email.trim();
+      if (!emailVal) {
+        Alert.alert('Email requis', 'Veuillez renseigner votre adresse email.');
+        return;
+      }
+      if (!values.firstname.trim() || !values.name.trim() || !values.password) {
+        Alert.alert('Champs requis', 'Veuillez remplir tous les champs obligatoires.');
+        return;
+      }
+
+      setCheckingEmail(true);
+      try {
+        const check = await authService.checkEmail(emailVal);
+        if (check?.exists) {
+          setEmailError('Cette adresse email est déjà utilisée.');
+          Alert.alert(
+            'Email déjà utilisé',
+            'Cette adresse email est déjà enregistrée. Veuillez vous connecter ou utiliser une autre adresse.',
+          );
+          setCheckingEmail(false);
+          return;
+        }
+      } catch {
+        // Backend unavailable or error: let through, backend validates on final submit
+      } finally {
+        setCheckingEmail(false);
+      }
+    }
+
     setStep(current => Math.min(current + 1, totalSteps));
   };
+
   const goBack = () => {
     setStep(current => (current === -2 ? -1 : Math.max(-1, current - 1)));
   };
-  const finish = () => setStep(totalSteps);
+
+  const finish = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+
+    try {
+      const formData = new FormData();
+
+      // Personal fields
+      Object.entries(values).forEach(([k, v]) => {
+        if (k === 'languages') {
+          (v || []).forEach(lang => formData.append('languages[]', lang));
+        } else if (k === 'shoe_size') {
+          if (v) formData.append('shoe_size', v);
+        } else if (v !== undefined && v !== null) {
+          formData.append(k, String(v));
+        }
+      });
+
+      // AE status
+      formData.append(
+        'statut_ae',
+        eligibility === 'ae' ? 'oui' : eligibility === 'in_progress' ? 'en_cours' : 'non',
+      );
+
+      // Qualifications
+      selectedQualifications.forEach(q => formData.append('qualifications[]', q));
+
+      // Skills / Ratings
+      Object.entries(ratings).forEach(([code, note]) => {
+        if (note > 0) {
+          formData.append('skills[]', JSON.stringify({ code, note }));
+        }
+      });
+
+      // Questionnaire / Quiz
+      formData.append('quiz_answers', JSON.stringify(questionnaireAnswers));
+
+      // Consents
+      formData.append('accept_cga', accepted.accept_cga ? '1' : '0');
+      formData.append('accept_cgv', accepted.accept_cgv ? '1' : '0');
+      formData.append('accept_mentions', accepted.accept_mentions ? '1' : '0');
+      formData.append('accept_cookies', accepted.accept_cookies ? '1' : '0');
+
+      // Documents attached
+      Object.entries(documents).forEach(([key, file]) => {
+        if (file && file.uri) {
+          formData.append(key, {
+            uri: file.uri,
+            name: file.name || `${key}.pdf`,
+            type: file.type || 'application/octet-stream',
+          });
+        }
+      });
+
+      await authService.registerExtra(formData);
+      setStep(totalSteps); // Success screen
+    } catch (err) {
+      const status = err?.status;
+      if (status === 422) {
+        const errors = err?.data?.errors;
+        const msgs = errors
+          ? Object.values(errors).flat()
+          : [err?.message || 'Erreur de validation'];
+        Alert.alert('Erreur', msgs[0]);
+        if (errors?.email) {
+          setEmailError(errors.email[0]);
+          setStep(0);
+        }
+      } else if (status === 429) {
+        Alert.alert('Patientez', 'Trop de tentatives. Merci de patienter quelques instants.');
+      } else {
+        Alert.alert('Erreur', err?.message || 'Impossible d’enregistrer votre profil.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const renderStepHeader = (title, subtitle) => (
     <View style={styles.stepHeader}>
@@ -1370,6 +1515,7 @@ export default function ExtraRegisterScreen({ navigation }) {
                 <Text style={clickableStyles.bigSecondaryText}>Retour</Text>
               </Pressable>
               <PrimaryButton
+                loading={submitting || checkingEmail}
                 icon={
                   isValidationStep ? (
                     <Check size={15} color={colors.white} />
@@ -1378,6 +1524,8 @@ export default function ExtraRegisterScreen({ navigation }) {
                   )
                 }
                 disabled={
+                  submitting ||
+                  checkingEmail ||
                   (step === 3 && selectedQualifications.length === 0) ||
                   (step === 5 && hasQuestionnaire && !questionnaireComplete) ||
                   (isValidationStep &&

@@ -151,6 +151,37 @@ export const headerStyles = StyleSheet.create({
     color: colors.orangeDark,
     ...typography.labels.bold,
   },
+  // "Accéder à mon espace" — shown instead of "Connexion" once signed in.
+  // Mirrors .hdr__btn-join from the web header: 135deg orange gradient,
+  // 9px radius, 10x20 padding, 7px icon gap, 13px bold label.
+  dashboardButton: {
+    minHeight: 40,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    borderRadius: 9,
+    // Solid mid-tone first: engines without CSS gradient support still get
+    // the right orange instead of a transparent button.
+    backgroundColor: '#C76F2F',
+    backgroundImage: 'linear-gradient(135deg, #D47A31 0%, #B9622C 100%)',
+    // CSS: box-shadow 0 3px 14px rgba(140, 62, 1, 0.28)
+    shadowColor: '#8C3E01',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.28,
+    shadowRadius: 7,
+    elevation: 3,
+  },
+  dashboardButtonPressed: {
+    opacity: 0.92,
+  },
+  dashboardText: {
+    color: colors.white,
+    fontFamily: fontFamilies.bold,
+    fontSize: 13,
+    fontWeight: 'normal',
+  },
 });
 
 // Reusable buttons and other pressable controls.

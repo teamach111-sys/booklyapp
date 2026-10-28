@@ -1,4 +1,35 @@
-import { useState } from 'react';
+/*
+### Screen: Inscription Extra (Sans Quiz)
+**Associated Route/Context**: `/inscription/extra-non-quizz`  
+**Total Discovered Backend Calls**: 3
+
+| Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+| :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+| [`Registernonquizz.jsx:217`](file:///C:/Users/Workspace/staffly-frontend/src/pages/inscription/Registernonquizz.jsx#L217) | Initial Page / Component Mount Lifecycle (`useEffect`) | `useEffect hook` | `GET` | `BASE_URL + '/qualifications/public` | `None` | Public (No auth) | Confirmed |
+| [`Registernonquizz.jsx:260`](file:///C:/Users/Workspace/staffly-frontend/src/pages/inscription/Registernonquizz.jsx#L260) | User Action Handler (`handleNextFromStep0`) | `handleNextFromStep0` | `POST` | `BASE_URL + '/check-email` | `None` | Public (No auth) | Confirmed |
+| [`Registernonquizz.jsx:318`](file:///C:/Users/Workspace/staffly-frontend/src/pages/inscription/Registernonquizz.jsx#L318) | Form Submit / Create Button (`handleSubmit`) | `handleSubmit` | `POST` | `BASE_URL + '/extra/register` | `formData` | Public (No auth) | Confirmed |
+
+
+*/
+
+/**
+ * =====================================================================
+ * INVENTORY WIRING SPECIFICATION (staffly-frontend/inventory.md)
+ * =====================================================================
+ * ### Screen: Extras Portal : Shell & Navigation
+ * **Associated Route/Context**: `/extras`  
+ * **Total Discovered Backend Calls**: 4
+ * 
+ * | Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+ * | :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+ * | [`Extras.jsx:80`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/Extras.jsx#L80) | Background Polling Interval (`poll`) | `poll` | `GET` | `/notifications/unread-count` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Extras.jsx:95`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/Extras.jsx#L95) | Data Fetch / Revalidation (`fetchBadges`) | `fetchBadges` | `GET` | `/extras/missions/matching` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Extras.jsx:110`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/Extras.jsx#L110) | Background Polling Interval (`poll`) | `poll` | `GET` | `/messages/conversations` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Extras.jsx:134`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/Extras.jsx#L134) | Auth Action Button (`handleLogout`) | `handleLogout` | `POST` | `/logout` | `None` | Bearer token (Authstorage / localStorage) | Confirmed (Resolved Service Call) |
+ * 
+ * =====================================================================
+ */
+import { useEffect, useMemo, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -23,6 +54,10 @@ import {
 } from 'lucide-react-native';
 import { colors } from '../../styles';
 import { extras as styles } from './styles';
+import { useAuth } from '../../context/AuthContext';
+import { fetchClient } from '../../api/fetchClient';
+import authService from '../../api/authService';
+import { getToken } from '../../utils/Authstorage';
 import Calendrier from './components/Calendrier';
 import Disponibilite from './components/Disponibilite';
 import ExtraFactures from './components/ExtraFactures';
@@ -34,25 +69,131 @@ import Profile from './components/Profile';
 // Nav matches the design sidebar (src/pages/extras/Extras.css). Pages are
 // placeholders for now — each renders its own "Espace extra" heading until the
 // design is implemented.
-const sections = [
-  { key: 'profile', label: 'Profil', icon: UserRound },
-  { key: 'prestations', label: 'Prestations', icon: BriefcaseBusiness, badge: 1 },
-  { key: 'unavailability', label: 'Indisponibilités', icon: Ban },
-  { key: 'calendar', label: 'Calendrier', icon: CalendarDays },
-  { key: 'invoices', label: 'Mes factures', icon: Receipt },
-  { key: 'messages', label: 'Messages', icon: MessageCircle },
-  { key: 'notifications', label: 'Notifications', icon: Bell, badge: 7 },
-];
+
 
 const bottomSections = ['prestations', 'calendar', 'messages', 'profile'];
 
 export default function ExtrasScreen({ navigation }) {
+  const { signOut, user } = useAuth();
   const [activeSection, setActiveSection] = useState('profile');
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const [notifUnread, setNotifUnread] = useState(0);
+  const [msgUnread, setMsgUnread] = useState(0);
+  const [missionBadge, setMissionBadge] = useState(0);
+  const [extraData, setExtraData] = useState(null);
+
+  // Poll notifications count
+  useEffect(() => {
+    let mounted = true;
+    const pollNotifs = async () => {
+      try {
+        const d = await fetchClient('/notifications/unread-count');
+        if (mounted && d?.count !== undefined) {
+          setNotifUnread(d.count);
+        }
+      } catch {}
+    };
+    pollNotifs();
+    const interval = setInterval(pollNotifs, 30000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Poll matching missions for badge
+  useEffect(() => {
+    let mounted = true;
+    const pollMissions = async () => {
+      try {
+        const missions = await fetchClient('/extras/missions/matching');
+        if (mounted && Array.isArray(missions)) {
+          setMissionBadge(missions.length);
+        }
+      } catch {}
+    };
+    pollMissions();
+    const interval = setInterval(pollMissions, 60000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Poll unread messages
+  useEffect(() => {
+    let mounted = true;
+    const pollMessages = async () => {
+      try {
+        const d = await fetchClient('/messages/conversations');
+        if (mounted && Array.isArray(d)) {
+          setMsgUnread(d.reduce((sum, item) => sum + (item.unread_count || 0), 0));
+        }
+      } catch {}
+    };
+    pollMessages();
+    const interval = setInterval(pollMessages, 30000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Load extra profile
+  useEffect(() => {
+    authService
+      .getExtraProfile()
+      .then(d => setExtraData(d))
+      .catch(() => {});
+  }, []);
+
+  const sections = useMemo(
+    () => [
+      { key: 'profile', label: 'Profil', icon: UserRound },
+      {
+        key: 'prestations',
+        label: 'Prestations',
+        icon: BriefcaseBusiness,
+        badge: missionBadge > 0 ? missionBadge : undefined,
+      },
+      { key: 'unavailability', label: 'Indisponibilités', icon: Ban },
+      { key: 'calendar', label: 'Calendrier', icon: CalendarDays },
+      { key: 'invoices', label: 'Mes factures', icon: Receipt },
+      {
+        key: 'messages',
+        label: 'Messages',
+        icon: MessageCircle,
+        badge: msgUnread > 0 ? msgUnread : undefined,
+      },
+      {
+        key: 'notifications',
+        label: 'Notifications',
+        icon: Bell,
+        badge: notifUnread > 0 ? notifUnread : undefined,
+      },
+    ],
+    [missionBadge, msgUnread, notifUnread],
+  );
 
   function selectSection(key) {
     setActiveSection(key);
     setMenuOpen(false);
+  }
+
+  // Clear the session before leaving: the login screen sends an authenticated
+  // user straight back to a dashboard, so navigating without signing out just
+  // bounces here again.
+  async function handleLogout() {
+    try {
+      const token = getToken();
+      if (token) {
+        await authService.logout(token).catch(() => {});
+      }
+    } finally {
+      await signOut();
+      navigation?.reset({ index: 0, routes: [{ name: 'Login' }] });
+    }
   }
 
   function renderContent() {
@@ -247,7 +388,7 @@ export default function ExtrasScreen({ navigation }) {
             <View style={styles.drawerFooter}>
               <Pressable
                 accessibilityRole="button"
-                onPress={() => navigation?.navigate('Login')}
+                onPress={handleLogout}
                 style={styles.logoutButton}
               >
                 <LogOut size={18} color="rgba(255,255,255,0.75)" />

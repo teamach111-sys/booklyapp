@@ -1,3 +1,19 @@
+/**
+ * =====================================================================
+ * INVENTORY WIRING SPECIFICATION (staffly-frontend/inventory.md)
+ * =====================================================================
+ * ### Screen: Extras Portal : Calendrier
+ * **Associated Route/Context**: `/extras (Tab/Modal: Calendrier)`  
+ * **Total Discovered Backend Calls**: 3
+ * 
+ * | Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+ * | :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+ * | [`Calendrier.jsx:158`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/Calendrier.jsx#L158) | User Action Handler (`Calendrier`) | `Calendrier` | `GET` | `/extra/my-availabilities` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Calendrier.jsx:202`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/Calendrier.jsx#L202) | User Action Handler (`handleAdd`) | `handleAdd` | `POST` | `/extra/availability` | `{ availabilities:[{ available_date:form.available_date` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Calendrier.jsx:213`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/Calendrier.jsx#L213) | Delete / Cancel Button (`handleDelete`) | `handleDelete` | `DELETE` | `/extra/availability/'+id` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * 
+ * =====================================================================
+ */
 import { useMemo, useState } from 'react';
 import {
   Alert,

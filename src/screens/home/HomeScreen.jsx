@@ -1,3 +1,17 @@
+/**
+ * =====================================================================
+ * INVENTORY WIRING SPECIFICATION (staffly-frontend/inventory.md)
+ * =====================================================================
+ * ### Screen: Home Landing Page
+ * **Associated Route/Context**: `/`  
+ * **Total Discovered Backend Calls**: 1
+ * 
+ * | Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+ * | :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+ * | [`Home.jsx:158`](file:///C:/Users/Workspace/staffly-frontend/src/pages/Home.jsx#L158) | Form Submit / Create Button (`handleSubmit`) | `handleSubmit` | `POST` | `CONTACT_API_URL` | `None` | Public (No auth) | Inferred / Dynamic |
+ * 
+ * =====================================================================
+ */
 import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -12,11 +26,14 @@ import {
   BriefcaseBusiness,
   CheckCircle2,
   ChevronDown,
+  LayoutDashboard,
   Star,
   Store,
 } from 'lucide-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import AuthLayout from '../auth/AuthLayout';
+import { useAuth } from '../../context/AuthContext';
+import { getDashboardRoute } from '../../utils/Authstorage';
 import {
   clickableStyles,
   contentStyles as styles,
@@ -183,6 +200,9 @@ function TalentCard({ talent }) {
 }
 
 export default function HomeScreen({ navigation }) {
+  const { isAuthenticated, user } = useAuth();
+  const dashboardRoute = isAuthenticated ? getDashboardRoute(user?.role) : null;
+
   const [openFaqs, setOpenFaqs] = useState([]);
   const [tickerWidth, setTickerWidth] = useState(0);
   const tickerOffset = useRef(new Animated.Value(0)).current;
@@ -216,12 +236,33 @@ export default function HomeScreen({ navigation }) {
     <AuthLayout
       contentStyle={styles.layoutContent}
       headerAction={
-        <Pressable
-          onPress={() => navigation.navigate('Login')}
-          style={headerStyles.loginButton}
-        >
-          <Text style={headerStyles.loginText}>Connexion</Text>
-        </Pressable>
+        dashboardRoute ? (
+          <Pressable
+            accessibilityLabel="Accéder à mon espace"
+            accessibilityRole="button"
+            onPress={() =>
+              navigation.navigate(dashboardRoute, {
+                partner: user?.platform_partner,
+              })
+            }
+            style={({ pressed }) => [
+              headerStyles.dashboardButton,
+              pressed && headerStyles.dashboardButtonPressed,
+            ]}
+          >
+            <LayoutDashboard color="#FFFFFF" size={14} strokeWidth={2.5} />
+            <Text numberOfLines={1} style={headerStyles.dashboardText}>
+              Accéder à mon espace
+            </Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            onPress={() => navigation.navigate('Login')}
+            style={headerStyles.loginButton}
+          >
+            <Text style={headerStyles.loginText}>Connexion</Text>
+          </Pressable>
+        )
       }
     >
       <View style={styles.screen}>

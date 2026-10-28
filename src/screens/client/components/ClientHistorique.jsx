@@ -1,5 +1,20 @@
-import { useState } from 'react';
+/**
+ * =====================================================================
+ * INVENTORY WIRING SPECIFICATION (staffly-frontend/inventory.md)
+ * =====================================================================
+ * ### Screen: Client Portal : ClientHistorique
+ * **Associated Route/Context**: `/client (Tab/Modal: ClientHistorique)`  
+ * **Total Discovered Backend Calls**: 1
+ * 
+ * | Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+ * | :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+ * | [`ClientHistorique.jsx:158`](file:///C:/Users/Workspace/staffly-frontend/src/pages/client/components/ClientHistorique.jsx#L158) | User Action Handler (`ClientHistorique`) | `ClientHistorique` | `GET` | `/client/sites/${selectedSpace.id}/employee-activity?${p.toString(` | `None` | Bearer token (Authstorage / localStorage) | Inferred / Dynamic |
+ * 
+ * =====================================================================
+ */
+import { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Modal,
   Platform,
   Pressable,
@@ -7,6 +22,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Alert,
 } from 'react-native';
 import {
   Check,
@@ -22,6 +38,8 @@ import {
 import { useClientTheme } from '../theme/ClientThemeContext';
 import { createBrandStyles } from '../theme/clientStyles';
 import DatePicker from '../../../components/DatePicker';
+import { getEmployeeActivity } from '../../../api/clientService';
+import { useClientSites } from '../state/SitesContext';
 
 const serifFont = Platform.select({
   ios: 'Georgia',
@@ -41,21 +59,57 @@ const ACTIVITY_TYPES = [
   { key: 'nomination_made', label: 'Extra nominé' },
 ];
 
-export default function ClientHistorique() {
+export default function ClientHistorique({ selectedSpace } = {}) {
   const { partner, colors } = useClientTheme();
   const styles = stylesByBrand[partner];
-  const [activities] = useState([]);
+  const { activeSite } = useClientSites();
+  const site = selectedSpace || activeSite;
+
+  const [activities, setActivities] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [stats, setStats] = useState({});
+  const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState('ALL');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  function handleRefresh() {
+  const load = useCallback(async () => {
+    if (!site?.id) {
+      setLoading(false);
+      setActivities([]);
+      setEmployees([]);
+      setStats({});
+      return;
+    }
     setIsRefreshing(true);
-    setTimeout(() => {
+    try {
+      const data = await getEmployeeActivity(site.id, {
+        type: selectedType,
+        date_from: dateFrom || undefined,
+        date_to: dateTo || undefined,
+      });
+      setActivities(Array.isArray(data?.activity) ? data.activity : Array.isArray(data?.activities) ? data.activities : Array.isArray(data) ? data : []);
+      setEmployees(Array.isArray(data?.employees) ? data.employees : []);
+      setStats(data?.stats || {});
+    } catch (error) {
+      Alert.alert('Erreur', "Erreur lors du chargement de l'historique.");
+      setActivities([]);
+      setEmployees([]);
+      setStats({});
+    } finally {
+      setLoading(false);
       setIsRefreshing(false);
-    }, 400);
+    }
+  }, [site?.id, selectedType, dateFrom, dateTo]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  function handleRefresh() {
+    load();
   }
 
   const selectedTypeObj =
@@ -85,76 +139,76 @@ export default function ClientHistorique() {
       {/* ── Filter & Action Card ── */}
       <View style={styles.filterCard}>
         <View style={styles.filterControlsRow}>
-          {/* Filtres indicator */}
-          <View style={styles.filterBadge}>
-            <Filter size={12} color="#BBBBBB" />
-            <Text style={styles.filterBadgeText}>Filtres</Text>
+          <View style={styles.filtersGroup}>
+            {/* Filtres indicator */}
+            <View style={styles.filterBadge}>
+              <Filter size={12} color="#BBBBBB" />
+              <Text style={styles.filterBadgeText}>Filtres</Text>
+            </View>
+
+            {/* Vertical divider */}
+            <View style={styles.divider} />
+
+            {/* Type dropdown button */}
+            <Pressable
+              accessibilityLabel={`Filtrer par type : ${selectedTypeObj.label}`}
+              accessibilityRole="button"
+              onPress={() => setShowTypeDropdown(true)}
+              style={styles.dropdownBtn}
+            >
+              <Text numberOfLines={1} style={styles.dropdownBtnText}>
+                {selectedTypeObj.label}
+              </Text>
+              <ChevronDown size={12} color="#555555" />
+            </Pressable>
+
+            {/* Date from */}
+            <DatePicker
+              accessibilityLabel="Date de début"
+              allowClear
+              colors={colors}
+              onChange={setDateFrom}
+              outputFormat="iso"
+              placeholder="JJ/MM/AAAA"
+              style={styles.dateInputWrap}
+              textStyle={styles.dateInput}
+              value={dateFrom}
+            />
+
+            {/* Arrow */}
+            <Text style={styles.arrowText}>→</Text>
+
+            {/* Date to */}
+            <DatePicker
+              accessibilityLabel="Date de fin"
+              allowClear
+              colors={colors}
+              onChange={setDateTo}
+              outputFormat="iso"
+              placeholder="JJ/MM/AAAA"
+              style={styles.dateInputWrap}
+              textStyle={styles.dateInput}
+              value={dateTo}
+            />
           </View>
-
-          {/* Vertical divider */}
-          <View style={styles.divider} />
-
-          {/* Type dropdown button */}
-          <Pressable
-            accessibilityLabel={`Filtrer par type : ${selectedTypeObj.label}`}
-            accessibilityRole="button"
-            onPress={() => setShowTypeDropdown(true)}
-            style={styles.dropdownBtn}
-          >
-            <Text numberOfLines={1} style={styles.dropdownBtnText}>
-              {selectedTypeObj.label}
-            </Text>
-            <ChevronDown size={12} color="#555555" />
-          </Pressable>
-
-          {/* Date from */}
-          <DatePicker
-            accessibilityLabel="Date de début"
-            allowClear
-            colors={colors}
-            onChange={setDateFrom}
-            outputFormat="iso"
-            placeholder="JJ/MM/AAAA"
-            style={styles.dateInputWrap}
-            textStyle={styles.dateInput}
-            value={dateFrom}
-          />
-
-          {/* Arrow */}
-          <Text style={styles.arrowText}>→</Text>
-
-          {/* Date to */}
-          <DatePicker
-            accessibilityLabel="Date de fin"
-            allowClear
-            colors={colors}
-            onChange={setDateTo}
-            outputFormat="iso"
-            placeholder="JJ/MM/AAAA"
-            style={styles.dateInputWrap}
-            textStyle={styles.dateInput}
-            value={dateTo}
-          />
 
           {/* Actualiser Button */}
-          <View style={styles.refreshBtnCol}>
-            <Pressable
-              accessibilityLabel="Actualiser l'historique"
-              accessibilityRole="button"
-              onPress={handleRefresh}
-              style={[
-                styles.refreshBtn,
-                isRefreshing && styles.refreshBtnActive,
-              ]}
-            >
-              <RotateCw
-                size={12}
-                color="#888888"
-                style={isRefreshing ? styles.refreshIconSpin : undefined}
-              />
-              <Text style={styles.refreshBtnText}>Actualiser</Text>
-            </Pressable>
-          </View>
+          <Pressable
+            accessibilityLabel="Actualiser l'historique"
+            accessibilityRole="button"
+            onPress={handleRefresh}
+            style={[
+              styles.refreshBtn,
+              isRefreshing && styles.refreshBtnActive,
+            ]}
+          >
+            <RotateCw
+              size={12}
+              color="#888888"
+              style={isRefreshing ? styles.refreshIconSpin : undefined}
+            />
+            <Text style={styles.refreshBtnText}>Actualiser</Text>
+          </Pressable>
         </View>
 
         {/* Type options bottom sheet */}
@@ -287,8 +341,14 @@ const createStyles = colors => StyleSheet.create({
   filterControlsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 8,
-    flexWrap: 'wrap',
+  },
+  filtersGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
   },
   filterBadge: {
     flexDirection: 'row',
@@ -302,20 +362,23 @@ const createStyles = colors => StyleSheet.create({
   },
   divider: {
     width: 1,
-    height: 20,
+    height: 24,
     backgroundColor: '#E0D0C8',
+    marginHorizontal: 2,
   },
   dropdownBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 5,
+    paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 8,
     borderWidth: 1.5,
     borderColor: '#E0D0C8',
     backgroundColor: colors.white,
-    minWidth: 130,
+    flex: 1.2,
+    minWidth: 100,
+    minHeight: 32,
     justifyContent: 'space-between',
   },
   dropdownBtnText: {
@@ -366,12 +429,15 @@ const createStyles = colors => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingVertical: 5,
+    paddingVertical: 6,
     paddingHorizontal: 8,
-    borderRadius: 7,
+    borderRadius: 8,
     borderWidth: 1.5,
     borderColor: '#E0D0C8',
     backgroundColor: colors.white,
+    minHeight: 32,
+    flex: 1,
+    minWidth: 80,
   },
   dateInput: {
     fontSize: 11,
@@ -383,19 +449,17 @@ const createStyles = colors => StyleSheet.create({
     fontSize: 11,
     color: '#BBBBBB',
   },
-  refreshBtnCol: {
-    marginLeft: 'auto',
-  },
   refreshBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingVertical: 4,
+    paddingVertical: 6,
     paddingHorizontal: 10,
-    borderRadius: 7,
+    borderRadius: 8,
     borderWidth: 1.5,
     borderColor: '#E0D0C8',
     backgroundColor: colors.white,
+    minHeight: 32,
   },
   refreshBtnActive: {
     backgroundColor: '#FAF5F2',

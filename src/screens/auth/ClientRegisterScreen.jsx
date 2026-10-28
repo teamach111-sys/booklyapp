@@ -1,5 +1,21 @@
+/**
+ * =====================================================================
+ * INVENTORY WIRING SPECIFICATION (staffly-frontend/inventory.md)
+ * =====================================================================
+ * ### Screen: Inscription Client / Établissement
+ * **Associated Route/Context**: `/inscription/client`  
+ * **Total Discovered Backend Calls**: 2
+ * 
+ * | Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+ * | :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+ * | [`Clients.jsx:123`](file:///C:/Users/Workspace/staffly-frontend/src/pages/inscription/Clients.jsx#L123) | Form Submit / Create Button (`handleSubmit`) | `handleSubmit` | `POST` | `/envoyerVerficationEmail` | `{` | Bearer token (localStorage) via clientAxios interceptor | Confirmed |
+ * | [`Clients.jsx:103`](file:///C:/Users/Workspace/staffly-frontend/src/pages/inscription/Clients.jsx#L103) | Form Submit / Create Button (`handleSubmit`) | `handleSubmit` | `POST` | `${import.meta.env.VITE_API_URL}/register/client` | `None` | Public (No auth) | Confirmed |
+ * 
+ * =====================================================================
+ */
 import { useState } from 'react';
 import {
+  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -12,6 +28,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import DatePicker from '../../components/DatePicker';
 import { colors, formStyles } from '../../styles';
 import AuthLayout from './AuthLayout';
+import authService from '../../api/authService';
 
 const registerStyles = formStyles.clientRegistration;
 const loginStyles = formStyles.login;
@@ -259,11 +276,85 @@ export default function ClientRegisterScreen({ navigation }) {
   });
   const [sites, setSites] = useState(['']);
   const [openSelect, setOpenSelect] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const updateValue = (name, value) => {
     setValues(current => ({ ...current, [name]: value }));
     if (name === 'tenue_staff' || name === 'platform_partner') {
       setOpenSelect(null);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (loading) return;
+    setError('');
+
+    // Validation
+    if (!values.name.trim()) { setError('Le nom est requis.'); return; }
+    if (!values.firstname.trim()) { setError('Le prénom est requis.'); return; }
+    if (!values.email.trim()) { setError("L'adresse e-mail est requise."); return; }
+    if (!values.phone.trim()) { setError('Le numéro de téléphone est requis.'); return; }
+    if (!values.address.trim()) { setError("L'adresse du siège est requise."); return; }
+    if (!values.birth_date) { setError('La date de naissance est requise.'); return; }
+    if (!values.password) { setError('Le mot de passe est requis.'); return; }
+    if (values.password.length < 8) { setError('Le mot de passe doit contenir au moins 8 caractères.'); return; }
+    if (values.password !== values.password_confirmation) {
+      setError('Les mots de passe ne correspondent pas.');
+      return;
+    }
+    if (!values.raison_sociale.trim()) { setError("Le nom de l'entreprise est requis."); return; }
+    if (!values.siret.trim()) { setError('Le numéro SIRET est requis.'); return; }
+
+    const cleanedSpaces = sites.map(s => s.trim()).filter(Boolean);
+    if (!cleanedSpaces.length) {
+      setError('Au moins un nom de site est requis.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const payload = {
+        ...values,
+        email: values.email.trim().toLowerCase(),
+        cities: cleanedSpaces,
+      };
+
+      const res = await authService.registerClient(payload);
+
+      try {
+        await authService.sendVerificationEmail({
+          email: payload.email,
+          user_id: res?.data?.user_id,
+          message: 'Votre inscription est en attente de validation.',
+        });
+      } catch {
+        // Non-fatal
+      }
+
+      Alert.alert(
+        'Compte créé avec succès',
+        res?.message || 'Votre inscription a bien été prise en compte.',
+        [
+          {
+            text: 'Se connecter',
+            onPress: () => navigation.navigate('Login'),
+          },
+        ],
+      );
+    } catch (err) {
+      const status = err?.status;
+      if (status === 422) {
+        const errors = err?.data?.errors;
+        const first = errors ? Object.values(errors).flat()[0] : null;
+        setError(first || 'Veuillez corriger les erreurs dans le formulaire.');
+      } else if (status === 429) {
+        setError('Trop de tentatives. Merci de patienter quelques instants.');
+      } else {
+        setError(err?.message || 'Une erreur est survenue lors de l’inscription.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -390,7 +481,18 @@ export default function ClientRegisterScreen({ navigation }) {
               onChange={updateValue}
             />
 
+            {error ? (
+              <View style={{ marginTop: 14, padding: 10, backgroundColor: '#FFF5F5', borderRadius: 8 }}>
+                <Text style={{ color: colors.orangeDark, fontSize: 13, lineHeight: 18 }}>
+                  {error}
+                </Text>
+              </View>
+            ) : null}
+
             <PrimaryButton
+              disabled={loading}
+              loading={loading}
+              onPress={handleSubmit}
               style={registerStyles.submitButton}
               title="Créer mon compte"
             />

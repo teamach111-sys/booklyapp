@@ -1,5 +1,39 @@
-import { useState } from 'react';
+/*
+### Screen: Extras Portal : ExtraFactures
+**Associated Route/Context**: `/extras (Tab/Modal: ExtraFactures)`  
+**Total Discovered Backend Calls**: 3
+
+| Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+| :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+| [`ExtraFactures.jsx:160`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/ExtraFactures.jsx#L160) | Initial Page / Component Mount Lifecycle (`useEffect`) | `useEffect hook` | `GET` | `/extra/invoices/' + invoiceId` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+| [`ExtraFactures.jsx:305`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/ExtraFactures.jsx#L305) | User Action Handler (`ExtraFactures`) | `ExtraFactures` | `GET` | `/extra/invoices` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+| [`ExtraFactures.jsx:38`](file:///C:/Users/Workspace/staffly-frontend/src/pages/extras/components/ExtraFactures.jsx#L38) | User Action Handler (`svgToBase64`) | `svgToBase64` | `GET` | `url` | `None` | Public (No auth) | Inferred / Dynamic |
+
+
+*/
+
+/**
+ * =====================================================================
+ * INVENTORY WIRING SPECIFICATION (staffly-frontend/inventory.md)
+ * =====================================================================
+ * ### Screen: Client Portal : Factures
+ * **Associated Route/Context**: `/client (Tab/Modal: Factures)`  
+ * **Total Discovered Backend Calls**: 5
+ * 
+ * | Line | Trigger / User Action | Handler Function | Method | Endpoint | Payload / Params | Auth Mode | Certainty |
+ * | :---: | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
+ * | [`Factures.jsx:68`](file:///C:/Users/Workspace/staffly-frontend/src/pages/client/components/Factures.jsx#L68) | User Action Handler (`Factures`) | `Factures` | `GET` | `/missions/space/' + selectedSpace.id` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Factures.jsx:82`](file:///C:/Users/Workspace/staffly-frontend/src/pages/client/components/Factures.jsx#L82) | User Action Handler (`Factures`) | `Factures` | `GET` | `/client/invoices/summary?' + params.toString(` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Factures.jsx:99`](file:///C:/Users/Workspace/staffly-frontend/src/pages/client/components/Factures.jsx#L99) | User Action Handler (`openMissionInvoice`) | `openMissionInvoice` | `GET` | `/invoice/mission/' + m.id` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Factures.jsx:109`](file:///C:/Users/Workspace/staffly-frontend/src/pages/client/components/Factures.jsx#L109) | User Action Handler (`openMonthlyInvoice`) | `openMonthlyInvoice` | `GET` | `/client/invoices/monthly/' + year + '/' + month + '?' + params.toString(` | `None` | Bearer token (Authstorage / localStorage) | Confirmed |
+ * | [`Factures.jsx:42`](file:///C:/Users/Workspace/staffly-frontend/src/pages/client/components/Factures.jsx#L42) | User Action Handler (`svgToDataUrl`) | `svgToDataUrl` | `GET` | `url` | `None` | Public (No auth) | Inferred / Dynamic |
+ * 
+ * =====================================================================
+ */
+import { useEffect, useState, useCallback } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Modal,
   Platform,
   Pressable,
@@ -20,7 +54,9 @@ import {
   X,
 } from 'lucide-react-native';
 import { useClientTheme } from '../theme/ClientThemeContext';
+import { useClientSites } from '../state/SitesContext';
 import { createBrandStyles } from '../theme/clientStyles';
+import clientService from '../../../api/clientService';
 
 const serifFont = Platform.select({
   ios: 'Georgia',
@@ -47,11 +83,88 @@ const STATUS_FILTERS = [
 export default function Factures() {
   const { partner, colors } = useClientTheme();
   const styles = stylesByBrand[partner];
-  const [invoices] = useState([]);
+  const { activeSite } = useClientSites();
+
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedPeriodIndex, setSelectedPeriodIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
+  const [selectedInvoiceDetail, setSelectedInvoiceDetail] = useState(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  const loadInvoices = useCallback(async () => {
+    if (!activeSite?.id) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const data = await clientService.getMissionsForSpace(activeSite.id);
+      const list = Array.isArray(data) ? data : data?.missions || [];
+      const finished = list.filter(
+        m => m.etat_mission === 'Terminée' || m.status === 'Terminée' || m.finished,
+      );
+
+      const mapped = finished.map(m => {
+        const isPaid = m.facture_statut === 'paye' || m.paid;
+        const isOverdue = m.facture_statut === 'retard' || m.overdue;
+        const status = isPaid ? 'paid' : isOverdue ? 'overdue' : 'to_pay';
+        const statusLabel = isPaid
+          ? 'Réglée'
+          : isOverdue
+          ? 'En retard'
+          : 'À régler';
+        const extraName = m.extra
+          ? `${m.extra.firstname || ''} ${m.extra.name || ''}`.trim()
+          : m.extra_name || 'Extra assigné';
+
+        return {
+          id: m.id,
+          number: m.facture_numero || `FAC-M-${m.id}`,
+          date: m.date_debut || m.created_at?.slice(0, 10) || '—',
+          status,
+          statusLabel,
+          missionTitle: m.prestation_nom || m.titre || `Mission #${m.id}`,
+          extraName,
+          amountTTC: `${m.total_ttc || m.tarif_total || '0'} €`,
+          amountHT: `${m.total_ht || (m.total_ttc ? Math.round(m.total_ttc / 1.2) : '0')} €`,
+          period: m.date_debut
+            ? new Date(m.date_debut).toLocaleDateString('fr-FR', {
+                month: 'long',
+                year: 'numeric',
+              })
+            : 'Période inconnue',
+        };
+      });
+
+      setInvoices(mapped);
+    } catch {
+      setInvoices([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeSite?.id]);
+
+  useEffect(() => {
+    loadInvoices();
+  }, [loadInvoices]);
+
+  const openInvoiceDetail = async inv => {
+    setLoadingDetail(true);
+    try {
+      const detail = await clientService.getClientInvoice(inv.id);
+      setSelectedInvoiceDetail({ invoice: inv, detail });
+    } catch (err) {
+      Alert.alert(
+        'Facture',
+        `Facture ${inv.number}\nMontant: ${inv.amountTTC}\nStatut: ${inv.statusLabel}`,
+      );
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
 
   const selectedPeriod = PERIODS[selectedPeriodIndex];
 
@@ -312,7 +425,11 @@ export default function Factures() {
       </View>
 
       {/* ── Content: Invoice List or Empty State ── */}
-      {filteredInvoices.length === 0 ? (
+      {loading ? (
+        <View style={[styles.emptyCard, { paddingVertical: 40 }]}>
+          <ActivityIndicator size="small" color={colors.orange} />
+        </View>
+      ) : filteredInvoices.length === 0 ? (
         <View style={styles.emptyCard}>
           <View style={styles.emptyIconWrap}>
             <FileText size={22} color={colors.orange} strokeWidth={2} />
@@ -325,7 +442,11 @@ export default function Factures() {
       ) : (
         <View style={styles.invoicesList}>
           {filteredInvoices.map(invoice => (
-            <View key={invoice.id} style={styles.invoiceCard}>
+            <Pressable
+              key={invoice.id}
+              style={styles.invoiceCard}
+              onPress={() => openInvoiceDetail(invoice)}
+            >
               <View style={styles.invoiceCardHeader}>
                 <View style={styles.invoiceNumberBlock}>
                   <Text style={styles.invoiceNumber}>{invoice.number}</Text>
@@ -371,13 +492,14 @@ export default function Factures() {
                 <Pressable
                   accessibilityLabel="Télécharger la facture"
                   accessibilityRole="button"
+                  onPress={() => openInvoiceDetail(invoice)}
                   style={styles.downloadBtn}
                 >
                   <Download size={13} color={colors.orangeDark} />
                   <Text style={styles.downloadBtnText}>PDF</Text>
                 </Pressable>
               </View>
-            </View>
+            </Pressable>
           ))}
         </View>
       )}

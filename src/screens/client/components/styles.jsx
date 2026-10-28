@@ -97,6 +97,7 @@ const createPrestationsStyles = colors => StyleSheet.create({
 
   /* ---------- Onglets ---------- */
   tabs: {
+    flexGrow: 1,
     flexDirection: 'row',
     marginBottom: 16,
     padding: 4,
@@ -105,18 +106,16 @@ const createPrestationsStyles = colors => StyleSheet.create({
   },
   tab: {
     flexGrow: 1,
-    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    paddingHorizontal: 4,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 9,
   },
   tabSelected: {
     backgroundColor: colors.white,
-    flexGrow: 1.5,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -182,6 +181,21 @@ const createPrestationsStyles = colors => StyleSheet.create({
     borderColor: '#E0D0C8',
     color: '#333',
     fontSize: 12,
+  },
+  resetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#E0D0C8',
+  },
+  resetButtonText: {
+    color: '#888888',
+    fontSize: 11,
+    fontWeight: '600',
   },
 
   /* ---------- Cartes de prestation ---------- */
@@ -1159,11 +1173,34 @@ const createPrestationsStyles = colors => StyleSheet.create({
   },
 
   /* ---------- Superpositions ---------- */
+  pickerSheet: {
+    width: '100%',
+    minHeight: 520,
+    paddingVertical: 12,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    backgroundColor: colors.white,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 10,
+  },
+  pickerTitle: {
+    paddingHorizontal: 26,
+    paddingVertical: 14,
+    color: '#999',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.35,
+    textTransform: 'uppercase',
+  },
   pickerOption: {
-    minHeight: 43,
+    minHeight: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 26,
     borderTopWidth: 1,
     borderTopColor: colors.divider,
   },
@@ -1175,7 +1212,8 @@ const createPrestationsStyles = colors => StyleSheet.create({
 
   /* ---------- Conversation ---------- */
   convSheet: {
-    minHeight: 520,
+    flex: 1,
+    minHeight: '90%',
     paddingTop: 0,
     paddingBottom: 0,
   },
@@ -1237,7 +1275,7 @@ const createPrestationsStyles = colors => StyleSheet.create({
     color: colors.orange,
   },
   convBody: {
-    flex: 1,
+    flexGrow: 1,
     padding: 16,
     backgroundColor: '#FAF7F5',
   },
@@ -1409,6 +1447,202 @@ const createPrestationsStyles = colors => StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+
+  /* ---------- Carte : compléments design ---------- */
+  missionTitleRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  archivedBadge: {
+    overflow: 'hidden',
+    paddingHorizontal: 7,
+    paddingVertical: 1,
+    borderRadius: 20,
+    backgroundColor: '#F0F0F0',
+    color: '#999999',
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  cancelReasonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 5,
+  },
+  cancelReasonText: {
+    flex: 1,
+    color: '#9B1C1C',
+    fontSize: 11,
+    fontStyle: 'italic',
+  },
+  posterStack: {
+    marginTop: 6,
+    gap: 2,
+  },
+  msgButtonText: {
+    color: '#1565C0',
+  },
+  msgBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    overflow: 'hidden',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 20,
+    backgroundColor: '#1565C0',
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  evalButton: {
+    borderColor: '#F59E0B',
+    backgroundColor: '#FFFBEB',
+  },
+  evalButtonText: {
+    color: '#B45309',
+  },
+  finishButton: {
+    borderColor: '#E65100',
+    backgroundColor: '#E65100',
+  },
+  finishButtonText: {
+    color: colors.white,
+  },
+  editButton: {
+    borderColor: '#E0D0C8',
+    backgroundColor: colors.white,
+  },
+  editButtonText: {
+    color: '#555555',
+  },
+  dupButtonText: {
+    color: '#555555',
+  },
+  archiveButton: {
+    borderColor: '#BBBBBB',
+  },
+  archiveButtonText: {
+    color: '#888888',
+  },
+  emptySub: {
+    color: '#AAAAAA',
+    fontSize: 13,
+    textAlign: 'center',
+  },
+
+  /* ---------- Formulaire : compléments design ---------- */
+  autosaveText: {
+    marginTop: 2,
+    color: '#2E7D32',
+    fontSize: 11,
+  },
+  clothingRowChecked: {
+    borderColor: '#F0D9A8',
+  },
+  addStaffRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  jobGridLabelsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  breakBox: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FFE082',
+    backgroundColor: '#FFF8E1',
+  },
+  breakStrong: {
+    color: '#F57F17',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  breakNoteInline: {
+    color: '#F57F17',
+    fontSize: 10,
+    fontStyle: 'italic',
+  },
+  fileBadgePending: {
+    overflow: 'hidden',
+    paddingHorizontal: 7,
+    paddingVertical: 1,
+    borderRadius: 20,
+    backgroundColor: '#DBEAFE',
+    color: '#1565C0',
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  fileSizeText: {
+    color: '#BBBBBB',
+    fontSize: 10,
+  },
+  fileRemove: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
+    backgroundColor: '#FDF0F0',
+  },
+  helperWarn: {
+    marginTop: 8,
+    color: '#F57F17',
+    fontSize: 11,
+  },
+
+  /* ---------- Conversation (prestation) ---------- */
+  convMsgRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 6,
+    marginBottom: 8,
+  },
+  convMsgRowMine: {
+    justifyContent: 'flex-end',
+  },
+  convMsgTime: {
+    color: '#BBBBBB',
+    fontSize: 10,
+  },
+  convAvatarSm: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: colors.palePink,
+  },
+  convAvatarSmText: {
+    color: colors.orange,
+    fontSize: 9,
+    fontWeight: '700',
+  },
+
+  /* ---------- Évaluation ---------- */
+  evalStarRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  evalStar: {
+    padding: 2,
+  },
 });
 
 const createProfileStyles = colors => StyleSheet.create({
@@ -1507,14 +1741,18 @@ const createProfileStyles = colors => StyleSheet.create({
 
   /* ---------- Tabs ---------- */
   tabs: {
+    flexGrow: 1,
     flexDirection: 'row',
     gap: 8,
     marginBottom: 14,
   },
   tab: {
+    flexGrow: 1,
     paddingHorizontal: 18,
     paddingVertical: 8,
     borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabActive: {
     backgroundColor: colors.orange,
@@ -1670,6 +1908,62 @@ const createProfileStyles = colors => StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+
+  /* ---------- States ---------- */
+  loadingBlock: {
+    paddingVertical: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    color: '#888',
+    fontSize: 13,
+  },
+  banner: {
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 14,
+  },
+  bannerError: {
+    backgroundColor: '#FCEDEA',
+    borderColor: '#F0C2BC',
+  },
+  bannerSuccess: {
+    backgroundColor: colors.successLight,
+    borderColor: colors.successBorder,
+  },
+  bannerText: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  bannerTextError: {
+    color: '#A02A1C',
+  },
+  bannerTextSuccess: {
+    color: colors.success,
+  },
+  retryButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 9,
+    backgroundColor: colors.orange,
+  },
+  retryButtonText: {
+    color: colors.white,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+  },
 });
 
 const createMessagesStyles = colors => StyleSheet.create({
@@ -1677,6 +1971,7 @@ const createMessagesStyles = colors => StyleSheet.create({
     gap: 14,
   },
   tabs: {
+    flexGrow: 1,
     flexDirection: 'row',
     marginBottom: 16,
     padding: 4,
@@ -1688,6 +1983,8 @@ const createMessagesStyles = colors => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 9,
   },
@@ -1794,12 +2091,22 @@ const createMessagesStyles = colors => StyleSheet.create({
     color: colors.orange,
   },
   modalBody: {
-    flexShrink: 1,
+    paddingHorizontal: 26,
+    paddingVertical: 12,
+  },
+  modalBodyNoPadding: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
   },
   modalScrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 26,
     paddingTop: 16,
     paddingBottom: 28,
+  },
+  modalScrollContentNoPadding: {
+    paddingHorizontal: 20,
+    paddingTop: 0,
+    paddingBottom: 24,
   },
   contactItem: {
     flexDirection: 'row',
@@ -1934,6 +2241,208 @@ const createMessagesStyles = colors => StyleSheet.create({
     color: '#888',
     fontSize: 15,
     fontWeight: '700',
+  },
+
+  /* ---------- Conversation & Report Sheets ---------- */
+  convSheet: {
+    minHeight: 520,
+    paddingTop: 0,
+    paddingBottom: 0,
+  },
+  convSheetTall: {
+    minHeight: '95%',
+    paddingTop: 0,
+    paddingBottom: 0,
+  },
+  convHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0E4DD',
+  },
+  convAvatar: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    backgroundColor: colors.palePink,
+  },
+  convAvatarText: {
+    color: colors.orange,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  convName: {
+    flex: 1,
+    color: colors.orangeDark,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  convClose: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#F5F0EC',
+  },
+  convBody: {
+    flexGrow: 1,
+    padding: 16,
+    backgroundColor: '#FAF7F5',
+  },
+  convEmpty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  convEmptyTitle: {
+    marginTop: 12,
+    color: colors.orangeDark,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  convEmptySub: {
+    marginTop: 4,
+    color: '#999',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  convScroll: {
+    flex: 1,
+  },
+  convList: {
+    gap: 12,
+  },
+  convMessageMine: {
+    alignSelf: 'flex-end',
+    maxWidth: '85%',
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 16,
+    borderBottomRightRadius: 4,
+    backgroundColor: colors.orange,
+  },
+  convMessageOther: {
+    alignSelf: 'flex-start',
+    maxWidth: '85%',
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 16,
+    borderBottomLeftRadius: 4,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: '#F0E4DD',
+  },
+  convMessageTextMine: {
+    color: colors.white,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  convMessageTextOther: {
+    color: '#333',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  convMsgTime: {
+    color: '#BBBBBB',
+    fontSize: 10,
+    marginTop: 4,
+    alignSelf: 'flex-end',
+  },
+  convComposer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F0E4DD',
+    backgroundColor: colors.white,
+  },
+  convComposerInput: {
+    flex: 1,
+    minHeight: 40,
+    maxHeight: 100,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F5EDE8',
+    color: '#333',
+    fontSize: 13,
+  },
+  convSend: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: colors.orange,
+  },
+  convSendDisabled: {
+    backgroundColor: '#E0D0C8',
+  },
+  reportBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  reportBadgeOpen: {
+    backgroundColor: '#EAF5EA',
+  },
+  reportBadgeClosed: {
+    backgroundColor: '#EFEFEF',
+  },
+  reportBadgeTextOpen: {
+    color: '#2E7D32',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  reportBadgeTextClosed: {
+    color: '#888',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  closeReportButton: {
+    marginTop: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#FFF1F0',
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  closeReportText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#D32F2F',
+  },
+  replyInput: {
+    backgroundColor: '#FFF',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#F0E4DD',
+    padding: 12,
+    fontSize: 13,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  replyButton: {
+    marginTop: 8,
+    backgroundColor: colors.orange,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  replyButtonText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 13,
   },
 });
 
