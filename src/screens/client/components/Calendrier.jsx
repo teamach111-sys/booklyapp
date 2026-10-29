@@ -50,15 +50,16 @@ import {
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useClientTheme } from '../theme/ClientThemeContext';
 import { createBrandStyles } from '../theme/clientStyles';
+import { useClientSites } from '../state/SitesContext';
 import BottomSheet from './BottomSheet';
 import { getClientCalendarMissions } from '../../../api/clientService';
 
 const weekdays = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
 
 const STATUS_CONFIG = {
-  upcoming: { label: 'Prestation à venir', color: '#e65100', dot: '#fb8c00' },
-  ongoing: { label: 'Prestation en cours', color: '#2e7d32', dot: '#43a047' },
-  past: { label: 'Prestation passée', color: '#757575', dot: '#bdbdbd' },
+  upcoming: { label: 'Prestation à venir', color: '#e65100', bg: '#FFF3E0', dot: '#FB8C00' },
+  ongoing: { label: 'Prestation en cours', color: '#2e7d32', bg: '#EAF5EA', dot: '#43A047' },
+  past: { label: 'Prestation passée', color: '#757575', bg: '#F0F0F0', dot: '#BDBDBD' },
 };
 
 function getStatus(m) {
@@ -118,13 +119,47 @@ function formatModalDate(date) {
   return `${capitalizedWeekday} ${day} ${capitalizedMonth}`;
 }
 
-export default function Calendrier({ selectedSpace, spaces = [] }) {
+function fmtTime(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function fmtMoney(n) {
+  if (n == null) return '—';
+  return (
+    Number(n).toLocaleString('fr-FR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }) + ' €'
+  );
+}
+
+function fmtHours(start, end) {
+  if (!start || !end) return null;
+  const h = (new Date(end) - new Date(start)) / 3600000;
+  if (!h || h <= 0) return null;
+  return (Number.isInteger(h) ? h : h.toFixed(1)) + 'h';
+}
+
+const PAIEMENT_LABELS = {
+  en_attente: 'En attente',
+  paye: 'Payé',
+  litige: 'Litige',
+  non_generee: 'Non générée',
+};
+
+export default function Calendrier() {
   const { partner, colors } = useClientTheme();
   const styles = stylesByBrand[partner];
+  const { selectableSites } = useClientSites();
+
   const [view, setView] = useState('month');
   const [focusedDate, setFocusedDate] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(() => new Date());
-  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState('ALL');
   const [modalVisible, setModalVisible] = useState(false);
   const [missions, setMissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -135,6 +170,28 @@ export default function Calendrier({ selectedSpace, spaces = [] }) {
       .catch(() => setMissions([]))
       .finally(() => setLoading(false));
   }, []);
+
+  // ── Filter by space (mirrors the web frontend) ──
+  const visibleMissions =
+    activeFilter === 'ALL'
+      ? missions
+      : missions.filter(m => {
+          const space = selectableSites.find(
+            s => String(s.id) === String(activeFilter),
+          );
+          if (!space) return true;
+          return (
+            m.city === space.city || m.space_name === space.space_name
+          );
+        });
+
+  // ── Index missions by date string for O(1) lookup ──
+  const visibleByDate = {};
+  visibleMissions.forEach(m => {
+    const key = new Date(m.date_debut).toDateString();
+    if (!visibleByDate[key]) visibleByDate[key] = [];
+    visibleByDate[key].push(m);
+  });
 
   // Month grid: 42 cells (6 weeks) starting from the Monday before/on the 1st
   const monthStart = new Date(
@@ -191,6 +248,56 @@ export default function Calendrier({ selectedSpace, spaces = [] }) {
     setModalVisible(true);
   }
 
+  // ── Stats by temporal status (month mode) ──
+  const countTotal = visibleMissions.length;
+  const countUpcoming = visibleMissions.filter(
+    m => getStatus(m) === 'upcoming',
+  ).length;
+  const countOngoing = visibleMissions.filter(
+    m => getStatus(m) === 'ongoing',
+  ).length;
+  const countPast = visibleMissions.filter(
+    m => getStatus(m) === 'past',
+  ).length;
+
+  // ── Stats for the displayed week (week mode) ──
+  const weekMissions =
+    view === 'week'
+      ? weekDays.flatMap(d => visibleByDate[d.toDateString()] || [])
+      : [];
+  const weekTotal = weekMissions.reduce(
+    (s, m) => s + (Number(m.total_ht) || 0),
+    0,
+  );
+  const weekJoursTravailles =
+    view === 'week'
+      ? weekDays.filter(
+          d => (visibleByDate[d.toDateString()] || []).length > 0,
+        ).length
+      : 0;
+
+  // ── Upcoming prestations for side panel ──
+  const upcomingMissions = visibleMissions
+    .filter(m => getStatus(m) !== 'past')
+    .sort((a, b) => new Date(a.date_debut) - new Date(b.date_debut))
+    .slice(0, 8);
+
+  // ── Missions for the selected day (modal) ──
+  const selectedDayMissions =
+    visibleByDate[selectedDate.toDateString()] || [];
+  const selectedDayTotal = selectedDayMissions.reduce(
+    (s, m) => s + (Number(m.total_ht) || 0),
+    0,
+  );
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { paddingVertical: 60, alignItems: 'center' }]}>
+        <ActivityIndicator size="small" color={colors.orange} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* 1. Filter Row */}
@@ -198,38 +305,41 @@ export default function Calendrier({ selectedSpace, spaces = [] }) {
         <Text style={styles.filterLabel}>FILTRER :</Text>
         <Pressable
           accessibilityRole="button"
-          onPress={() => setSelectedFilter('all')}
+          onPress={() => setActiveFilter('ALL')}
           style={[
             styles.filterPill,
-            selectedFilter === 'all' && styles.filterPillActive,
+            activeFilter === 'ALL' && styles.filterPillActive,
           ]}
         >
           <Text
             style={[
               styles.filterPillText,
-              selectedFilter === 'all' && styles.filterPillTextActive,
+              activeFilter === 'ALL' && styles.filterPillTextActive,
             ]}
           >
             Tous les espaces
           </Text>
         </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => setSelectedFilter('client02')}
-          style={[
-            styles.filterPill,
-            selectedFilter === 'client02' && styles.filterPillActive,
-          ]}
-        >
-          <Text
+        {selectableSites.map(space => (
+          <Pressable
+            key={space.id}
+            accessibilityRole="button"
+            onPress={() => setActiveFilter(space.id)}
             style={[
-              styles.filterPillText,
-              selectedFilter === 'client02' && styles.filterPillTextActive,
+              styles.filterPill,
+              activeFilter === space.id && styles.filterPillActive,
             ]}
           >
-            Dashboard Client 02
-          </Text>
-        </Pressable>
+            <Text
+              style={[
+                styles.filterPillText,
+                activeFilter === space.id && styles.filterPillTextActive,
+              ]}
+            >
+              {space.city || space.name}
+            </Text>
+          </Pressable>
+        ))}
       </View>
 
       {/* 2. Stat Cards Row */}
@@ -237,21 +347,29 @@ export default function Calendrier({ selectedSpace, spaces = [] }) {
         <View style={styles.statsContainer}>
           <View style={styles.statsRow}>
             <View style={styles.statCard}>
-              <Text style={[styles.statNum, styles.statNumPrimary]}>0</Text>
+              <Text style={[styles.statNum, styles.statNumPrimary]}>
+                {countTotal}
+              </Text>
               <Text style={styles.statLabel}>TOTAL PRESTATIONS</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statNum, styles.statNumWarning]}>0</Text>
+              <Text style={[styles.statNum, styles.statNumWarning]}>
+                {countUpcoming}
+              </Text>
               <Text style={styles.statLabel}>PRESTATION À VENIR</Text>
             </View>
           </View>
           <View style={styles.statsRow}>
             <View style={styles.statCard}>
-              <Text style={[styles.statNum, styles.statNumSuccess]}>0</Text>
+              <Text style={[styles.statNum, styles.statNumSuccess]}>
+                {countOngoing}
+              </Text>
               <Text style={styles.statLabel}>PRESTATION EN COURS</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statNum, styles.statNumMuted]}>0</Text>
+              <Text style={[styles.statNum, styles.statNumMuted]}>
+                {countPast}
+              </Text>
               <Text style={styles.statLabel}>PRESTATIONS PASSÉES</Text>
             </View>
           </View>
@@ -259,18 +377,20 @@ export default function Calendrier({ selectedSpace, spaces = [] }) {
       ) : (
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Text style={[styles.statNum, styles.statNumPrimary]}>0</Text>
+            <Text style={[styles.statNum, styles.statNumPrimary]}>
+              {weekMissions.length}
+            </Text>
             <Text style={styles.statLabel}>PRESTATIONS</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={[styles.statNum, styles.statNumPrimary]}>
-              0,00 €
+              {fmtMoney(weekTotal)}
             </Text>
             <Text style={styles.statLabel}>TOTAL ESTIMÉ HT</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={[styles.statNum, styles.statNumDark]}>
-              0/7
+              {weekJoursTravailles}/7
             </Text>
             <Text style={styles.statLabel}>JOURS TRAVAILLÉS</Text>
           </View>
@@ -376,6 +496,8 @@ export default function Calendrier({ selectedSpace, spaces = [] }) {
                     const inMonth = date.getMonth() === focusedDate.getMonth();
                     const today = sameDay(date, new Date());
                     const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                    const dayMissions =
+                      visibleByDate[date.toDateString()] || [];
 
                     return (
                       <Pressable
@@ -416,7 +538,26 @@ export default function Calendrier({ selectedSpace, spaces = [] }) {
                             {date.getDate()}
                           </Text>
                         </View>
-                        <View style={styles.calDots} />
+                        {/* Mission dots — colored by temporal status */}
+                        <View style={styles.calDots}>
+                          {dayMissions.slice(0, 3).map((m, mi) => {
+                            const status = getStatus(m);
+                            return (
+                              <View
+                                key={mi}
+                                style={[
+                                  styles.calDot,
+                                  { backgroundColor: STATUS_CONFIG[status].dot },
+                                ]}
+                              />
+                            );
+                          })}
+                          {dayMissions.length > 3 ? (
+                            <Text style={styles.calDotMore}>
+                              +{dayMissions.length - 3}
+                            </Text>
+                          ) : null}
+                        </View>
                       </Pressable>
                     );
                   })}
@@ -441,8 +582,12 @@ export default function Calendrier({ selectedSpace, spaces = [] }) {
             </View>
           </>
         ) : (
-          /* Week View: 7 Day Cards */
-          <View style={styles.calDaygrid}>
+          /* Week View: 7 Day Cards with mission items */
+          <ScrollView
+            style={styles.calDaygridScroll}
+            contentContainerStyle={styles.calDaygrid}
+            showsVerticalScrollIndicator={false}
+          >
             {weekDays.map(date => {
               const today = sameDay(date, new Date());
               const dayName = date.toLocaleDateString('fr-FR', {
@@ -450,6 +595,12 @@ export default function Calendrier({ selectedSpace, spaces = [] }) {
               });
               const capitalizedDayName =
                 dayName.charAt(0).toUpperCase() + dayName.slice(1);
+              const dayMissions =
+                visibleByDate[date.toDateString()] || [];
+              const dayTotal = dayMissions.reduce(
+                (s, m) => s + (Number(m.total_ht) || 0),
+                0,
+              );
 
               return (
                 <Pressable
@@ -467,14 +618,37 @@ export default function Calendrier({ selectedSpace, spaces = [] }) {
                     </Text>
                   </View>
                   <View style={styles.calDaycardBody}>
-                    <Text style={styles.calDaycardEmpty}>
-                      Aucune prestation
-                    </Text>
+                    {dayMissions.length === 0 ? (
+                      <Text style={styles.calDaycardEmpty}>
+                        Aucune prestation
+                      </Text>
+                    ) : (
+                      dayMissions.map(m => (
+                        <View key={m.id} style={styles.calDaycardItem}>
+                          <Text
+                            style={styles.calDaycardItemName}
+                            numberOfLines={1}
+                          >
+                            {m.prestation_nom}
+                          </Text>
+                          <Text style={styles.calDaycardItemMeta}>
+                            {fmtTime(m.date_debut)}–{fmtTime(m.date_fin)} ·{' '}
+                            {m.staff_accepted || 0} extra
+                            {(m.staff_accepted || 0) > 1 ? 's' : ''}
+                          </Text>
+                        </View>
+                      ))
+                    )}
                   </View>
+                  {dayMissions.length > 0 ? (
+                    <Text style={styles.calDaycardTotal}>
+                      {fmtMoney(dayTotal)}
+                    </Text>
+                  ) : null}
                 </Pressable>
               );
             })}
-          </View>
+          </ScrollView>
         )}
       </View>
 
@@ -482,11 +656,55 @@ export default function Calendrier({ selectedSpace, spaces = [] }) {
       {view === 'month' ? (
         <View style={styles.calSide}>
           <Text style={styles.calSideTitle}>PROCHAINES PRESTATIONS</Text>
-          <Text style={styles.calSideEmpty}>Aucune prestation à venir.</Text>
+          {upcomingMissions.length === 0 ? (
+            <Text style={styles.calSideEmpty}>
+              Aucune prestation à venir.
+            </Text>
+          ) : (
+            <View style={styles.calSideList}>
+              {upcomingMissions.map(m => {
+                const status = getStatus(m);
+                const cfg = STATUS_CONFIG[status];
+                return (
+                  <View
+                    key={m.id}
+                    style={[
+                      styles.eventCard,
+                      { backgroundColor: cfg.bg, borderColor: cfg.color + '33' },
+                    ]}
+                  >
+                    <View style={styles.eventCardLeft}>
+                      <Text style={styles.eventCardName} numberOfLines={1}>
+                        {m.prestation_nom}
+                      </Text>
+                      <Text style={styles.eventCardTime}>
+                        {fmtTime(m.date_debut)} — {fmtTime(m.date_fin)}
+                      </Text>
+                      {m.space_name ? (
+                        <Text style={[styles.eventCardSpace, { color: cfg.color }]}>
+                          {m.space_name}
+                        </Text>
+                      ) : null}
+                    </View>
+                    <View
+                      style={[
+                        styles.eventCardBadge,
+                        { backgroundColor: cfg.bg, borderColor: cfg.color + '33' },
+                      ]}
+                    >
+                      <Text style={[styles.eventCardBadgeText, { color: cfg.color }]}>
+                        {cfg.label}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </View>
       ) : null}
 
-      {/* 5. Day Detail Modal (same sheet as the select pickers) */}
+      {/* 5. Day Detail Modal */}
       <BottomSheet
         onClose={() => setModalVisible(false)}
         showClose
@@ -494,9 +712,52 @@ export default function Calendrier({ selectedSpace, spaces = [] }) {
         visible={modalVisible}
       >
         <View style={styles.modalContent}>
-          <Text style={styles.modalEmptyText}>
-            Aucune prestation ce jour.
-          </Text>
+          {selectedDayMissions.length === 0 ? (
+            <Text style={styles.modalEmptyText}>
+              Aucune prestation ce jour.
+            </Text>
+          ) : (
+            <>
+              <View style={styles.modalMissionList}>
+                {selectedDayMissions.map(m => {
+                  const hours = fmtHours(m.date_debut, m.date_fin);
+                  return (
+                    <View key={m.id} style={styles.modalMission}>
+                      <View style={styles.modalMissionLeft}>
+                        <Text style={styles.modalMissionName} numberOfLines={2}>
+                          {m.prestation_nom}
+                        </Text>
+                        <Text style={styles.modalMissionMeta}>
+                          {fmtTime(m.date_debut)} – {fmtTime(m.date_fin)}
+                          {hours ? ` · ${hours}` : ''}
+                          {' · '}
+                          {m.staff_accepted || 0} extra
+                          {(m.staff_accepted || 0) > 1 ? 's' : ''}
+                        </Text>
+                      </View>
+                      <Text style={styles.modalMissionPrice}>
+                        {fmtMoney(m.total_ht)}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+              <View style={styles.modalFooter}>
+                <View>
+                  <Text style={styles.modalFooterLabel}>
+                    Total journée estimé
+                  </Text>
+                  <Text style={styles.modalFooterSub}>
+                    {selectedDayMissions.length} prestation
+                    {selectedDayMissions.length > 1 ? 's' : ''} · hors taxes
+                  </Text>
+                </View>
+                <Text style={styles.modalFooterTotal}>
+                  {fmtMoney(selectedDayTotal)}
+                </Text>
+              </View>
+            </>
+          )}
         </View>
       </BottomSheet>
     </View>
@@ -757,6 +1018,26 @@ const createStyles = colors => StyleSheet.create({
     gap: 3,
     marginTop: 3,
     minHeight: 6,
+    alignItems: 'center',
+  },
+  calDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  calDotMore: {
+    fontSize: 8,
+    fontWeight: '700',
+    color: '#AAA',
+  },
+  calDotUpcoming: {
+    backgroundColor: '#FB8C00',
+  },
+  calDotOngoing: {
+    backgroundColor: '#43A047',
+  },
+  calDotPast: {
+    backgroundColor: '#BDBDBD',
   },
 
   /* ── Legend ── */
@@ -775,20 +1056,6 @@ const createStyles = colors => StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  calDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  calDotUpcoming: {
-    backgroundColor: '#FB8C00',
-  },
-  calDotOngoing: {
-    backgroundColor: '#43A047',
-  },
-  calDotPast: {
-    backgroundColor: '#BDBDBD',
-  },
   calLegendText: {
     fontSize: 11,
     color: '#888',
@@ -796,6 +1063,9 @@ const createStyles = colors => StyleSheet.create({
   },
 
   /* ── Week View Day Cards ── */
+  calDaygridScroll: {
+    maxHeight: 380,
+  },
   calDaygrid: {
     padding: 12,
     gap: 10,
@@ -832,10 +1102,30 @@ const createStyles = colors => StyleSheet.create({
   },
   calDaycardBody: {
     paddingTop: 10,
+    gap: 6,
   },
   calDaycardEmpty: {
     fontSize: 12,
     color: '#CCC',
+  },
+  calDaycardItem: {
+    gap: 1,
+  },
+  calDaycardItemName: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  calDaycardItemMeta: {
+    fontSize: 11,
+    color: '#888',
+  },
+  calDaycardTotal: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.orange,
+    marginTop: 8,
+    textAlign: 'right',
   },
 
   /* ── Upcoming Prestations Card (Month View) ── */
@@ -861,15 +1151,119 @@ const createStyles = colors => StyleSheet.create({
     color: '#BBB',
     paddingVertical: 12,
   },
+  calSideList: {
+    paddingTop: 10,
+    gap: 8,
+  },
+  eventCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  eventCardLeft: {
+    flex: 1,
+    minWidth: 0,
+    gap: 3,
+  },
+  eventCardName: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  eventCardTime: {
+    fontSize: 11,
+    color: '#888',
+  },
+  eventCardSpace: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  eventCardBadge: {
+    paddingVertical: 2,
+    paddingHorizontal: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+    flexShrink: 0,
+  },
+  eventCardBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+  },
 
   /* ── Day Detail Modal ── */
   modalContent: {
     paddingHorizontal: 20,
+    paddingBottom: 24,
   },
   modalEmptyText: {
     fontSize: 13,
     color: '#BBB',
     paddingVertical: 16,
+  },
+  modalMissionList: {
+    gap: 10,
+    paddingVertical: 8,
+  },
+  modalMission: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: '#FAF6F4',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ECDDD6',
+  },
+  modalMissionLeft: {
+    flex: 1,
+    minWidth: 0,
+    gap: 3,
+  },
+  modalMissionName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  modalMissionMeta: {
+    fontSize: 11,
+    color: '#888',
+  },
+  modalMissionPrice: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.orange,
+    flexShrink: 0,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#F0E4DD',
+  },
+  modalFooterLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#AAA',
+  },
+  modalFooterSub: {
+    fontSize: 11,
+    color: '#BBB',
+    marginTop: 2,
+  },
+  modalFooterTotal: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.orange,
   },
 });
 
