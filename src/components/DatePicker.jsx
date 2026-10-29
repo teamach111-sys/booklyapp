@@ -326,6 +326,8 @@ const styles = StyleSheet.create({
     gap: 8,
     borderRadius: 9,
     borderWidth: 1.5,
+    // Keep the calendar icon inside the bordered box when the label is long.
+    overflow: 'hidden',
   },
   triggerText: {
     flexShrink: 1,
