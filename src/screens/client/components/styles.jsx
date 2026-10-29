@@ -203,29 +203,36 @@ const createPrestationsStyles = colors => StyleSheet.create({
     gap: 12,
   },
   missionCard: {
-    flexDirection: 'row',
-    gap: 12,
+    gap: 10,
     paddingHorizontal: 18,
     paddingVertical: 14,
     backgroundColor: colors.white,
     borderRadius: 12,
     borderWidth: 1.5,
     borderColor: '#FDE8CC',
+    overflow: 'hidden',
   },
   missionMain: {
-    flex: 1,
-    minWidth: 180,
+    width: '100%',
+  },
+  missionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginBottom: 6,
   },
   missionTitle: {
-    marginBottom: 6,
+    flex: 1,
     color: '#1A1A1A',
     fontSize: 14,
     fontWeight: '700',
   },
+  missionPriceBlock: {
+    alignItems: 'flex-end',
+  },
   missionStatus: {
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
     overflow: 'hidden',
-    marginBottom: 8,
     paddingHorizontal: 9,
     paddingVertical: 2,
     borderRadius: 20,
@@ -239,11 +246,13 @@ const createPrestationsStyles = colors => StyleSheet.create({
     flexWrap: 'wrap',
     alignItems: 'center',
     gap: 12,
+    maxWidth: '100%',
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    flexShrink: 1,
   },
   metaText: {
     color: '#888',
@@ -259,10 +268,6 @@ const createPrestationsStyles = colors => StyleSheet.create({
     color: '#BBA695',
     fontSize: 10,
     fontStyle: 'italic',
-  },
-  missionSide: {
-    alignItems: 'flex-end',
-    gap: 8,
   },
   missionPrice: {
     color: colors.orange,
@@ -281,20 +286,34 @@ const createPrestationsStyles = colors => StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-end',
+    alignItems: 'stretch',
+    alignContent: 'flex-end',
     gap: 6,
+    width: '100%',
   },
   cardIconButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 5,
+    minHeight: 30,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 7,
     borderWidth: 1.5,
+    maxWidth: '100%',
+    flexShrink: 1,
   },
   cardIconButtonText: {
     fontSize: 11,
     fontWeight: '600',
+    flexShrink: 1,
+  },
+  cardIconGlyph: {
+    width: 14,
+    height: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   msgButton: {
     borderColor: '#BFDBFE',
@@ -1449,13 +1468,6 @@ const createPrestationsStyles = colors => StyleSheet.create({
   },
 
   /* ---------- Carte : compléments design ---------- */
-  missionTitleRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
   archivedBadge: {
     overflow: 'hidden',
     paddingHorizontal: 7,
@@ -1524,6 +1536,7 @@ const createPrestationsStyles = colors => StyleSheet.create({
   },
   archiveButton: {
     borderColor: '#BBBBBB',
+    backgroundColor: colors.white,
   },
   archiveButtonText: {
     color: '#888888',

@@ -731,17 +731,24 @@ function MissionCard({
     >
       <View style={styles.missionMain}>
         <View style={styles.missionTitleRow}>
-          <Text style={styles.missionTitle}>{m.nom || m.prestation_nom}</Text>
-          {isArchived ? <Text style={styles.archivedBadge}>Archivée</Text> : null}
-        </View>
-
-        <View style={[styles.missionStatus, { backgroundColor: statusStyle.bg, color: statusStyle.color }]}>
-          <Text style={{ color: statusStyle.color, fontSize: 10, fontWeight: '700' }}>
-            {statusStyle.label}
+          <Text style={styles.missionTitle} numberOfLines={2}>
+            {m.nom || m.prestation_nom}
           </Text>
+          {isArchived ? <Text style={styles.archivedBadge}>Archivée</Text> : null}
+          {m.total_ht != null ? (
+            <View style={styles.missionPriceBlock}>
+              <Text style={styles.missionPrice}>{Number(m.total_ht).toFixed(2)} €</Text>
+              <Text style={styles.missionPriceCaption}>HT / prestation</Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.missionMeta}>
+          <View style={[styles.missionStatus, { backgroundColor: statusStyle.bg }]}>
+            <Text style={{ color: statusStyle.color, fontSize: 10, fontWeight: '700' }}>
+              {statusStyle.label}
+            </Text>
+          </View>
           {m.date ? (
             <View style={styles.metaItem}>
               <CalendarDays size={11} color="#888" />
@@ -803,78 +810,87 @@ function MissionCard({
         )}
       </View>
 
-      <View style={styles.missionSide}>
-        {m.total_ht != null ? (
-          <View>
-            <Text style={styles.missionPrice}>{Number(m.total_ht).toFixed(2)} €</Text>
-            <Text style={styles.missionPriceCaption}>HT / prestation</Text>
+      <View style={styles.missionActions}>
+        <Pressable
+          onPress={() => onMessage(m)}
+          style={[styles.cardIconButton, styles.msgButton]}
+          accessibilityLabel="Message"
+        >
+          <View style={styles.cardIconGlyph}>
+            <MessageSquare size={12} color="#1565C0" />
           </View>
+          {unread > 0 ? <Text style={styles.msgBadge}>{unread}</Text> : null}
+        </Pressable>
+
+        <Pressable onPress={() => onView(m)} style={[styles.cardIconButton, styles.viewButton]}>
+          <View style={styles.cardIconGlyph}>
+            <Eye size={12} color={colors.orangeDark} />
+          </View>
+          <Text style={[styles.cardIconButtonText, styles.viewButtonText]}>Voir</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => onDuplicate(m)}
+          style={[styles.cardIconButton, styles.dupButton]}
+          accessibilityLabel="Dupliquer"
+        >
+          <View style={styles.cardIconGlyph}>
+            <Copy size={12} color="#555" />
+          </View>
+          <Text style={[styles.cardIconButtonText, styles.dupButtonText]}>Dupliquer</Text>
+        </Pressable>
+
+        {canEvaluate ? (
+          <Pressable onPress={() => onEvaluate(m)} style={[styles.cardIconButton, styles.evalButton]}>
+            <View style={styles.cardIconGlyph}>
+              <Star size={12} color="#B45309" />
+            </View>
+            <Text style={[styles.cardIconButtonText, styles.evalButtonText]}>Évaluer</Text>
+          </Pressable>
         ) : null}
 
-        <View style={styles.missionActions}>
-          <Pressable
-            onPress={() => onMessage(m)}
-            style={[styles.cardIconButton, styles.msgButton]}
-            accessibilityLabel="Message"
-          >
-            <MessageSquare size={11} color="#1565C0" />
-            {unread > 0 ? <Text style={styles.msgBadge}>{unread}</Text> : null}
+        {canFinish ? (
+          <Pressable onPress={() => onFinish(m)} style={[styles.cardIconButton, styles.finishButton]}>
+            <View style={styles.cardIconGlyph}>
+              <Check size={12} color="#FFF" />
+            </View>
+            <Text style={[styles.cardIconButtonText, styles.finishButtonText]}>Terminer</Text>
           </Pressable>
+        ) : null}
 
-          <Pressable onPress={() => onView(m)} style={[styles.cardIconButton, styles.viewButton]}>
-            <Eye size={11} color={colors.orangeDark} />
-            <Text style={[styles.cardIconButtonText, styles.viewButtonText]}>Voir</Text>
+        {canEdit ? (
+          <Pressable onPress={() => onEdit(m)} style={[styles.cardIconButton, styles.editButton]}>
+            <View style={styles.cardIconGlyph}>
+              <Edit2 size={12} color="#555" />
+            </View>
+            <Text style={[styles.cardIconButtonText, styles.editButtonText]}>Modifier</Text>
           </Pressable>
+        ) : null}
 
-          <Pressable
-            onPress={() => onDuplicate(m)}
-            style={[styles.cardIconButton, styles.dupButton]}
-            accessibilityLabel="Dupliquer"
-          >
-            <Copy size={11} color="#555" />
-            <Text style={[styles.cardIconButtonText, styles.dupButtonText]}>Dupliquer</Text>
+        {isDraft ? (
+          <Pressable onPress={() => onDelete(m)} style={[styles.cardIconButton, styles.cancelButton]}>
+            <View style={styles.cardIconGlyph}>
+              <Trash2 size={12} color="#9B1C1C" />
+            </View>
           </Pressable>
+        ) : null}
 
-          {canEvaluate ? (
-            <Pressable onPress={() => onEvaluate(m)} style={[styles.cardIconButton, styles.evalButton]}>
-              <Star size={11} color="#B45309" />
-              <Text style={[styles.cardIconButtonText, styles.evalButtonText]}>Évaluer</Text>
-            </Pressable>
-          ) : null}
+        {canCancel && !isDraft ? (
+          <Pressable onPress={() => onCancel(m)} style={[styles.cardIconButton, styles.cancelButton]}>
+            <View style={styles.cardIconGlyph}>
+              <X size={12} color="#9B1C1C" />
+            </View>
+          </Pressable>
+        ) : null}
 
-          {canFinish ? (
-            <Pressable onPress={() => onFinish(m)} style={[styles.cardIconButton, styles.finishButton]}>
-              <Check size={11} color="#FFF" />
-              <Text style={[styles.cardIconButtonText, styles.finishButtonText]}>Terminer</Text>
-            </Pressable>
-          ) : null}
-
-          {canEdit ? (
-            <Pressable onPress={() => onEdit(m)} style={[styles.cardIconButton, styles.editButton]}>
-              <Edit2 size={11} color="#555" />
-              <Text style={[styles.cardIconButtonText, styles.editButtonText]}>Modifier</Text>
-            </Pressable>
-          ) : null}
-
-          {isDraft ? (
-            <Pressable onPress={() => onDelete(m)} style={[styles.cardIconButton, styles.cancelButton]}>
-              <Trash2 size={11} color="#9B1C1C" />
-            </Pressable>
-          ) : null}
-
-          {canCancel && !isDraft ? (
-            <Pressable onPress={() => onCancel(m)} style={[styles.cardIconButton, styles.cancelButton]}>
-              <X size={11} color="#9B1C1C" />
-            </Pressable>
-          ) : null}
-
-          {isCancelled && !isArchived ? (
-            <Pressable onPress={() => onArchive(m)} style={[styles.cardIconButton, styles.archiveButton]}>
-              <Archive size={11} color="#888" />
-              <Text style={[styles.cardIconButtonText, styles.archiveButtonText]}>Archiver</Text>
-            </Pressable>
-          ) : null}
-        </View>
+        {isCancelled && !isArchived ? (
+          <Pressable onPress={() => onArchive(m)} style={[styles.cardIconButton, styles.archiveButton]}>
+            <View style={styles.cardIconGlyph}>
+              <Archive size={12} color="#888" />
+            </View>
+            <Text style={[styles.cardIconButtonText, styles.archiveButtonText]}>Archiver</Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );

@@ -20,8 +20,10 @@
  * 
  * =====================================================================
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -42,6 +44,13 @@ import {
 import { colors } from '../../../styles';
 import { extras } from '../styles';
 import { notifications as styles } from './styles';
+import {
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  deleteNotification as deleteNotificationApi,
+} from '../../../api/clientService';
+import { getNotificationCategory } from '../../../utils/notifications';
 
 // Port of the web "extra notifications" page
 // (staffly-frontend/src/pages/extras/components/Notifications.jsx): unread badge,
@@ -162,8 +171,63 @@ function formatLongDate(value) {
   } ${date.getFullYear()} à ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+function normalizeNotification(raw) {
+  if (!raw) return null;
+  const data = raw.data || {};
+  const isRead =
+    raw.isRead !== undefined
+      ? Boolean(raw.isRead)
+      : raw.lu !== undefined && raw.lu !== null
+      ? raw.lu === 1 || raw.lu === true
+      : raw.read_at !== undefined
+      ? Boolean(raw.read_at)
+      : raw.read !== undefined
+      ? Boolean(raw.read)
+      : false;
+  // The backend column is `titre` (French) — `title` alone would always be empty.
+  const title =
+    raw.titre ||
+    raw.title ||
+    data.titre ||
+    data.title ||
+    data.subject ||
+    'Notification';
+  const message =
+    raw.message ||
+    raw.description ||
+    data.message ||
+    data.description ||
+    raw.content ||
+    '';
+  const category = (
+    raw.category ||
+    data.category ||
+    getNotificationCategory(title)
+  )
+    .toString()
+    .toLowerCase();
+  const type = raw.type || data.type || category.toUpperCase();
+  const createdAt = raw.created_at || raw.createdAt || raw.date || new Date().toISOString();
+
+  return {
+    ...raw,
+    id: raw.id,
+    titre: raw.titre,
+    title,
+    message,
+    description: message,
+    category,
+    type,
+    tag: raw.tag || data.tag || category.toUpperCase(),
+    read: isRead,
+    isRead,
+    lu: isRead ? 1 : 0,
+    createdAt,
+  };
+}
+
 export default function Notifications() {
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState('toutes');
   const [query, setQuery] = useState('');
   const [pageSize, setPageSize] = useState(10);
@@ -171,6 +235,30 @@ export default function Notifications() {
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [detailId, setDetailId] = useState(null);
   const [pageSizeOpen, setPageSizeOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    getNotifications()
+      .then(data => {
+        let list = [];
+        if (Array.isArray(data)) list = data;
+        else if (Array.isArray(data?.data)) list = data.data;
+        else if (Array.isArray(data?.notifications)) list = data.notifications;
+        else if (Array.isArray(data?.items)) list = data.items;
+        const normalized = list.map(normalizeNotification).filter(Boolean);
+        setNotifications(normalized);
+      })
+      .catch(err => {
+        console.error('Error loading notifications:', err);
+        Alert.alert(
+          'Erreur',
+          'Impossible de charger les notifications depuis le serveur. Vérifiez votre connexion.',
+        );
+        setNotifications(INITIAL_NOTIFICATIONS.map(normalizeNotification).filter(Boolean));
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   const unreadCount = notifications.filter(item => !item.read).length;
 
@@ -215,8 +303,9 @@ export default function Notifications() {
 
   function markAllRead() {
     setNotifications(previous =>
-      previous.map(item => ({ ...item, read: true })),
+      previous.map(item => ({ ...item, read: true, isRead: true, lu: 1, read_at: new Date().toISOString() })),
     );
+    markAllNotificationsRead().catch(() => {});
   }
 
   function toggleSelectAll() {
@@ -236,6 +325,7 @@ export default function Notifications() {
       return next;
     });
     if (detailId === id) setDetailId(null);
+    deleteNotificationApi(id).catch(() => {});
   }
 
   function deleteSelected() {
@@ -250,9 +340,10 @@ export default function Notifications() {
     if (detailId) {
       setNotifications(previous =>
         previous.map(item =>
-          item.id === detailId ? { ...item, read: true } : item,
+          item.id === detailId ? { ...item, read: true, isRead: true, lu: 1, read_at: new Date().toISOString() } : item,
         ),
       );
+      markNotificationRead(detailId).catch(() => {});
     }
     setDetailId(null);
   }
@@ -416,7 +507,15 @@ export default function Notifications() {
 
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => setDetailId(item.id)}
+                  onPress={() => {
+                    setNotifications(previous =>
+                      previous.map(n =>
+                        n.id === item.id ? { ...n, read: true, isRead: true, lu: 1, read_at: new Date().toISOString() } : n,
+                      ),
+                    );
+                    markNotificationRead(item.id).catch(() => {});
+                    setDetailId(item.id);
+                  }}
                   style={styles.rowBody}
                 >
                   <View style={styles.rowTop}>

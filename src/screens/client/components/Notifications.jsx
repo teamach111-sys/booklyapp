@@ -53,6 +53,7 @@ import {
   markAllNotificationsRead,
   deleteNotification as deleteNotificationApi,
 } from '../../../api/clientService';
+import { normalizeNotification, extractNotificationList } from '../../../utils/notifications';
 
 const serifFont = Platform.select({
   ios: 'Georgia',
@@ -60,50 +61,16 @@ const serifFont = Platform.select({
   default: 'Georgia',
 });
 
-function normalizeNotification(raw) {
-  if (!raw) return null;
-  const data = raw.data || {};
-  const isRead =
-    raw.isRead !== undefined ? Boolean(raw.isRead) : Boolean(raw.read_at);
-  const title = raw.title || data.title || data.subject || 'Notification';
-  const description =
-    raw.description || raw.message || data.message || data.description || '';
-  const category =
-    raw.category ||
-    data.category ||
-    (raw.type && raw.type.includes('Mission') ? 'Missions' : 'Général');
-  const tag = raw.tag || data.tag || category.toUpperCase() || 'INFO';
-  const dateStr = raw.created_at
-    ? new Date(raw.created_at).toLocaleDateString('fr-FR', {
-        day: 'numeric',
-        month: 'short',
-      })
-    : raw.date || '';
-  const fullDate = raw.created_at
-    ? new Date(raw.created_at).toLocaleString('fr-FR')
-    : raw.fullDate || '';
-
-  return {
-    ...raw,
-    id: raw.id,
-    title,
-    description,
-    category,
-    tag,
-    isRead,
-    date: dateStr,
-    fullDate,
-  };
-}
-
+// Category keys must match the ones produced by `getNotificationCategory()`
+// in src/utils/notifications.js (mirrors the web frontend).
 const FILTER_TABS = [
   { key: 'all', label: 'Toutes' },
   { key: 'unread', label: 'Non lues' },
-  { key: 'Missions', label: 'Missions' },
-  { key: 'Factures', label: 'Factures' },
-  { key: 'Signalements', label: 'Signalements' },
-  { key: 'Comptes', label: 'Comptes' },
-  { key: 'Bienvenue', label: 'Bienvenue' },
+  { key: 'mission', label: 'Missions' },
+  { key: 'invoice', label: 'Factures' },
+  { key: 'report', label: 'Signalements' },
+  { key: 'account', label: 'Comptes' },
+  { key: 'welcome', label: 'Bienvenue' },
 ];
 
 export default function Notifications() {
@@ -122,11 +89,8 @@ export default function Notifications() {
     setLoading(true);
     getNotifications()
       .then(data => {
-        if (Array.isArray(data)) setNotifications(data);
-        else if (Array.isArray(data?.data)) setNotifications(data.data);
-        else if (Array.isArray(data?.notifications)) setNotifications(data.notifications);
-        else if (Array.isArray(data?.items)) setNotifications(data.items);
-        else setNotifications([]);
+        const list = extractNotificationList(data);
+        setNotifications(list.map(normalizeNotification).filter(Boolean));
       })
       .catch(err => {
         console.error('Error loading notifications:', err);
@@ -138,12 +102,7 @@ export default function Notifications() {
       .finally(() => setLoading(false));
   }, []);
 
-  const unreadCount = notifications.filter(n => {
-    if (n.isRead !== undefined) return !n.isRead;
-    if (n.lu !== undefined) return n.lu === 0 || n.lu === false;
-    if (n.read_at !== undefined) return !n.read_at;
-    return false;
-  }).length;
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   function markAllAsRead() {
     setNotifications(current => current.map(n => ({ ...n, isRead: true, lu: 1, read_at: new Date().toISOString() })));
@@ -167,10 +126,10 @@ export default function Notifications() {
   }
 
   function deleteSelected() {
-    setNotifications(current =>
-      current.filter(n => !selectedIds.includes(n.id)),
-    );
+    const ids = [...selectedIds];
+    setNotifications(current => current.filter(n => !ids.includes(n.id)));
     setSelectedIds([]);
+    ids.forEach(id => deleteNotificationApi(id).catch(() => {}));
   }
 
   function handleNotificationPress(notif) {
@@ -180,7 +139,7 @@ export default function Notifications() {
 
   // Filtered list
   const filteredNotifications = notifications.filter(notif => {
-    const isReadNotif = notif.isRead !== undefined ? Boolean(notif.isRead) : notif.lu === 1 || notif.lu === true || Boolean(notif.read_at);
+    const isReadNotif = Boolean(notif.isRead);
     // Tab filter
     if (activeTab === 'unread' && isReadNotif) return false;
     if (
@@ -194,9 +153,9 @@ export default function Notifications() {
     // Search query
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
-      const matchTitle = notif.title.toLowerCase().includes(q);
-      const matchDesc = notif.description.toLowerCase().includes(q);
-      const matchTag = notif.tag.toLowerCase().includes(q);
+      const matchTitle = (notif.title || '').toLowerCase().includes(q);
+      const matchDesc = (notif.description || '').toLowerCase().includes(q);
+      const matchTag = (notif.tag || '').toLowerCase().includes(q);
       if (!matchTitle && !matchDesc && !matchTag) return false;
     }
 
