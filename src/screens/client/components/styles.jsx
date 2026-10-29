@@ -1517,6 +1517,22 @@ const createPrestationsStyles = colors => StyleSheet.create({
   evalButtonText: {
     color: '#B45309',
   },
+  feedbackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#F59E0B',
+    backgroundColor: '#FFFBEB',
+  },
+  feedbackButtonText: {
+    color: '#B45309',
+    fontSize: 13,
+    fontWeight: '700',
+  },
   finishButton: {
     borderColor: '#E65100',
     backgroundColor: '#E65100',
@@ -1805,6 +1821,62 @@ const createPrestationsStyles = colors => StyleSheet.create({
   },
   evalStar: {
     padding: 2,
+  },
+  feedbackStatus: {
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 20,
+  },
+  feedbackStatusText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  feedbackStaffCard: {
+    marginBottom: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ECDDD6',
+    backgroundColor: '#FAF6F4',
+  },
+  feedbackStaffHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  feedbackAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.palePink,
+  },
+  feedbackAvatarText: {
+    color: colors.orangeDark,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  feedbackStaffName: {
+    color: '#1A1A1A',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  feedbackStaffJob: {
+    marginTop: 1,
+    color: '#888888',
+    fontSize: 10,
+  },
+  feedbackEmpty: {
+    marginBottom: 12,
+    color: '#BBBBBB',
+    fontSize: 12,
   },
 });
 

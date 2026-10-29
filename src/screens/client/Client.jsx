@@ -285,6 +285,7 @@ function ClientDashboard({ navigation }) {
   const [spaceOpen, setSpaceOpen] = useState(false);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [notifTarget, setNotifTarget] = useState(null);
   const [collections, setCollections] = useState({
     coOwners: [],
     employees: [],
@@ -385,6 +386,21 @@ function ClientDashboard({ navigation }) {
     setSpaceOpen(false);
     setCreating(false);
     setDraft('');
+  }
+
+  // "Voir la prestation" / "Voir la conversation" from the notifications page:
+  // switch to the site the mission belongs to, then hand the target to the
+  // Prestations screen so it can open the right mission (or its discussion).
+  function openNotificationTarget(target) {
+    if (!target) return;
+    const site = selectableSites.find(
+      item => String(item.id) === String(target.site_id),
+    );
+    if (site && String(site.id) !== String(activeSite?.id)) {
+      setActiveSiteId(site.id);
+    }
+    setNotifTarget(target);
+    selectSection('services');
   }
 
   function addCollectionItem() {
@@ -500,7 +516,13 @@ function ClientDashboard({ navigation }) {
       return <Calendrier />;
     }
     if (activeSection === 'services') {
-      return <Prestations activeSite={activeSite} />;
+      return (
+        <Prestations
+          activeSite={activeSite}
+          notifTarget={notifTarget}
+          onNotifTargetHandled={() => setNotifTarget(null)}
+        />
+      );
     }
     if (activeSection === 'messages') {
       return <Messages />;
@@ -521,7 +543,7 @@ function ClientDashboard({ navigation }) {
       return <Factures />;
     }
     if (activeSection === 'notifications') {
-      return <Notifications />;
+      return <Notifications onGo={openNotificationTarget} />;
     }
     if (activeSection === 'history') {
       return <ClientHistorique />;

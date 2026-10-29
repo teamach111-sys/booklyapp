@@ -209,6 +209,7 @@ function splitDateTime(value) {
 function parseStart(m) {
   const raw = m?.date_debut_raw;
   if (raw) return new Date(String(raw).replace(' ', 'T'));
+  if (m?.date_debut) return new Date(String(m.date_debut).replace(' ', 'T'));
   if (m?.date) return new Date(String(m.date).split('/').reverse().join('-'));
   return null;
 }
@@ -243,7 +244,11 @@ function fmtLongDate(value) {
 
 /* ── Screen ── */
 
-export default function Prestations({ activeSite }) {
+export default function Prestations({
+  activeSite,
+  notifTarget = null,
+  onNotifTargetHandled,
+}) {
   const { partner, colors } = useClientTheme();
   const styles = prestationsStylesByBrand[partner];
 
@@ -259,7 +264,7 @@ export default function Prestations({ activeSite }) {
   const [unreadCounts, setUnreadCounts] = useState({});
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
-  const [feedbackTarget, setFeedbackTarget] = useState(null); // { mission, mode }
+  const [feedbackTarget, setFeedbackTarget] = useState(null); // { mission }
   const [convMission, setConvMission] = useState(null);
 
   const loadMissions = useCallback(async () => {
@@ -291,6 +296,23 @@ export default function Prestations({ activeSite }) {
   useEffect(() => {
     loadMissions();
   }, [loadMissions]);
+
+  // Deep link coming from a notification ("Voir la prestation" /
+  // "Voir la conversation"): once the missions are available, open the target
+  // mission detail, or its discussion for message notifications.
+  useEffect(() => {
+    if (!notifTarget?.mission_id || loading) return;
+    const mission = missions.find(
+      item => String(item.id) === String(notifTarget.mission_id),
+    ) || { id: notifTarget.mission_id };
+    if (notifTarget.kind === 'message') {
+      setConvMission(mission);
+    } else {
+      setDetailMission(mission);
+      setView('DETAIL');
+    }
+    onNotifTargetHandled?.();
+  }, [notifTarget, missions, loading, onNotifTargetHandled]);
 
   useEffect(() => {
     if (view === 'LIST') loadUnread();
@@ -365,7 +387,7 @@ export default function Prestations({ activeSite }) {
     setConvMission(mission);
   };
 
-  const openFeedback = (mission, mode) => setFeedbackTarget({ mission, mode });
+  const openFeedback = mission => setFeedbackTarget({ mission });
 
   if (!activeSite) {
     return (
@@ -434,8 +456,7 @@ export default function Prestations({ activeSite }) {
     onDuplicate: handleDuplicate,
     onDelete: handleDelete,
     onCancel: openCancel,
-    onFinish: m => openFeedback(m, 'finish'),
-    onEvaluate: m => openFeedback(m, 'evaluate'),
+    onFeedback: openFeedback,
     onArchive: handleArchive,
     onMessage: handleMessage,
   };
@@ -477,6 +498,7 @@ export default function Prestations({ activeSite }) {
           mission={detailMission}
           onBack={backToList}
           onEdit={handleEdit}
+          onFeedback={openFeedback}
           styles={styles}
           colors={colors}
         />
@@ -511,6 +533,7 @@ export default function Prestations({ activeSite }) {
         onClose={() => setFeedbackTarget(null)}
         onDone={() => {
           setFeedbackTarget(null);
+          backToList();
           loadMissions();
         }}
         styles={styles}
@@ -699,8 +722,7 @@ function MissionCard({
   onDuplicate,
   onDelete,
   onCancel,
-  onFinish,
-  onEvaluate,
+  onFeedback,
   onArchive,
   onMessage,
   styles,
@@ -715,8 +737,7 @@ function MissionCard({
   const start = parseStart(m);
   const isPassed = !!start && start < new Date();
 
-  const canFinish = isPassed && m.validation_admin === 'Approved' && !isFinished && !isCancelled;
-  const canEvaluate = isPassed && m.validation_admin === 'Approved' && !isCancelled && !isFinished;
+  const canEvaluate = isPassed && m.validation_admin === 'Approved' && !isCancelled;
   const canEdit =
     (isDraft || isWaiting || m.validation_admin === 'Approved') && !isFinished && !isCancelled && !isPassed;
   const canCancel = !isCancelled && !isFinished && !isArchived;
@@ -843,20 +864,11 @@ function MissionCard({
         </Pressable>
 
         {canEvaluate ? (
-          <Pressable onPress={() => onEvaluate(m)} style={[styles.cardIconButton, styles.evalButton]}>
+          <Pressable onPress={() => onFeedback(m)} style={[styles.cardIconButton, styles.evalButton]}>
             <View style={styles.cardIconGlyph}>
               <Star size={12} color="#B45309" />
             </View>
-            <Text style={[styles.cardIconButtonText, styles.evalButtonText]}>Évaluer</Text>
-          </Pressable>
-        ) : null}
-
-        {canFinish ? (
-          <Pressable onPress={() => onFinish(m)} style={[styles.cardIconButton, styles.finishButton]}>
-            <View style={styles.cardIconGlyph}>
-              <Check size={12} color="#FFF" />
-            </View>
-            <Text style={[styles.cardIconButtonText, styles.finishButtonText]}>Terminer</Text>
+            <Text style={[styles.cardIconButtonText, styles.evalButtonText]}>Feedback</Text>
           </Pressable>
         ) : null}
 
@@ -902,7 +914,7 @@ function MissionCard({
    DETAIL
 ══════════════════════════════════════════════ */
 
-function MissionDetailView({ mission, onBack, onEdit, styles, colors }) {
+function MissionDetailView({ mission, onBack, onEdit, onFeedback, styles, colors }) {
   const [details, setDetails] = useState(mission);
   const [loading, setLoading] = useState(false);
 
@@ -928,6 +940,10 @@ function MissionDetailView({ mission, onBack, onEdit, styles, colors }) {
 
   const m = details || mission;
   const statusStyle = STATUS_MAP[m.validation_admin] || STATUS_MAP['Unknown'];
+  const start = parseStart(m);
+  const hasStarted = !!start && start <= new Date();
+  const canEvaluate =
+    hasStarted && m.validation_admin === 'Approved' && m.etat_mission !== 'Annulée';
 
   const row = (label, val) =>
     val ? (
@@ -965,6 +981,12 @@ function MissionDetailView({ mission, onBack, onEdit, styles, colors }) {
             ) : null}
           </View>
         </View>
+        {canEvaluate ? (
+          <Pressable onPress={() => onFeedback(m)} style={styles.feedbackButton}>
+            <Star size={13} color="#B45309" />
+            <Text style={styles.feedbackButtonText}>Feedback</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
@@ -2324,38 +2346,123 @@ function CancelSheet({ target, reason, onChangeReason, onClose, onConfirm, style
 }
 
 /* ══════════════════════════════════════════════
-   FEEDBACK SHEET (Terminer / Évaluation)
+   FEEDBACK SHEET (global + per-extra ratings)
 ══════════════════════════════════════════════ */
 
+// Mirrors staffly-frontend MissionList: one feedback entry per extra, even
+// when the extra has several slots on the same mission.
+function getFeedbackStaff(mission) {
+  const rows = mission?.actual_staff?.length
+    ? mission.actual_staff
+    : (mission?._extras || [])
+        .filter(e => e.statut_reponse === 'acceptee')
+        .map(e => ({
+          ...e,
+          extra_id: e.extra_id ?? e.id,
+          staff_name: e.firstname,
+          staff_lastname: e.name,
+          job: e.libelle || e.qualification_code,
+        }));
+
+  const map = new Map();
+  rows.forEach(r => {
+    const id = r.extra_id ?? r.id;
+    if (!map.has(id)) map.set(id, { ...r, extra_id: id });
+  });
+  return [...map.values()];
+}
+
 function FeedbackSheet({ target, onClose, onDone, styles, colors }) {
+  const missionId = target?.mission?.id;
+
+  const [mission, setMission] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState('');
+  const [ratings, setRatings] = useState({});
+  const [reviews, setReviews] = useState({});
   const [saving, setSaving] = useState(null);
 
-  const isFinish = target?.mode === 'finish';
-  const mission = target?.mission;
-
   useEffect(() => {
-    if (target) {
-      setRating(0);
-      setFeedback('');
-      setSaving(null);
+    if (!missionId) {
+      setMission(null);
+      return undefined;
     }
-  }, [target]);
+
+    let alive = true;
+    const base = target.mission;
+    setMission(base);
+    setLoading(true);
+    setRating(0);
+    setFeedback('');
+    setRatings({});
+    setReviews({});
+    setSaving(null);
+
+    clientService
+      .getMissionDetails(missionId)
+      .then(data => {
+        if (!alive) return;
+        const src = data?.mission || data || {};
+        const merged = {
+          ...base,
+          ...src,
+          _extras: data?.extras ?? src._extras ?? base?._extras,
+        };
+        const rows = getFeedbackStaff(merged);
+        const saved =
+          rows.find(s => s.statut_evaluation || s.rating_global || s.feedback_client) || {};
+
+        setMission(merged);
+        setRating(Number(saved.rating_global ?? merged.stars) || 0);
+        setFeedback(
+          saved.feedback_client || merged.mission_feedback || merged.client_feedback || '',
+        );
+        setRatings(
+          Object.fromEntries(rows.map(s => [s.extra_id, Number(s.rating) || 0])),
+        );
+        setReviews(Object.fromEntries(rows.map(s => [s.extra_id, s.review || ''])));
+      })
+      .catch(err => console.error('Failed to load mission feedback:', err))
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [missionId, target?.mission]);
+
+  const staff = getFeedbackStaff(mission);
+  const evalStatut = staff.find(s => s.statut_evaluation)?.statut_evaluation || null;
+  const locked = evalStatut === 'valide';
 
   const submit = async kind => {
-    if (kind !== 'save') {
-      if (!rating) return Alert.alert('Note requise', 'Veuillez donner une note globale.');
-      if (!feedback.trim()) return Alert.alert('Champ requis', 'Veuillez laisser un commentaire global.');
-    }
-    setSaving(kind);
-    const body = { mission_feedback: feedback, rating };
-    try {
-      if (isFinish) {
-        await clientService.finishMissionWithFeedback(mission.id, body);
-      } else {
-        await clientService.evaluateMission(mission.id, { ...body, submit: kind === 'submit' });
+    if (!mission?.id || loading) return;
+    if (kind === 'submit') {
+      const hasExtraContent = staff.some(
+        s => (ratings[s.extra_id] || 0) > 0 || (reviews[s.extra_id] || '').trim(),
+      );
+      if (!rating && !feedback.trim() && !hasExtraContent) {
+        return Alert.alert('Rien à enregistrer', 'Ajoutez une note ou un avis avant de valider.');
       }
+    }
+
+    setSaving(kind);
+    const body = {
+      mission_feedback: feedback.trim() || null,
+      rating,
+      extras: staff.map(s => ({
+        extra_id: s.extra_id,
+        rating: ratings[s.extra_id] || null,
+        review: (reviews[s.extra_id] || '').trim() || null,
+      })),
+    };
+    try {
+      await clientService.evaluateMission(mission.id, {
+        ...body,
+        submit: kind === 'submit',
+      });
       onDone();
     } catch (err) {
       Alert.alert('Erreur', err?.error || err?.message || "Erreur lors de l'enregistrement.");
@@ -2364,19 +2471,31 @@ function FeedbackSheet({ target, onClose, onDone, styles, colors }) {
     }
   };
 
+  const statusColors =
+    evalStatut === 'valide'
+      ? { bg: '#DCFCE7', color: '#15803D' }
+      : evalStatut === 'non_valide'
+        ? { bg: '#FEE2E2', color: '#DC2626' }
+        : { bg: '#FFF8E1', color: '#F57F17' };
+  const statusLabel =
+    evalStatut === 'valide'
+      ? 'Évaluation validée'
+      : evalStatut === 'non_valide'
+        ? 'Évaluation rejetée'
+        : 'En attente de validation';
+
   return (
     <BottomSheet
       visible={!!target}
       onClose={onClose}
-      title={isFinish ? `Terminer — ${mission?.nom || mission?.prestation_nom || ''}` : `Évaluation — ${mission?.nom || mission?.prestation_nom || ''}`}
-      subtitle={
-        isFinish
-          ? "Évaluez l'équipe et laissez un feedback global"
-          : 'Enregistrez pour reprendre plus tard, validez pour l’envoyer en validation'
-      }
+      title={`Feedback — ${mission?.nom || mission?.prestation_nom || ''}`}
+      subtitle="Évaluez l'équipe et laissez un feedback global"
       showClose
     >
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 8 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 8 }}
+        keyboardShouldPersistTaps="handled"
+      >
         {mission?.date_debut ? (
           <View style={styles.clientHours}>
             <Clock size={13} color="#888" />
@@ -2388,60 +2507,161 @@ function FeedbackSheet({ target, onClose, onDone, styles, colors }) {
           </View>
         ) : null}
 
+        {evalStatut ? (
+          <View style={[styles.feedbackStatus, { backgroundColor: statusColors.bg }]}>
+            <Text style={[styles.feedbackStatusText, { color: statusColors.color }]}>
+              {statusLabel}
+            </Text>
+          </View>
+        ) : null}
+
         <Text style={styles.cardTitlePlain}>Note globale</Text>
         <View style={styles.evalStarRow}>
           {[1, 2, 3, 4, 5].map(n => (
-            <Pressable key={n} onPress={() => setRating(n)} style={styles.evalStar}>
-              <Text style={{ fontSize: 24, color: n <= rating ? colors.orange : '#E0D0C8' }}>★</Text>
+            <Pressable
+              key={n}
+              onPress={() => !locked && setRating(prev => (prev === n ? 0 : n))}
+              disabled={locked || loading}
+              style={styles.evalStar}
+            >
+              <Text style={{ fontSize: 24, color: n <= rating ? colors.orange : '#E0D0C8' }}>
+                ★
+              </Text>
             </Pressable>
           ))}
         </View>
 
-        <Text style={styles.cardTitlePlain}>Feedback global *</Text>
+        <Text style={styles.cardTitlePlain}>
+          Feedback global <Text style={styles.cardTitleMuted}>(optionnel)</Text>
+        </Text>
         <TextInput
           value={feedback}
           onChangeText={setFeedback}
+          editable={!locked && !loading}
           placeholder="Comment s'est déroulée la mission ?"
           placeholderTextColor="#AAA"
           multiline
-          style={[styles.input, { minHeight: 100 }]}
+          style={[styles.input, { minHeight: 100 }, (locked || loading) && { opacity: 0.6 }]}
         />
 
+        {loading ? (
+          <ActivityIndicator color={colors.orange} style={{ marginVertical: 16 }} />
+        ) : staff.length > 0 ? (
+          <>
+            <Text style={styles.cardTitlePlain}>Évaluation individuelle</Text>
+            {staff.map(s => {
+              const firstname = s.staff_name || s.firstname || '';
+              const lastname = s.staff_lastname || s.name || '';
+              const fullName = `${firstname} ${lastname}`.trim() || 'Extra';
+              const initials = `${firstname[0] || ''}${lastname[0] || ''}`.toUpperCase();
+              const extraRating = ratings[s.extra_id] || 0;
+              return (
+                <View key={s.extra_id} style={styles.feedbackStaffCard}>
+                  <View style={styles.feedbackStaffHead}>
+                    <View style={styles.feedbackAvatar}>
+                      <Text style={styles.feedbackAvatarText}>{initials || '?'}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.feedbackStaffName}>{fullName}</Text>
+                      <Text style={styles.feedbackStaffJob}>
+                        {s.job || s.qualification_code || ''}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.label}>Note</Text>
+                  <View style={[styles.evalStarRow, { marginBottom: 8 }]}>
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <Pressable
+                        key={n}
+                        onPress={() =>
+                          !locked &&
+                          setRatings(prev => ({
+                            ...prev,
+                            [s.extra_id]: prev[s.extra_id] === n ? 0 : n,
+                          }))
+                        }
+                        disabled={locked}
+                        style={styles.evalStar}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 20,
+                            color: n <= extraRating ? colors.orange : '#E0D0C8',
+                          }}
+                        >
+                          ★
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+
+                  <Text style={styles.label}>
+                    Avis <Text style={styles.cardTitleMuted}>(optionnel)</Text>
+                  </Text>
+                  <TextInput
+                    value={reviews[s.extra_id] || ''}
+                    onChangeText={value =>
+                      setReviews(prev => ({ ...prev, [s.extra_id]: value }))
+                    }
+                    editable={!locked}
+                    placeholder={`Votre avis sur ${firstname || 'cet extra'}...`}
+                    placeholderTextColor="#AAA"
+                    multiline
+                    style={[
+                      styles.input,
+                      { minHeight: 60, fontSize: 12 },
+                      locked && { opacity: 0.6 },
+                    ]}
+                  />
+                </View>
+              );
+            })}
+          </>
+        ) : (
+          <Text style={styles.feedbackEmpty}>
+            Aucun extra à évaluer sur cette prestation.
+          </Text>
+        )}
+
         <View style={[styles.formActions, { marginTop: 16, marginBottom: 0 }]}>
-          <Pressable onPress={onClose} disabled={!!saving} style={[styles.actionButton, styles.actionCancel]}>
+          <Pressable
+            onPress={onClose}
+            disabled={!!saving}
+            style={[styles.actionButton, styles.actionCancel]}
+          >
             <Text style={styles.actionCancelText}>Annuler</Text>
           </Pressable>
-          {isFinish ? (
-            <Pressable
-              onPress={() => submit('submit')}
-              disabled={!!saving}
-              style={[styles.actionButton, styles.actionSubmit]}
-            >
-              {saving ? <ActivityIndicator size="small" color="#FFF" /> : null}
-              <Text style={styles.actionSubmitText}>Terminer</Text>
-            </Pressable>
-          ) : (
-            <>
-              <Pressable
-                onPress={() => submit('save')}
-                disabled={!!saving}
-                style={[styles.actionButton, styles.actionDraft]}
-              >
-                {saving === 'save' ? (
-                  <ActivityIndicator size="small" color={colors.orangeDark} />
-                ) : null}
-                <Text style={styles.actionDraftText}>Enregistrer l'évaluation</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => submit('submit')}
-                disabled={!!saving}
-                style={[styles.actionButton, styles.actionSubmit]}
-              >
-                {saving === 'submit' ? <ActivityIndicator size="small" color="#FFF" /> : null}
-                <Text style={styles.actionSubmitText}>Valider l'évaluation</Text>
-              </Pressable>
-            </>
-          )}
+          <Pressable
+            onPress={() => submit('save')}
+            disabled={!!saving || locked || loading}
+            style={[
+              styles.actionButton,
+              styles.actionDraft,
+              (saving || locked || loading) && { opacity: 0.6 },
+            ]}
+          >
+            {saving === 'save' ? (
+              <ActivityIndicator size="small" color={colors.orangeDark} />
+            ) : null}
+            <Text style={styles.actionDraftText}>Enregistrer le brouillon</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => submit('submit')}
+            disabled={!!saving || locked || loading}
+            style={[
+              styles.actionButton,
+              styles.actionSubmit,
+              (saving || locked || loading) && { opacity: 0.6 },
+            ]}
+          >
+            {saving === 'submit' ? (
+              <ActivityIndicator size="small" color="#FFF" />
+            ) : (
+              <Check size={14} color="#FFF" />
+            )}
+            <Text style={styles.actionSubmitText}>Enregistrer le feedback</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </BottomSheet>

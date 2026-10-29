@@ -77,12 +77,19 @@ import {
   sendModificationConversation,
 } from '../../../api/extraService';
 
+// Couleurs des pastilles de comptage, identiques au frontend web
+// (Mission.jsx → BADGE_COLORS) : la pastille prend la couleur du onglet
+// quand il est actif, et reste grise (#bbb) sinon.
 const TABS = [
-  { key: 'proposees', label: 'Prestations proposées' },
-  { key: 'a_venir', label: 'À venir' },
-  { key: 'en_cours', label: 'En cours' },
-  { key: 'terminees', label: 'Terminées' },
-  { key: 'toutes', label: 'Toutes' },
+  {
+    key: 'proposees',
+    label: 'Prestations proposées',
+    badgeStyle: 'tabBadgeProposees',
+  },
+  { key: 'a_venir', label: 'À venir', badgeStyle: 'tabBadgeAVenir' },
+  { key: 'en_cours', label: 'En cours', badgeStyle: 'tabBadgeEnCours' },
+  { key: 'terminees', label: 'Terminées', badgeStyle: 'tabBadgeTerminees' },
+  { key: 'toutes', label: 'Toutes', badgeStyle: 'tabBadgeToutes' },
 ];
 
 // Group matching missions by mission id — the backend returns one row per
@@ -477,7 +484,7 @@ function ConversationSheet({ mission, onClose }) {
   );
 }
 
-export default function Mission() {
+export default function Mission({ notifTarget = null, onNotifTargetHandled }) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('proposees');
   const [searchQuery, setSearchQuery] = useState('');
@@ -542,6 +549,24 @@ export default function Mission() {
   }, []);
 
   useEffect(() => { loadAll(); }, [loadAll]);
+
+  // Deep link from a notification ("Voir la prestation" / "Voir la
+  // conversation"): open the target mission detail, or its discussion, once
+  // the mission lists are loaded.
+  useEffect(() => {
+    if (!notifTarget?.mission_id || loading) return;
+    const mission =
+      missions.find(
+        item => String(item.id) === String(notifTarget.mission_id),
+      ) || { id: notifTarget.mission_id };
+    if (notifTarget.kind === 'message') {
+      setConvMission(mission);
+    } else {
+      setSelectedMission(mission);
+      setView('detail');
+    }
+    onNotifTargetHandled?.();
+  }, [notifTarget, missions, loading, onNotifTargetHandled]);
 
   // Load mission detail + files when entering the detail view.
   useEffect(() => {
@@ -700,11 +725,8 @@ export default function Mission() {
   if (view === 'retour') {
     return (
       <RetourPrestation
-        mission={selectedMission}
+        missionId={selectedMission?.id}
         onBack={() => setView('detail')}
-        onSubmitted={() => {
-          setView('list');
-        }}
       />
     );
   }
@@ -1578,7 +1600,14 @@ export default function Mission() {
                   {tab.label}
                 </Text>
                 {tabCounts[tab.key] > 0 && (
-                  <View style={styles.tabBadge}>
+                  <View
+                    style={[
+                      styles.tabBadge,
+                      active
+                        ? styles[tab.badgeStyle]
+                        : styles.tabBadgeInactive,
+                    ]}
+                  >
                     <Text style={styles.tabBadgeText}>{tabCounts[tab.key]}</Text>
                   </View>
                 )}

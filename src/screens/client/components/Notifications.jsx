@@ -27,7 +27,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -50,6 +49,7 @@ import BottomSheet from './BottomSheet';
 import { createBrandStyles } from '../theme/clientStyles';
 import {
   getNotifications,
+  getNotificationTargets,
   markNotificationRead,
   markAllNotificationsRead,
   deleteNotification as deleteNotificationApi,
@@ -1128,7 +1128,9 @@ const createStyles = colors => ({
   },
   modalActionsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: 8,
   },
   modalDeleteBtn: {

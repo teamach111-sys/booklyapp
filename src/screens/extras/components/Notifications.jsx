@@ -46,6 +46,7 @@ import { extras } from '../styles';
 import { notifications as styles } from './styles';
 import {
   getNotifications,
+  getNotificationTargets,
   markNotificationRead,
   markAllNotificationsRead,
   deleteNotification as deleteNotificationApi,
@@ -57,6 +58,23 @@ import { getNotificationCategory } from '../../../utils/notifications';
 // search, category chips, select-all bar, notification rows and footer. The row
 // detail and the "Par page" select use the app bottom sheet.
 const PAGE_SIZES = [5, 10, 20, 50];
+
+// Accent used by the "Voir …" link, same palette as the web NotificationsPanel.
+const CAT_COLORS = {
+  welcome: '#6366F1',
+  mission: '#F97316',
+  invoice: '#22C55E',
+  report: '#F43F5E',
+  message: '#0EA5E9',
+  document: '#F59E0B',
+  account: '#8B5CF6',
+  availability: '#10B981',
+  info: '#B9622C',
+};
+
+function categoryColor(category) {
+  return CAT_COLORS[category] || CAT_COLORS.info;
+}
 
 const CHIPS = [
   { key: 'toutes', label: 'Toutes' },
@@ -226,7 +244,7 @@ function normalizeNotification(raw) {
   };
 }
 
-export default function Notifications() {
+export default function Notifications({ onGo }) {
   const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState('toutes');
   const [query, setQuery] = useState('');
@@ -236,6 +254,7 @@ export default function Notifications() {
   const [detailId, setDetailId] = useState(null);
   const [pageSizeOpen, setPageSizeOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [targets, setTargets] = useState({});
 
   useEffect(() => {
     setLoading(true);
@@ -261,6 +280,21 @@ export default function Notifications() {
   }, []);
 
   const unreadCount = notifications.filter(item => !item.read).length;
+
+  // Which notifications still point to an existing mission (and whether the
+  // link opens the mission or its discussion) — same endpoint as the web panel.
+  useEffect(() => {
+    if (notifications.length === 0) return;
+    const ids = notifications
+      .map(item => item.id)
+      .filter(id => Number.isFinite(Number(id)));
+    if (ids.length === 0) return;
+    getNotificationTargets(ids)
+      .then(data => {
+        if (data && typeof data === 'object') setTargets(data);
+      })
+      .catch(() => {});
+  }, [notifications]);
 
   const filtered = useMemo(() => {
     const search = query.trim().toLowerCase();
@@ -352,6 +386,28 @@ export default function Notifications() {
     setPageSize(size);
     setPage(1);
     setPageSizeOpen(false);
+  }
+
+  // "Voir la prestation" / "Voir la conversation" from a notification.
+  function openTarget(item) {
+    const target = targets[item.id];
+    if (!target) return;
+    setNotifications(previous =>
+      previous.map(next =>
+        next.id === item.id
+          ? {
+              ...next,
+              read: true,
+              isRead: true,
+              lu: 1,
+              read_at: new Date().toISOString(),
+            }
+          : next,
+      ),
+    );
+    markNotificationRead(item.id).catch(() => {});
+    setDetailId(null);
+    onGo?.(target);
   }
 
   return (
@@ -571,6 +627,35 @@ export default function Notifications() {
                   >
                     {item.message}
                   </Text>
+
+                  {targets[item.id] ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={event => {
+                        event.stopPropagation?.();
+                        openTarget(item);
+                      }}
+                      style={[
+                        styles.rowGoBtn,
+                        { borderColor: categoryColor(item.category) },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.rowGoBtnText,
+                          { color: categoryColor(item.category) },
+                        ]}
+                      >
+                        {targets[item.id].kind === 'message'
+                          ? 'Voir la conversation'
+                          : 'Voir la prestation'}
+                      </Text>
+                      <ChevronRight
+                        size={10}
+                        color={categoryColor(item.category)}
+                      />
+                    </Pressable>
+                  ) : null}
                 </Pressable>
               </View>
             );
@@ -677,6 +762,31 @@ export default function Notifications() {
                   </View>
 
                   <View style={styles.detailActions}>
+                    {targets[detail.id] ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => openTarget(detail)}
+                        style={[
+                          styles.detailGoBtn,
+                          { borderColor: categoryColor(detail.category) },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.detailGoBtnText,
+                            { color: categoryColor(detail.category) },
+                          ]}
+                        >
+                          {targets[detail.id].kind === 'message'
+                            ? 'Voir la conversation'
+                            : 'Voir la prestation'}
+                        </Text>
+                        <ChevronRight
+                          size={12}
+                          color={categoryColor(detail.category)}
+                        />
+                      </Pressable>
+                    ) : null}
                     <Pressable
                       accessibilityRole="button"
                       onPress={() => deleteNotification(detail.id)}

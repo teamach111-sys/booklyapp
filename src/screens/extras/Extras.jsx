@@ -82,6 +82,7 @@ export default function ExtrasScreen({ navigation }) {
   const [msgUnread, setMsgUnread] = useState(0);
   const [missionBadge, setMissionBadge] = useState(0);
   const [extraData, setExtraData] = useState(null);
+  const [notifTarget, setNotifTarget] = useState(null);
 
   // Poll notifications count
   useEffect(() => {
@@ -181,6 +182,13 @@ export default function ExtrasScreen({ navigation }) {
     setMenuOpen(false);
   }
 
+  // "Voir la prestation" / "Voir la conversation" from the notifications page.
+  function openNotificationTarget(target) {
+    if (!target) return;
+    setNotifTarget(target);
+    selectSection('prestations');
+  }
+
   // Clear the session before leaving: the login screen sends an authenticated
   // user straight back to a dashboard, so navigating without signing out just
   // bounces here again.
@@ -201,7 +209,12 @@ export default function ExtrasScreen({ navigation }) {
       case 'profile':
         return <Profile />;
       case 'prestations':
-        return <Mission />;
+        return (
+          <Mission
+            notifTarget={notifTarget}
+            onNotifTargetHandled={() => setNotifTarget(null)}
+          />
+        );
       case 'unavailability':
         return <Disponibilite />;
       case 'calendar':
@@ -211,7 +224,7 @@ export default function ExtrasScreen({ navigation }) {
       case 'messages':
         return <Messages />;
       case 'notifications':
-        return <Notifications />;
+        return <Notifications onGo={openNotificationTarget} />;
       default:
         return <Profile />;
     }

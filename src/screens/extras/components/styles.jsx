@@ -1576,6 +1576,22 @@ export const notifications = StyleSheet.create({
   rowPreviewRead: {
     color: '#A07850',
   },
+  rowGoBtn: {
+    marginTop: 6,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    backgroundColor: colors.white,
+  },
+  rowGoBtnText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 10,
+  },
   emptyText: {
     paddingVertical: 30,
     fontFamily: fontFamilies.regular,
@@ -1711,8 +1727,23 @@ export const notifications = StyleSheet.create({
   },
   detailActions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'flex-end',
     gap: 8,
+  },
+  detailGoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    backgroundColor: colors.white,
+  },
+  detailGoBtnText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 12,
   },
   btnDanger: {
     paddingVertical: 7,
@@ -2619,6 +2650,24 @@ export const mission = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
+  },
+  tabBadgeProposees: {
+    backgroundColor: '#f57f17',
+  },
+  tabBadgeAVenir: {
+    backgroundColor: '#1565c0',
+  },
+  tabBadgeEnCours: {
+    backgroundColor: '#15803d',
+  },
+  tabBadgeTerminees: {
+    backgroundColor: '#888888',
+  },
+  tabBadgeToutes: {
+    backgroundColor: colors.orange,
+  },
+  tabBadgeInactive: {
+    backgroundColor: '#bbbbbb',
   },
   tabBadgeText: {
     color: colors.white,
@@ -4776,6 +4825,333 @@ export const retourPrestation = StyleSheet.create({
     color: colors.white,
     fontSize: 12,
     fontFamily: fontFamilies.bold,
+  },
+
+  // ── Header ──
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
+    flexWrap: 'wrap',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+  },
+  backButtonText: {
+    fontSize: 12,
+    fontFamily: fontFamilies.semiBold,
+    color: '#888888',
+  },
+  headerInfo: {
+    flex: 1,
+    minWidth: 160,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontFamily: fontFamilies.bold,
+    color: colors.brown,
+  },
+  headerSubtitle: {
+    fontSize: 11,
+    fontFamily: fontFamilies.regular,
+    color: '#aaaaaa',
+    marginTop: 3,
+  },
+  sentBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginBottom: 16,
+    backgroundColor: '#f0fdf4',
+    borderWidth: 1.5,
+    borderColor: '#bbf7d0',
+  },
+  sentBannerText: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: fontFamilies.semiBold,
+    color: '#15803d',
+    lineHeight: 18,
+  },
+
+  cardAccent: {
+    borderLeftWidth: 4,
+    borderLeftColor: colors.orange,
+  },
+  sectionDescription: {
+    fontSize: 12,
+    fontFamily: fontFamilies.regular,
+    color: '#aaaaaa',
+    marginBottom: 12,
+    lineHeight: 18,
+  },
+  subsectionTitle: {
+    fontSize: 11,
+    fontFamily: fontFamilies.bold,
+    color: colors.brown,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 12,
+    fontFamily: fontFamilies.regular,
+    color: '#bbbbbb',
+    margin: 0,
+  },
+
+  // ── Boissons ──
+  drinkGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  drinkItem: {
+    width: '47%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  drinkLabelRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  checkboxBox: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#d8c8c0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.white,
+  },
+  checkboxBoxChecked: {
+    borderColor: colors.orange,
+    backgroundColor: colors.orange,
+  },
+  drinkLabel: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: fontFamilies.regular,
+    color: '#333333',
+  },
+  qtyInput: {
+    width: 64,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    fontSize: 13,
+    fontFamily: fontFamilies.regular,
+    color: '#1a1a1a',
+    textAlign: 'center',
+    backgroundColor: colors.white,
+  },
+  qtyInputMissing: {
+    borderColor: '#f59e0b',
+  },
+  boissonsComment: {
+    marginTop: 14,
+  },
+
+  // ── Satisfaction ──
+  satisfactionRow: {
+    gap: 16,
+  },
+  starValue: {
+    fontSize: 13,
+    fontFamily: fontFamilies.bold,
+    color: '#f59e0b',
+    marginLeft: 6,
+  },
+  satisfactionComment: {
+    marginTop: 14,
+  },
+
+  // ── Check-list ──
+  checklistSection: {
+    marginBottom: 18,
+  },
+  checklistSectionLast: {
+    marginBottom: 0,
+  },
+  checklistItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5ede8',
+  },
+  checklistItemLast: {
+    borderBottomWidth: 0,
+  },
+  checklistItemText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: fontFamilies.regular,
+    color: '#333333',
+    lineHeight: 20,
+  },
+  checklistComment: {
+    marginTop: 16,
+  },
+
+  // ── Photos ──
+  photoCategoriesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  photoCategoryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: '#e0d0c8',
+    backgroundColor: 'transparent',
+  },
+  photoCategoryBtnAdd: {
+    borderColor: '#e0d0c8',
+  },
+  photoCategoryText: {
+    fontSize: 12,
+    fontFamily: fontFamilies.semiBold,
+    color: colors.brown,
+  },
+  photoCategoryTextAdd: {
+    color: '#888888',
+  },
+  customCategoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  customCategoryInput: {
+    width: 140,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    fontSize: 13,
+    fontFamily: fontFamilies.regular,
+    color: '#1a1a1a',
+    backgroundColor: colors.white,
+  },
+  customCategoryConfirm: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: colors.orange,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customCategoryCancel: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoCategoryBlock: {
+    marginBottom: 14,
+  },
+  photoCategoryTitle: {
+    fontSize: 11,
+    fontFamily: fontFamilies.bold,
+    color: colors.brown,
+    marginBottom: 8,
+  },
+  photoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  photoThumb: {
+    width: 88,
+    height: 88,
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#ecddd6',
+    backgroundColor: '#f5f5f5',
+  },
+  photoImage: {
+    width: '100%',
+    height: '100%',
+  },
+  photoPlaceholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoRemove: {
+    position: 'absolute',
+    top: 3,
+    right: 3,
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── Footer ──
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: '#fdf9f7',
+    borderWidth: 2,
+    borderColor: '#ecddd6',
+    flexWrap: 'wrap',
+    marginBottom: 20,
+  },
+  footerSummary: {
+    flex: 1,
+    minWidth: 200,
+    fontSize: 12,
+    fontFamily: fontFamilies.regular,
+    color: '#888888',
+    lineHeight: 18,
+  },
+  footerStrong: {
+    fontFamily: fontFamilies.bold,
+    color: '#333333',
+  },
+  footerMissing: {
+    fontSize: 11,
+    fontFamily: fontFamilies.regular,
+    color: '#f57f17',
+    marginTop: 6,
   },
 });
 
