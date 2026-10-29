@@ -79,6 +79,19 @@ export const respondMission = (id, payload) =>
     body: typeof payload === 'string' ? { status: payload } : payload,
   });
 
+// ─── DISCUSSION DE PRESTATION ─────────────────────────
+export const getModificationConversationsUnread = () =>
+  fetchClient('/modification-conversations/unread');
+
+export const getModificationConversation = (missionId) =>
+  fetchClient(`/modification-conversations/${missionId}`);
+
+export const sendModificationConversation = (payload) =>
+  fetchClient('/modification-conversations', {
+    method: 'POST',
+    body: payload,
+  });
+
 // ─── FACTURATION & RECAP ──────────────────────────────
 export const getExtraInvoices = () => fetchClient('/extra/invoices');
 

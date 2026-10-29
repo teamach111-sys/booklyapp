@@ -544,23 +544,25 @@ export default function HomeScreen({ navigation }) {
           </View>
         </ScrollView>
 
-        <View style={navigationStyles.bottomNavigation}>
-          <Pressable
-            onPress={() => navigation.navigate('ClientRegister')}
-            style={navigationStyles.bottomTab}
-          >
-            <Store size={18} color="#6B584C" strokeWidth={1.8} />
-            <Text style={navigationStyles.bottomTabText}>Espace client</Text>
-          </Pressable>
-          <View style={navigationStyles.tabDivider} />
-          <Pressable
-            onPress={() => navigation.navigate('ExtraRegister')}
-            style={navigationStyles.bottomTab}
-          >
-            <BadgeCheck size={18} color="#6B584C" strokeWidth={1.8} />
-            <Text style={navigationStyles.bottomTabText}>Devenir extra</Text>
-          </Pressable>
-        </View>
+        {!isAuthenticated && (
+          <View style={navigationStyles.bottomNavigation}>
+            <Pressable
+              onPress={() => navigation.navigate('ClientRegister')}
+              style={navigationStyles.bottomTab}
+            >
+              <Store size={18} color="#6B584C" strokeWidth={1.8} />
+              <Text style={navigationStyles.bottomTabText}>Espace client</Text>
+            </Pressable>
+            <View style={navigationStyles.tabDivider} />
+            <Pressable
+              onPress={() => navigation.navigate('ExtraRegister')}
+              style={navigationStyles.bottomTab}
+            >
+              <BadgeCheck size={18} color="#6B584C" strokeWidth={1.8} />
+              <Text style={navigationStyles.bottomTabText}>Devenir extra</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
     </AuthLayout>
   );

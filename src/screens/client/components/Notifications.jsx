@@ -38,6 +38,7 @@ import {
   BriefcaseBusiness,
   Check,
   ChevronDown,
+  ChevronRight,
   ListFilter,
   Search,
   Trash2,
@@ -73,7 +74,7 @@ const FILTER_TABS = [
   { key: 'welcome', label: 'Bienvenue' },
 ];
 
-export default function Notifications() {
+export default function Notifications({ onGo }) {
   const { partner, colors } = useClientTheme();
   const styles = stylesByBrand[partner];
   const [notifications, setNotifications] = useState([]);
@@ -84,6 +85,7 @@ export default function Notifications() {
   const [perPage, setPerPage] = useState('10');
   const [showPerPageMenu, setShowPerPageMenu] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [targets, setTargets] = useState({});
 
   useEffect(() => {
     setLoading(true);
@@ -101,6 +103,18 @@ export default function Notifications() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (notifications.length === 0) return;
+    const ids = notifications.map(n => n.id);
+    getNotificationTargets(ids)
+      .then(d => {
+        if (d && typeof d === 'object') {
+          setTargets(d);
+        }
+      })
+      .catch(() => {});
+  }, [notifications]);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -475,6 +489,28 @@ export default function Notifications() {
                     <Text numberOfLines={2} style={styles.notifDescription}>
                       {notif.description}
                     </Text>
+
+                    {targets[notif.id] && (
+                      <Pressable
+                        onPress={e => {
+                          e.stopPropagation();
+                          markAsRead(notif.id);
+                          onGo?.(targets[notif.id]);
+                        }}
+                        style={[
+                          styles.notifGoBtn,
+                          { borderColor: stylesByBrand[partner].CAT_COLORS?.[notif.category] || colors.orange }
+                        ]}
+                      >
+                        <Text style={[
+                          styles.notifGoBtnText,
+                          { color: stylesByBrand[partner].CAT_COLORS?.[notif.category] || colors.orange }
+                        ]}>
+                          {targets[notif.id].kind === 'message' ? 'Voir la conversation' : 'Voir la prestation'}
+                        </Text>
+                        <ChevronRight size={10} color={stylesByBrand[partner].CAT_COLORS?.[notif.category] || colors.orange} />
+                      </Pressable>
+                    )}
                   </View>
                 </Pressable>
               );
@@ -549,6 +585,27 @@ export default function Notifications() {
                 </View>
 
                 <View style={styles.modalActionsRow}>
+                  {targets[activeNotification.id] && (
+                    <Pressable
+                      onPress={() => {
+                        const target = targets[activeNotification.id];
+                        setActiveNotification(null);
+                        onGo?.(target);
+                      }}
+                      style={[
+                        styles.modalGoBtn,
+                        { borderColor: stylesByBrand[partner].CAT_COLORS?.[activeNotification.category] || colors.orange }
+                      ]}
+                    >
+                      <Text style={[
+                        styles.modalGoBtnText,
+                        { color: stylesByBrand[partner].CAT_COLORS?.[activeNotification.category] || colors.orange }
+                      ]}>
+                        {targets[activeNotification.id].kind === 'message' ? 'Voir la conversation' : 'Voir la prestation'}
+                      </Text>
+                      <ChevronRight size={12} color={stylesByBrand[partner].CAT_COLORS?.[activeNotification.category] || colors.orange} />
+                    </Pressable>
+                  )}
                   <Pressable
                     accessibilityLabel="Supprimer"
                     accessibilityRole="button"
@@ -574,7 +631,18 @@ export default function Notifications() {
   );
 }
 
-const createStyles = colors => StyleSheet.create({
+const createStyles = colors => ({
+  CAT_COLORS: {
+    welcome: '#6366F1',
+    mission: '#F97316',
+    invoice: '#22C55E',
+    report: '#F43F5E',
+    message: '#0EA5E9',
+    document: '#F59E0B',
+    account: '#8B5CF6',
+    availability: '#10B981',
+    info: '#B9622C',
+  },
   container: {
     gap: 14,
   },
@@ -898,6 +966,22 @@ const createStyles = colors => StyleSheet.create({
     fontSize: 11,
     color: '#A07850',
   },
+  notifGoBtn: {
+    marginTop: 6,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    backgroundColor: colors.white,
+  },
+  notifGoBtnText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
   notifDeleteBtn: {
     padding: 2,
   },
@@ -1027,6 +1111,20 @@ const createStyles = colors => StyleSheet.create({
   modalTimestampText: {
     fontSize: 11,
     color: '#A07850',
+  },
+  modalGoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    backgroundColor: colors.white,
+  },
+  modalGoBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   modalActionsRow: {
     flexDirection: 'row',

@@ -337,6 +337,12 @@ export const deleteNotification = id =>
     method: 'DELETE',
   });
 
+export const getNotificationTargets = ids =>
+  fetchClient('/notifications/targets', {
+    method: 'POST',
+    body: { ids },
+  });
+
 // ─── MESSAGES & DISCUSSIONS ──────────────────────────
 export const getConversations = () =>
   fetchClient('/messages/conversations').catch(() =>
@@ -501,6 +507,7 @@ export default {
   markNotificationRead,
   markAllNotificationsRead,
   deleteNotification,
+  getNotificationTargets,
   getConversations,
   getDiscussion,
   getMessages,
