@@ -23,7 +23,7 @@
  * 
  * =====================================================================
  */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Image,
@@ -58,6 +58,13 @@ import {
 } from 'lucide-react-native';
 import { colors } from '../../../styles';
 import { profile } from './styles';
+import { toPhotoSrc } from '../../../utils/toPhotoSrc';
+import {
+  getMyDashboardData,
+  getExtraFormOptions,
+  updateExtraProfile,
+  deleteExtraDocument,
+} from '../../../api/extraService';
 
 // Port of the web "extra profile" page (staffly-frontend/src/pages/extras/components/Profile.jsx),
 // itself styled after Extras.css (.ex-card / .ex-stats-grid / .ex-info-grid / .ex-field …).
@@ -115,50 +122,6 @@ const DOC_TYPES = [
   { key: 'cv', label: 'CV' },
   { key: 'diplomes', label: 'Diplômes divers' },
 ];
-
-// Sample data — the extras dashboard has no API layer wired yet.
-const INITIAL_EXTRA_DATA = {
-  account_info: {
-    first_name: 'Amine',
-    last_name: 'Belkacem',
-    avatar_url: null,
-    email: 'amine.belkacem@email.com',
-    phone: '06 12 34 56 78',
-    address: '14 rue des Lilas',
-    postal_code: '75011',
-    birthday: '1994-03-12',
-    status: 'active',
-    member_since: '2024-01-08',
-  },
-  profile_details: {
-    ville: 'Paris',
-    city: ['Ile de France'],
-    tshirt_size: 'L',
-    shoe_size: '42',
-    has_permis_b: true,
-    accepte_camion: false,
-    vehicule_perso: true,
-    auto_entrepreneur: 'oui',
-    languages: ['Français', 'Anglais'],
-    qualifications: ['HACCP', 'SST'],
-  },
-  documents: [
-    { type_document: 'cni_recto', statut_conformite: 'valide', date_upload: '2024-02-11' },
-    { type_document: 'cni_verso', statut_conformite: 'en_attente', date_upload: '2024-02-11' },
-    {
-      type_document: 'attestation_urssaf',
-      statut_conformite: 'rejete',
-      date_upload: '2024-02-12',
-      commentaires: "Document illisible, merci d'envoyer un scan net.",
-    },
-    { type_document: 'kbis', statut_conformite: 'valide', date_upload: '2024-03-01' },
-    { type_document: 'permis_recto', statut_conformite: 'en_attente', date_upload: '2024-03-02' },
-  ],
-  skills: [
-    { skill_code: 'Service en salle', note: 4 },
-    { skill_code: 'Manutention', note: 3 },
-  ],
-};
 
 const MONTHS = [
   'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
@@ -354,8 +317,37 @@ function SelectField({ label, value, options, onSelect, placeholder = '-- Sélec
 
 export default function Profile() {
   const [tab, setTab] = useState('INFO');
-  const [extraData, setExtraData] = useState(INITIAL_EXTRA_DATA);
-  const { account_info, profile_details, documents, skills } = extraData;
+  const [extraData, setExtraData] = useState(null);
+  const [formOptions, setFormOptions] = useState({ languages: [], skills: [], qualifications: [] });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    Promise.all([
+      getMyDashboardData().catch(() => null),
+      getExtraFormOptions().catch(() => null),
+    ]).then(([data, opts]) => {
+      if (!alive) return;
+      if (data) setExtraData(data);
+      if (opts) setFormOptions({
+        languages: opts.languages || [],
+        skills: opts.skills || [],
+        qualifications: opts.qualifications || [],
+      });
+    }).finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, []);
+
+  const refreshProfile = async () => {
+    try {
+      const refreshed = await getMyDashboardData();
+      setExtraData(refreshed);
+    } catch {
+      // silent — the user sees the previous state
+    }
+  };
+
+  const { account_info, profile_details, documents, skills } = extraData || {};
 
   const updateExtraData = (patch) =>
     setExtraData((previous) => ({ ...previous, ...patch }));
@@ -385,36 +377,53 @@ export default function Profile() {
         })}
       </View>
 
-      {tab === 'INFO' ? (
-        <InfoTab
-          accountInfo={account_info}
-          onChange={updateExtraData}
-          profileDetails={profile_details}
-        />
-      ) : null}
+      {loading ? (
+        <View style={profile.card}>
+          <Text style={profile.cardTitle}>Chargement du profil…</Text>
+        </View>
+      ) : !extraData ? (
+        <View style={profile.card}>
+          <Text style={profile.cardTitle}>Impossible de charger le profil</Text>
+        </View>
+      ) : (
+        <>
+          {tab === 'INFO' ? (
+            <InfoTab
+              accountInfo={account_info}
+              onChange={updateExtraData}
+              profileDetails={profile_details}
+              languages={formOptions.languages}
+              onRefresh={refreshProfile}
+            />
+          ) : null}
 
-      {tab === 'DOCUMENTS' ? (
-        <DocumentsTab documents={documents || []} onChange={updateExtraData} />
-      ) : null}
+          {tab === 'DOCUMENTS' ? (
+            <DocumentsTab documents={documents || []} onChange={updateExtraData} onRefresh={refreshProfile} />
+          ) : null}
 
-      {tab === 'SKILLS' ? (
-        <SkillsTab onChange={updateExtraData} skills={skills || []} />
-      ) : null}
+          {tab === 'SKILLS' ? (
+            <SkillsTab onChange={updateExtraData} skills={skills || []} catalog={formOptions.skills} onRefresh={refreshProfile} />
+          ) : null}
 
-      {tab === 'QUALIFICATIONS' ? (
-        <QualificationsTab
-          onChange={updateExtraData}
-          profileDetails={profile_details}
-        />
-      ) : null}
+          {tab === 'QUALIFICATIONS' ? (
+            <QualificationsTab
+              onChange={updateExtraData}
+              profileDetails={profile_details}
+              catalog={formOptions.qualifications}
+              onRefresh={refreshProfile}
+            />
+          ) : null}
+        </>
+      )}
     </View>
   );
 }
 
 /* ════ Tab 1 — Informations ════ */
-function InfoTab({ accountInfo, profileDetails, onChange }) {
+function InfoTab({ accountInfo, profileDetails, onChange, languages: availableLanguages, onRefresh }) {
   const [editMode, setEditMode] = useState(false);
   const [draft, setDraft] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   const currentRegions = Array.isArray(profileDetails?.city)
     ? profileDetails.city
@@ -464,9 +473,27 @@ function InfoTab({ accountInfo, profileDetails, onChange }) {
     try {
       const [pickedFile] = await pick({ type: [types.images] });
       if (!pickedFile?.uri) return;
-      onChange({
-        account_info: { ...accountInfo, avatar_url: pickedFile.uri },
+
+      // Upload the photo to the backend.
+      // The API expects the file under the "photo_profil" field name.
+      const formData = new FormData();
+      formData.append('photo_profil', {
+        uri: pickedFile.uri,
+        type: pickedFile.type || 'image/jpeg',
+        name: pickedFile.name || 'avatar.jpg',
       });
+
+      try {
+        await updateExtraProfile(formData);
+        // Update local state immediately (the API stores it as `photo`).
+        onChange({
+          account_info: { ...accountInfo, photo: pickedFile.uri },
+        });
+        if (onRefresh) await onRefresh();
+        Alert.alert('Succès', 'Photo de profil mise à jour.');
+      } catch (err) {
+        Alert.alert('Erreur', err?.message || 'Impossible de téléverser la photo.');
+      }
     } catch (error) {
       if (
         isErrorWithCode(error) &&
@@ -483,32 +510,106 @@ function InfoTab({ accountInfo, profileDetails, onChange }) {
     }
   };
 
-  const save = () => {
-    onChange({
-      account_info: {
-        ...accountInfo,
-        first_name: draft.firstname,
-        last_name: draft.name,
-        email: draft.email,
-        phone: draft.phone,
-        address: draft.address,
-        postal_code: draft.postal_code,
-        birthday: draft.birth_date,
-      },
-      profile_details: {
-        ...profileDetails,
-        ville: draft.ville,
-        city: draft.cities,
-        tshirt_size: draft.tshirt_size,
-        shoe_size: draft.shoe_size,
-        has_permis_b: draft.has_permis_b,
-        accepte_camion: draft.accepte_camion,
-        vehicule_perso: draft.vehicule_perso,
-        auto_entrepreneur: draft.statut_auto_entrepreneur,
-        languages: draft.languages,
-      },
+  const save = async () => {
+    // Build a diff payload — only send changed fields (same logic as web).
+    const personalMap = {
+      firstname: accountInfo?.first_name || '',
+      name: accountInfo?.last_name || '',
+      email: accountInfo?.email || '',
+      phone: accountInfo?.phone || '',
+      address: accountInfo?.address || '',
+      postal_code: accountInfo?.postal_code || '',
+      birth_date: accountInfo?.birthday || '',
+    };
+    const profileMap = {
+      ville: currentVille,
+      tshirt_size: profileDetails?.tshirt_size || '',
+      shoe_size: profileDetails?.shoe_size || '',
+      has_permis_b: profileDetails?.has_permis_b ? 1 : 0,
+      accepte_camion: profileDetails?.accepte_camion ? 1 : 0,
+      vehicule_perso: profileDetails?.vehicule_perso ? 1 : 0,
+      statut_auto_entrepreneur: autoEntrepreneur,
+    };
+
+    const draftMap = {
+      ...personalMap,
+      ...profileMap,
+      firstname: draft.firstname,
+      name: draft.name,
+      email: draft.email,
+      phone: draft.phone,
+      address: draft.address,
+      postal_code: draft.postal_code,
+      birth_date: draft.birth_date,
+      ville: draft.ville,
+      tshirt_size: draft.tshirt_size,
+      shoe_size: draft.shoe_size,
+      has_permis_b: draft.has_permis_b ? 1 : 0,
+      accepte_camion: draft.accepte_camion ? 1 : 0,
+      vehicule_perso: draft.vehicule_perso ? 1 : 0,
+      statut_auto_entrepreneur: draft.statut_auto_entrepreneur,
+    };
+
+    const payload = {};
+    Object.entries({ ...personalMap, ...profileMap }).forEach(([key, original]) => {
+      if (draftMap[key] !== original) payload[key] = draftMap[key];
     });
-    setEditMode(false);
+
+    const originalLangs = JSON.stringify([...(profileDetails?.languages || [])].sort());
+    const newLangs = JSON.stringify([...draft.languages].sort());
+    if (originalLangs !== newLangs) payload.languages = draft.languages;
+
+    const originalRegions = JSON.stringify([...currentRegions].sort());
+    const newRegions = JSON.stringify([...(draft.cities || [])].sort());
+    if (originalRegions !== newRegions) payload.city = draft.cities;
+
+    if (draft.current_password?.trim()) {
+      payload.current_password = draft.current_password;
+      payload.password = draft.password;
+      payload.password_confirmation = draft.password_confirmation;
+    }
+
+    if (Object.keys(payload).length === 0) {
+      Alert.alert('Aucune modification', 'Aucun champ n\'a été modifié.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await updateExtraProfile(payload);
+      // Update local state optimistically
+      onChange({
+        account_info: {
+          ...accountInfo,
+          first_name: draft.firstname,
+          last_name: draft.name,
+          email: draft.email,
+          phone: draft.phone,
+          address: draft.address,
+          postal_code: draft.postal_code,
+          birthday: draft.birth_date,
+        },
+        profile_details: {
+          ...profileDetails,
+          ville: draft.ville,
+          city: draft.cities,
+          tshirt_size: draft.tshirt_size,
+          shoe_size: draft.shoe_size,
+          has_permis_b: draft.has_permis_b,
+          accepte_camion: draft.accepte_camion,
+          vehicule_perso: draft.vehicule_perso,
+          auto_entrepreneur: draft.statut_auto_entrepreneur,
+          languages: draft.languages,
+        },
+      });
+      if (onRefresh) await onRefresh();
+      setEditMode(false);
+      Alert.alert('Succès', 'Profil mis à jour avec succès !');
+    } catch (err) {
+      Alert.alert('Erreur', err?.message || 'Une erreur est survenue lors de la mise à jour.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (editMode) {
@@ -646,14 +747,21 @@ function InfoTab({ accountInfo, profileDetails, onChange }) {
           <Text style={profile.cardTitle}>Langues parlées</Text>
           <Field label="Sélectionnez vos langues">
             <View style={profile.chipRow}>
-              {LANGUAGES.map((language) => (
-                <Chip
-                  key={language}
-                  active={draft.languages.includes(language)}
-                  label={language}
-                  onPress={() => toggleInList('languages', language)}
-                />
-              ))}
+              {(availableLanguages && availableLanguages.length > 0
+                ? availableLanguages
+                : LANGUAGES
+              ).map((lang) => {
+                const code = typeof lang === 'string' ? lang : lang.code;
+                const label = typeof lang === 'string' ? lang : (lang.label || lang.code);
+                return (
+                  <Chip
+                    key={code}
+                    active={draft.languages.includes(code)}
+                    label={label}
+                    onPress={() => toggleInList('languages', code)}
+                  />
+                );
+              })}
             </View>
           </Field>
         </View>
@@ -697,11 +805,12 @@ function InfoTab({ accountInfo, profileDetails, onChange }) {
           </Pressable>
           <Pressable
             accessibilityRole="button"
+            disabled={saving}
             onPress={save}
-            style={profile.btnSave}
+            style={[profile.btnSave, saving && profile.btnSaveDisabled]}
           >
             <Check size={14} color={colors.white} />
-            <Text style={profile.btnSaveText}>Enregistrer</Text>
+            <Text style={profile.btnSaveText}>{saving ? 'Enregistrement…' : 'Enregistrer'}</Text>
           </Pressable>
         </View>
       </View>
@@ -745,6 +854,8 @@ function InfoTab({ accountInfo, profileDetails, onChange }) {
   ];
 
   const languages = profileDetails?.languages || [];
+  // The API exposes the profile picture as `account_info.photo` ("assets/photos/x.jpg").
+  const avatarUri = toPhotoSrc(accountInfo?.photo || accountInfo?.avatar_url);
 
   return (
     <View>
@@ -752,10 +863,10 @@ function InfoTab({ accountInfo, profileDetails, onChange }) {
         <View style={profile.editHeaderIdentity}>
           <View style={profile.avatarWrap}>
             <View style={profile.avatar}>
-              {accountInfo?.avatar_url ? (
+              {avatarUri ? (
                 <Image
                   accessibilityLabel="Photo de profil"
-                  source={{ uri: accountInfo.avatar_url }}
+                  source={{ uri: avatarUri }}
                   style={profile.avatarImage}
                 />
               ) : (
@@ -849,7 +960,7 @@ function InfoTab({ accountInfo, profileDetails, onChange }) {
 }
 
 /* ════ Tab 2 — Documents ════ */
-function DocumentsTab({ documents, onChange }) {
+function DocumentsTab({ documents, onChange, onRefresh }) {
   const getExistingDoc = (key) =>
     documents.find((doc) => doc.type_document === key);
 
@@ -862,8 +973,8 @@ function DocumentsTab({ documents, onChange }) {
 
   const commitDocuments = (nextDocuments) => onChange({ documents: nextDocuments });
 
-  // "Ajouter" and "Remplacer" open the phone file picker (images + PDF). A local
-  // copy is kept so the selected file stays readable once the API is wired.
+  // "Ajouter" and "Remplacer" open the phone file picker (images + PDF),
+  // then upload the file to the backend via FormData.
   const pickDocument = async (key) => {
     try {
       const [picked] = await pick({ type: [types.images, types.pdf] });
@@ -882,19 +993,37 @@ function DocumentsTab({ documents, onChange }) {
         }
       }
 
-      const nextDocuments = documents.filter(
-        (doc) => doc.type_document !== key,
-      );
-      nextDocuments.push({
-        type_document: key,
-        statut_conformite: 'en_attente',
-        date_upload: new Date().toISOString(),
-        file_name: picked.name || `${key}.pdf`,
-        file_uri: uri,
-        file_type: picked.type || null,
-        file_size: picked.size || null,
+      // Upload to the backend.
+      // The API expects the file under the document type key itself
+      // (cni_recto, kbis, permis_verso, ...) — not a generic "document" field.
+      const formData = new FormData();
+      formData.append(key, {
+        uri,
+        type: picked.type || (picked.name?.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
+        name: picked.name || `${key}.pdf`,
       });
-      commitDocuments(nextDocuments);
+
+      try {
+        await updateExtraProfile(formData);
+        // Update local state
+        const nextDocuments = documents.filter(
+          (doc) => doc.type_document !== key,
+        );
+        nextDocuments.push({
+          type_document: key,
+          statut_conformite: 'en_attente',
+          date_upload: new Date().toISOString(),
+          file_name: picked.name || `${key}.pdf`,
+          file_uri: uri,
+          file_type: picked.type || null,
+          file_size: picked.size || null,
+        });
+        commitDocuments(nextDocuments);
+        if (onRefresh) await onRefresh();
+        Alert.alert('Succès', 'Document téléversé.');
+      } catch (err) {
+        Alert.alert('Erreur', err?.message || 'Impossible de téléverser le document.');
+      }
     } catch (error) {
       if (
         isErrorWithCode(error) &&
@@ -920,10 +1049,18 @@ function DocumentsTab({ documents, onChange }) {
         {
           text: 'Supprimer',
           style: 'destructive',
-          onPress: () =>
-            commitDocuments(
-              documents.filter((doc) => doc.type_document !== key),
-            ),
+          onPress: async () => {
+            try {
+              await deleteExtraDocument(key);
+              commitDocuments(
+                documents.filter((doc) => doc.type_document !== key),
+              );
+              if (onRefresh) await onRefresh();
+              Alert.alert('Succès', 'Document supprimé.');
+            } catch (err) {
+              Alert.alert('Erreur', err?.message || 'Impossible de supprimer le document.');
+            }
+          },
         },
       ],
     );
@@ -1011,21 +1148,70 @@ function DocumentsTab({ documents, onChange }) {
 }
 
 /* ════ Tab 3 — Compétences ════ */
-function SkillsTab({ skills, onChange }) {
+function SkillsTab({ skills, onChange, catalog, onRefresh }) {
   const [selected, setSelected] = useState('');
   const [dirty, setDirty] = useState(false);
-
-  const items = skills.map((skill) => ({
-    code: skill.skill_code,
-    score: skill.note || 3,
-  }));
-  const available = SKILLS_CATALOG.filter(
-    (label) => !items.some((item) => item.code === label),
+  const [saving, setSaving] = useState(false);
+  // Local copy of the ratings so clicking a star updates instantly and is
+  // not thrown away by a re-render (same behaviour as the web page).
+  const [localItems, setLocalItems] = useState(() =>
+    (skills || []).map((skill) => ({
+      code: skill.skill_code || skill.code,
+      score: Number(skill.note ?? skill.score ?? 3) || 3,
+    })),
   );
 
+  // Only re-seed from the server when a refresh delivers a genuinely
+  // different list (e.g. after save). We compare by JSON so that the
+  // onChange-triggered prop mutation (which is identical to what we
+  // just wrote) doesn't reset our local edits and the dirty flag.
+  const lastSyncedRef = useRef(JSON.stringify(skills || []));
+  useEffect(() => {
+    const snapshot = JSON.stringify(skills || []);
+    if (snapshot !== lastSyncedRef.current) {
+      lastSyncedRef.current = snapshot;
+      setLocalItems((skills || []).map((skill) => ({
+        code: skill.skill_code || skill.code,
+        score: Number(skill.note ?? skill.score ?? 3) || 3,
+      })));
+      setDirty(false);
+    }
+  }, [skills]);
+
+  const items = localItems;
+  const catalogList = (catalog && catalog.length > 0 ? catalog : SKILLS_CATALOG);
+  const available = catalogList
+    .filter((entry) => {
+      const code = typeof entry === 'string' ? entry : (entry.code || entry.label);
+      return !items.some((item) => item.code === code);
+    })
+    .map((entry) => {
+      if (typeof entry === 'string') return { value: entry, label: entry };
+      const code = entry.code || entry.label;
+      return { value: code, label: entry.label || code };
+    });
+
   const commit = (next) => {
+    setLocalItems(next);
     onChange({ skills: next.map((item) => ({ skill_code: item.code, note: item.score })) });
     setDirty(true);
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      // The API stores the rating under "score" (see Extra::processMetaData).
+      await updateExtraProfile({
+        skills: items.map(s => ({ code: s.code, score: s.score })),
+      });
+      setDirty(false);
+      if (onRefresh) await onRefresh();
+      Alert.alert('Succès', 'Compétences enregistrées.');
+    } catch (err) {
+      Alert.alert('Erreur', err?.message || 'Impossible d\'enregistrer.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const add = () => {
@@ -1074,22 +1260,24 @@ function SkillsTab({ skills, onChange }) {
                 <Text numberOfLines={1} style={profile.skillName}>{item.code}</Text>
                 <View style={profile.skillRating}>
                   <Text style={profile.skillNoteLabel}>Note :</Text>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Pressable
-                      key={star}
-                      accessibilityLabel={`Note ${star} sur 5`}
-                      accessibilityRole="button"
-                      hitSlop={4}
-                      onPress={() => rate(item.code, star)}
-                      style={profile.iconBtn}
-                    >
-                      <Star
-                        color="#f57f17"
-                        fill={star <= item.score ? '#f57f17' : 'none'}
-                        size={16}
-                      />
-                    </Pressable>
-                  ))}
+                  <View style={profile.skillStars}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Pressable
+                        key={star}
+                        accessibilityLabel={`Note ${star} sur 5`}
+                        accessibilityRole="button"
+                        hitSlop={4}
+                        onPress={() => rate(item.code, star)}
+                        style={profile.iconBtn}
+                      >
+                        <Star
+                          color="#f57f17"
+                          fill={star <= item.score ? '#f57f17' : 'none'}
+                          size={16}
+                        />
+                      </Pressable>
+                    ))}
+                  </View>
                   <Text style={profile.skillScore}>{item.score}/5</Text>
                 </View>
                 <Pressable
@@ -1109,12 +1297,12 @@ function SkillsTab({ skills, onChange }) {
           <View style={profile.saveRow}>
             <Pressable
               accessibilityRole="button"
-              disabled={!dirty}
-              onPress={() => setDirty(false)}
-              style={[profile.btnSave, !dirty && profile.btnSaveDisabled]}
+              disabled={!dirty || saving}
+              onPress={save}
+              style={[profile.btnSave, (!dirty || saving) && profile.btnSaveDisabled]}
             >
               <Check size={14} color={colors.white} />
-              <Text style={profile.btnSaveText}>Enregistrer</Text>
+              <Text style={profile.btnSaveText}>{saving ? 'Enregistrement…' : 'Enregistrer'}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -1124,14 +1312,45 @@ function SkillsTab({ skills, onChange }) {
 }
 
 /* ════ Tab 4 — Qualifications ════ */
-function QualificationsTab({ profileDetails, onChange }) {
+function QualificationsTab({ profileDetails, onChange, catalog, onRefresh }) {
   const [selected, setSelected] = useState('');
   const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  // Local copy so an added/removed qualification survives a re-render.
+  const [localItems, setLocalItems] = useState(() => profileDetails?.qualifications || []);
 
-  const items = profileDetails?.qualifications || [];
-  const available = QUALIFICATIONS_CATALOG.filter((label) => !items.includes(label));
+  const serverItems = profileDetails?.qualifications || [];
+
+  // Only re-seed from the server when a refresh delivers a genuinely
+  // different list (e.g. after save). Without this guard, the onChange
+  // triggered by add/remove would mutate the prop, re-trigger this effect,
+  // and reset the local list + dirty flag — effectively auto-saving.
+  const lastSyncedRef = useRef(JSON.stringify(serverItems));
+  useEffect(() => {
+    const snapshot = JSON.stringify(serverItems);
+    if (snapshot !== lastSyncedRef.current) {
+      lastSyncedRef.current = snapshot;
+      setLocalItems(serverItems);
+      setDirty(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileDetails?.qualifications]);
+
+  const items = localItems;
+  const catalogList = (catalog && catalog.length > 0 ? catalog : QUALIFICATIONS_CATALOG);
+  const available = catalogList
+    .filter((entry) => {
+      const code = typeof entry === 'string' ? entry : (entry.code || entry.label);
+      return !items.includes(code);
+    })
+    .map((entry) => {
+      if (typeof entry === 'string') return { value: entry, label: entry };
+      const code = entry.code || entry.label;
+      return { value: code, label: entry.label || code };
+    });
 
   const commit = (next) => {
+    setLocalItems(next);
     onChange({ profile_details: { ...profileDetails, qualifications: next } });
     setDirty(true);
   };
@@ -1143,6 +1362,20 @@ function QualificationsTab({ profileDetails, onChange }) {
   };
 
   const remove = (code) => commit(items.filter((item) => item !== code));
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await updateExtraProfile({ qualifications: items });
+      setDirty(false);
+      if (onRefresh) await onRefresh();
+      Alert.alert('Succès', 'Qualifications enregistrées.');
+    } catch (err) {
+      Alert.alert('Erreur', err?.message || 'Impossible d\'enregistrer.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <View>
@@ -1192,12 +1425,12 @@ function QualificationsTab({ profileDetails, onChange }) {
         <View style={[profile.saveRow, profile.saveRowTight]}>
           <Pressable
             accessibilityRole="button"
-            disabled={!dirty}
-            onPress={() => setDirty(false)}
-            style={[profile.btnSave, !dirty && profile.btnSaveDisabled]}
+            disabled={!dirty || saving}
+            onPress={save}
+            style={[profile.btnSave, (!dirty || saving) && profile.btnSaveDisabled]}
           >
             <Check size={14} color={colors.white} />
-            <Text style={profile.btnSaveText}>Enregistrer</Text>
+            <Text style={profile.btnSaveText}>{saving ? 'Enregistrement…' : 'Enregistrer'}</Text>
           </Pressable>
         </View>
       </View>

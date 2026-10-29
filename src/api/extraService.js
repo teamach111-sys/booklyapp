@@ -35,11 +35,13 @@ export const getMyDashboardData = () => fetchClient('/my-dashboard-data');
 export const getExtraFormOptions = () => fetchClient('/extra/form-options');
 
 export const updateExtraProfile = (payload) => {
-  const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
+  // Do NOT force "Content-Type: multipart/form-data" here: without the
+  // boundary parameter the runtime would generate, the server cannot parse
+  // the multipart body and the uploaded file silently never arrives.
+  // fetchClient leaves the header off for FormData so the runtime sets it.
   return fetchClient('/extra/update', {
     method: 'POST',
     body: payload,
-    headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {},
   });
 };
 
@@ -55,10 +57,10 @@ export const deleteExtraPhoto = () =>
 // ─── AVAILABILITY ─────────────────────────────────────
 export const getMyAvailabilities = () => fetchClient('/extra/my-availabilities');
 
-export const addAvailability = (availabilities) =>
+export const addAvailability = (payload) =>
   fetchClient('/extra/availability', {
     method: 'POST',
-    body: { availabilities },
+    body: payload,
   });
 
 export const deleteAvailability = (id) =>
@@ -104,7 +106,6 @@ export const uploadMissionRetourPhotos = (missionId, formData) =>
   fetchClient(`/missions/${missionId}/retour/photos`, {
     method: 'POST',
     body: formData,
-    headers: { 'Content-Type': 'multipart/form-data' },
   });
 
 export const deleteMissionRetourPhoto = (missionId, photoId) =>

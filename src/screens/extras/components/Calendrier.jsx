@@ -14,7 +14,7 @@
  * 
  * =====================================================================
  */
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   Alert,
   Modal,
@@ -42,6 +42,11 @@ import { extras } from '../styles';
 import { calendrier as styles } from './styles';
 import DatePicker from '../../../components/DatePicker';
 import TimePicker from '../../../components/TimePicker';
+import {
+  getMyAvailabilities,
+  addAvailability,
+  deleteAvailability,
+} from '../../../api/extraService';
 
 // Port of the web "extra calendar" page
 // (staffly-frontend/src/pages/extras/components/Calendrier.jsx + .css):
@@ -170,14 +175,49 @@ export default function Calendrier() {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [unavailabilities, setUnavailabilities] = useState([]);
+  const [missionDates, setMissionDates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [draftDate, setDraftDate] = useState('');
   const [draftStart, setDraftStart] = useState(DEFAULT_START);
   const [draftEnd, setDraftEnd] = useState(DEFAULT_END);
   const [draftReason, setDraftReason] = useState('');
 
-  // No mission data on the extras calendar yet; the design shows 0 as well.
-  const missionCount = 0;
+  const loadAvailabilities = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getMyAvailabilities();
+      const rows = Array.isArray(data) ? data : [];
+      // Separate unavailabilities from mission slots
+      const unavail = rows
+        .filter(r => r.type === 'unavailable' || (!r.type && !r.mission_id))
+        .map(r => ({
+          id: String(r.id),
+          day: (() => { const d = new Date(r.available_date || r.date_debut || r.date); d.setHours(0,0,0,0); return d; })(),
+          start: parseTimeInput(r.start || r.start_time || r.heure_debut || DEFAULT_START) ?? 9 * 60,
+          end: parseTimeInput(r.end || r.end_time || r.heure_fin || DEFAULT_END) ?? 18 * 60,
+          reason: r.description || r.comment || r.reason || r.commentaire || '',
+        }));
+      const missions = rows
+        .filter(r => r.type === 'mission' || r.mission_id)
+        .map(r => {
+          const d = new Date(r.date_debut || r.available_date || r.date);
+          d.setHours(0, 0, 0, 0);
+          return { day: d, date_fin: r.date_fin };
+        });
+      setUnavailabilities(unavail);
+      setMissionDates(missions);
+    } catch {
+      // silent — empty calendar
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadAvailabilities(); }, [loadAvailabilities]);
+
+  const missionCount = missionDates.length;
   const indispoCount = unavailabilities.length;
 
   const weeks = useMemo(() => {
@@ -229,7 +269,7 @@ export default function Calendrier() {
     setModalOpen(true);
   }
 
-  function handleSave() {
+  async function handleSave() {
     const day = parseDateInput(draftDate);
     if (!day) {
       Alert.alert('Date requise', 'Choisissez une date.');
@@ -254,13 +294,27 @@ export default function Calendrier() {
       return;
     }
 
-    setUnavailabilities(previous => [
-      ...previous,
-      { id: `${Date.now()}`, day, start, end, reason: draftReason.trim() },
-    ]);
-    setSelectedDate(day);
-    setViewMonth(new Date(day.getFullYear(), day.getMonth(), 1));
-    setModalOpen(false);
+    setSaving(true);
+    try {
+      const isoDate = `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
+      await addAvailability({
+        availabilities: [{
+          available_date: isoDate,
+          start_time: formatTime(start),
+          end_time: formatTime(end),
+          comment: draftReason.trim() || null,
+        }],
+      });
+      setModalOpen(false);
+      setSelectedDate(day);
+      setViewMonth(new Date(day.getFullYear(), day.getMonth(), 1));
+      await loadAvailabilities();
+      Alert.alert('Succès', 'Indisponibilité enregistrée.');
+    } catch (err) {
+      Alert.alert('Erreur', err?.message || 'Impossible d\'enregistrer l\'indisponibilité.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -374,6 +428,20 @@ export default function Calendrier() {
               const hasUnavailability = unavailabilities.some(item =>
                 sameDay(item.day, day),
               );
+              const hasMission = missionDates.some(item =>
+                sameDay(item.day, day),
+              );
+              const missionEnCours = missionDates.some(item =>
+                sameDay(item.day, day) &&
+                item.date_fin &&
+                new Date(item.date_fin) >= new Date() &&
+                new Date(item.day) <= new Date(),
+              );
+              const missionPassee = missionDates.some(item =>
+                sameDay(item.day, day) &&
+                item.date_fin &&
+                new Date(item.date_fin) < new Date(),
+              );
 
               return (
                 <Pressable
@@ -386,6 +454,9 @@ export default function Calendrier() {
                     dayIndex < 6 && styles.dayCellRightBorder,
                     !inMonth && styles.dayCellOutside,
                     hasUnavailability && styles.dayCellUnavailable,
+                    missionEnCours && styles.dayCellMissionEnCours,
+                    hasMission && !missionEnCours && !missionPassee && styles.dayCellMission,
+                    missionPassee && styles.dayCellMissionPassee,
                     isToday && styles.dayCellToday,
                     isSelected && styles.dayCellSelected,
                   ]}
@@ -483,6 +554,36 @@ export default function Calendrier() {
                 <View style={styles.shiftBadge}>
                   <Text style={styles.shiftBadgeText}>Indisponible</Text>
                 </View>
+                <Pressable
+                  accessibilityLabel="Supprimer l'indisponibilité"
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  onPress={() => {
+                    Alert.alert(
+                      'Supprimer l\'indisponibilité',
+                      'Voulez-vous vraiment supprimer cette indisponibilité ?',
+                      [
+                        { text: 'Annuler', style: 'cancel' },
+                        {
+                          text: 'Supprimer',
+                          style: 'destructive',
+                          onPress: async () => {
+                            try {
+                              await deleteAvailability(item.id);
+                              await loadAvailabilities();
+                              Alert.alert('Succès', 'Indisponibilité supprimée.');
+                            } catch (err) {
+                              Alert.alert('Erreur', err?.message || 'Impossible de supprimer.');
+                            }
+                          },
+                        },
+                      ],
+                    );
+                  }}
+                  style={styles.shiftDelete}
+                >
+                  <X size={12} color="#DC2626" />
+                </Pressable>
               </View>
             ))}
           </View>

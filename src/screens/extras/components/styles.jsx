@@ -202,6 +202,15 @@ export const calendrier = StyleSheet.create({
   dayCellUnavailable: {
     backgroundColor: '#FDF0F0',
   },
+  dayCellMission: {
+    backgroundColor: '#FFF7ED',
+  },
+  dayCellMissionEnCours: {
+    backgroundColor: '#F0FDF4',
+  },
+  dayCellMissionPassee: {
+    backgroundColor: '#F9FAFB',
+  },
   dayCellToday: {
     backgroundColor: '#FFF8F0',
   },
@@ -411,6 +420,11 @@ export const calendrier = StyleSheet.create({
     fontFamily: fontFamilies.semiBold,
     fontSize: 11,
     color: '#9b1c1c',
+  },
+  shiftDelete: {
+    padding: 6,
+    borderRadius: 16,
+    backgroundColor: '#FDF0F0',
   },
 
   // ── "Déclarer une indisponibilité" bottom sheet ──
@@ -706,6 +720,71 @@ export const extraFactures = StyleSheet.create({
     color: '#aaa',
     textAlign: 'center',
   },
+
+  // ── Invoice list ──
+  invoiceList: {
+    gap: 8,
+  },
+  invoiceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  invoiceLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  invoiceIconTile: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  invoiceInfo: {
+    gap: 2,
+    flex: 1,
+  },
+  invoiceNumber: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 13,
+    color: '#333',
+  },
+  invoiceClient: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 12,
+    color: '#888',
+  },
+  invoiceDate: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    color: '#bbb',
+  },
+  invoiceRight: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  invoiceAmount: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 14,
+  },
+  invoiceBadge: {
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 20,
+  },
+  invoiceBadgeText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 10,
+  },
 });
 
 // Extra messages page (src/pages/extras/components/Messages.jsx). The design is
@@ -867,93 +946,325 @@ export const messages = StyleSheet.create({
   sheetScroll: {
     flexShrink: 1,
   },
-  field: {
-    marginBottom: 14,
+  formField: {
+    marginBottom: 20,
   },
-  fieldLast: {
-    marginBottom: 18,
-  },
-  fieldLabel: {
-    marginBottom: 6,
+  label: {
     fontFamily: fontFamilies.bold,
     fontSize: 11,
-    letterSpacing: 0.4,
+    color: '#999',
     textTransform: 'uppercase',
-    color: '#888',
+    letterSpacing: 0.5,
+    marginBottom: 8,
   },
-  chips: {
+  typeSelector: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 8,
   },
-  chip: {
-    paddingVertical: 5,
-    paddingHorizontal: 12,
+  typePill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: '#e0d0c8',
+    borderColor: '#f0e4dd',
     backgroundColor: colors.white,
   },
-  chipActive: {
+  typePillActive: {
     borderColor: colors.orange,
     backgroundColor: colors.orange,
   },
-  chipText: {
+  typePillText: {
     fontFamily: fontFamilies.semiBold,
-    fontSize: 11,
+    fontSize: 12,
     color: '#888',
   },
-  chipTextActive: {
+  typePillTextActive: {
     color: colors.white,
   },
   input: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
+    backgroundColor: '#faf6f4',
     borderWidth: 1.5,
-    borderColor: '#e0d0c8',
-    backgroundColor: colors.white,
+    borderColor: '#f0e4dd',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontFamily: fontFamilies.regular,
+    fontSize: 14,
+    color: '#333',
+  },
+  textarea: {
+    minHeight: 120,
+    textAlignVertical: 'top',
+  },
+  formActions: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 24,
+  },
+  submitButton: {
+    flex: 1.2,
+    backgroundColor: colors.orange,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  submitButtonText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 15,
+    color: colors.white,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#f5f0ec',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButtonText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 15,
+    color: '#888',
+  },
+
+  // ── Conversation list items ──
+  convItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+  },
+  convAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.palePink,
+  },
+  convAvatarText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 14,
+    color: colors.brown,
+  },
+  convInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  convName: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 13,
+    color: '#333',
+  },
+  convPreview: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    color: '#aaa',
+  },
+  convTime: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 10,
+    color: '#bbb',
+  },
+  unreadBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.orange,
+  },
+  unreadBadgeText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 10,
+    color: '#fff',
+  },
+
+  // ── Discussion view ──
+  discussionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    backgroundColor: '#fff',
+  },
+  backBtn: {
+    padding: 4,
+  },
+  discussionPartnerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  partnerAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.palePink,
+  },
+  partnerAvatarText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 14,
+    color: colors.brown,
+  },
+  partnerName: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 13,
+    color: '#333',
+  },
+  partnerRole: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    color: '#aaa',
+  },
+  discussionScroll: {
+    flex: 1,
+    backgroundColor: '#fafafa',
+  },
+  loadingText: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 13,
+    color: '#aaa',
+    textAlign: 'center',
+    padding: 20,
+  },
+  bubbleRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+  },
+  bubbleRowMine: {
+    justifyContent: 'flex-end',
+  },
+  bubble: {
+    maxWidth: '75%',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderTopLeftRadius: 4,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  bubbleMine: {
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 4,
+    backgroundColor: colors.orange,
+    borderWidth: 0,
+  },
+  bubbleText: {
     fontFamily: fontFamilies.regular,
     fontSize: 13,
     color: '#333',
   },
-  textarea: {
-    minHeight: 90,
-    textAlignVertical: 'top',
+  bubbleSender: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 11,
+    color: colors.orangeDark,
+    marginBottom: 4,
   },
-  actions: {
+  bubbleTextMine: {
+    color: '#fff',
+  },
+  bubbleTime: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 10,
+    color: '#bbb',
+    marginTop: 3,
+  },
+  bubbleTimeMine: {
+    color: 'rgba(255,255,255,0.7)',
+  },
+  composeRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    backgroundColor: '#fff',
   },
-  btnCancel: {
+  composeInput: {
     flex: 1,
-    paddingVertical: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: '#e0d0c8',
-    backgroundColor: colors.white,
-  },
-  btnCancelText: {
-    fontFamily: fontFamilies.semiBold,
+    borderWidth: 1,
+    borderColor: '#e8e8e8',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    fontFamily: fontFamilies.regular,
     fontSize: 13,
-    color: '#888',
+    color: '#333',
   },
-  btnSend: {
-    flex: 2,
-    paddingVertical: 11,
-    flexDirection: 'row',
+  composeSend: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    borderRadius: 10,
     backgroundColor: colors.orange,
   },
-  btnSendText: {
+
+  // ── Report badges ──
+  reportAvatar: {
+    backgroundColor: colors.palePink,
+  },
+  reportMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  reportTypeLabel: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    color: '#aaa',
+  },
+  reportStatusBadge: {
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    borderRadius: 20,
+  },
+  reportStatusOpen: {
+    backgroundColor: '#fff8e1',
+  },
+  reportStatusClosed: {
+    backgroundColor: '#eaf5ea',
+  },
+  reportStatusText: {
     fontFamily: fontFamilies.bold,
-    fontSize: 13,
-    color: colors.white,
+    fontSize: 9,
+  },
+  reportStatusTextOpen: {
+    color: '#f57f17',
+  },
+  reportStatusTextClosed: {
+    color: '#2e7d32',
+  },
+  closeReportBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0d0c8',
+  },
+  closeReportText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 12,
+    color: '#888',
   },
 });
 
@@ -1685,7 +1996,474 @@ export const disponibilite = StyleSheet.create({
     borderRadius: 4,
   },
 });
-export const extraRecapGlobal = StyleSheet.create({});
+export const extraRecapGlobal = StyleSheet.create({
+  pageHeadingSpacing: {
+    marginBottom: 12,
+  },
+
+  // ── Badge ──
+  badgeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  badge: {
+    paddingVertical: 5,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: colors.palePink,
+  },
+  badgeText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 12,
+    color: colors.brown,
+  },
+
+  // ── Filters ──
+  filterCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ecddd6',
+    backgroundColor: '#fff',
+    padding: 14,
+    marginBottom: 12,
+  },
+  filterHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  filterHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  filterHeaderText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 11,
+    color: colors.brown,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  clearBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    borderRadius: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 10,
+  },
+  clearBtnText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 11,
+    color: '#888',
+  },
+  filterGrid: {
+    gap: 10,
+  },
+  filterField: {
+    gap: 4,
+  },
+  filterLabel: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 10,
+    color: '#bbb',
+    textTransform: 'uppercase',
+  },
+  filterSelectWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  filterChip: {
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    backgroundColor: '#fff',
+  },
+  filterChipActive: {
+    borderColor: colors.orange,
+    backgroundColor: colors.palePink,
+  },
+  filterChipText: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 12,
+    color: '#888',
+  },
+  filterChipTextActive: {
+    fontFamily: fontFamilies.semiBold,
+    color: colors.brown,
+  },
+
+  // ── Selection bar ──
+  selectionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 10,
+    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    backgroundColor: colors.orange,
+    marginBottom: 12,
+  },
+  selectionInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  selectionCount: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 14,
+    color: '#fff',
+  },
+  selectionTotal: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.85)',
+  },
+  selectionActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  selectionCancelBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.4)',
+  },
+  selectionCancelText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 12,
+    color: '#fff',
+  },
+  selectionGenBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 7,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+  },
+  selectionGenText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 13,
+    color: colors.orange,
+  },
+
+  // ── List ──
+  emptyCard: {
+    alignItems: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ecddd6',
+    backgroundColor: '#fff',
+  },
+  emptyTitle: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 14,
+    color: colors.brown,
+    marginBottom: 6,
+  },
+  emptySubtitle: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 13,
+    color: '#aaa',
+  },
+  selectAllRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    marginBottom: 8,
+  },
+  selectAllText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 12,
+    color: '#888',
+  },
+  missionList: {
+    gap: 10,
+  },
+  missionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#ecddd6',
+    backgroundColor: '#fff',
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+  },
+  missionCardSelected: {
+    borderColor: colors.orange,
+    shadowColor: colors.orange,
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  missionInfo: {
+    flex: 1,
+    gap: 5,
+  },
+  missionName: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 14,
+    color: '#1a1a1a',
+  },
+  missionMetaRow: {
+    flexDirection: 'row',
+    gap: 14,
+    flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  missionMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  missionMetaText: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 12,
+    color: '#888',
+  },
+  suppBadge: {
+    alignSelf: 'flex-start',
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    borderRadius: 20,
+    backgroundColor: '#fff8e1',
+  },
+  suppBadgeText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 10,
+    color: '#f57f17',
+  },
+  missionRight: {
+    alignItems: 'flex-end',
+    gap: 3,
+  },
+  missionAmount: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 16,
+    color: colors.orange,
+  },
+  missionRate: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    color: '#aaa',
+  },
+  paiementBadge: {
+    paddingVertical: 2,
+    paddingHorizontal: 9,
+    borderRadius: 20,
+    marginTop: 3,
+  },
+  paiementBadgePaid: {
+    backgroundColor: '#eaf5ea',
+  },
+  paiementBadgePending: {
+    backgroundColor: '#fff8e1',
+  },
+  paiementBadgeText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 10,
+  },
+  paiementBadgeTextPaid: {
+    color: '#2e7d32',
+  },
+  paiementBadgeTextPending: {
+    color: '#f57f17',
+  },
+
+  // ── Generate modal ──
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  modalSheet: {
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    paddingHorizontal: 26,
+    paddingVertical: 24,
+    width: '92%',
+    maxWidth: 440,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 15,
+    color: '#1a1a1a',
+  },
+  modalSub: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    color: '#aaa',
+    marginTop: 2,
+  },
+  modalClose: {
+    padding: 4,
+  },
+  modalScroll: {
+    maxHeight: 500,
+  },
+  modalSectionLabel: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 11,
+    color: '#bbb',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 8,
+  },
+  modalPeriodRow: {
+    marginBottom: 14,
+  },
+  modalPeriodField: {
+    gap: 6,
+  },
+  modalPeriodLabel: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 10,
+    color: '#bbb',
+    textTransform: 'uppercase',
+  },
+  modalChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  modalChip: {
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    backgroundColor: '#fff',
+  },
+  modalChipActive: {
+    borderColor: colors.orange,
+    backgroundColor: colors.palePink,
+  },
+  modalChipText: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 11,
+    color: '#888',
+  },
+  modalChipTextActive: {
+    fontFamily: fontFamilies.semiBold,
+    color: colors.brown,
+  },
+  modalMissionList: {
+    gap: 6,
+    maxHeight: 180,
+  },
+  modalMissionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#f0e4dd',
+    backgroundColor: '#fdf9f7',
+  },
+  modalMissionInfo: {
+    flex: 1,
+  },
+  modalMissionName: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 12,
+    color: '#333',
+  },
+  modalMissionDate: {
+    fontFamily: fontFamilies.regular,
+    fontSize: 10,
+    color: '#aaa',
+  },
+  modalMissionAmount: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 12,
+    color: colors.orange,
+  },
+  modalTotalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: colors.palePink,
+    marginBottom: 20,
+    marginTop: 4,
+  },
+  modalTotalLabel: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 12,
+    color: '#888',
+  },
+  modalTotalValue: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 18,
+    color: colors.orange,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#e0d0c8',
+    backgroundColor: '#fff',
+  },
+  modalCancelText: {
+    fontFamily: fontFamilies.semiBold,
+    fontSize: 13,
+    color: '#888',
+  },
+  modalConfirmBtn: {
+    flex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: colors.orange,
+  },
+  modalConfirmText: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 13,
+    color: '#fff',
+  },
+});
 export const mission = StyleSheet.create({
   // ── Segmented Tabs ──
   tabsWrap: {
@@ -2434,14 +3212,14 @@ export const mission = StyleSheet.create({
     color: '#f57f17',
   },
   btnSlotAccept: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
     borderRadius: 8,
     backgroundColor: '#15803d',
-    marginLeft: 'auto',
   },
   btnSlotAcceptText: {
     color: colors.white,
@@ -2498,7 +3276,6 @@ export const mission = StyleSheet.create({
   },
 });
 
-export const oldMission = StyleSheet.create({});
 // Extra profile design (src/pages/extras/components/Profile.jsx + Extras.css).
 export const profile = StyleSheet.create({
   // ── Segmented tab bar ──
@@ -3013,6 +3790,9 @@ export const profile = StyleSheet.create({
     backgroundColor: '#faf6f4',
   },
   skillName: {
+    // flex:1 keeps the name column elastic while pinning the rating block
+    // to a constant width, so every "Note: ★★★" row lines up.
+    flex: 1,
     flexShrink: 1,
     fontFamily: fontFamilies.bold,
     fontSize: 13,
@@ -3022,15 +3802,25 @@ export const profile = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
+    // Fixed width so the stars + score never shift between rows.
+    width: 176,
   },
   skillNoteLabel: {
-    marginRight: 4,
+    width: 40,
+    textAlign: 'right',
+    marginRight: 6,
     fontFamily: fontFamilies.regular,
     fontSize: 11,
     color: '#bbb',
   },
+  skillStars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
   skillScore: {
-    marginLeft: 4,
+    width: 26,
+    marginLeft: 6,
     fontFamily: fontFamilies.regular,
     fontSize: 11,
     color: '#aaa',

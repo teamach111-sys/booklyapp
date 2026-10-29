@@ -14,12 +14,13 @@
  * 
  * =====================================================================
  */
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { CircleCheck, FileText, Search, Wallet } from 'lucide-react-native';
 import { colors } from '../../../styles';
 import { extras } from '../styles';
 import { extraFactures as styles } from './styles';
+import { getExtraInvoices } from '../../../api/extraService';
 
 // Port of the web "extra invoices" page
 // (staffly-frontend/src/pages/extras/components/Factures.jsx): statistics cards,
@@ -32,33 +33,45 @@ const TABS = [
   { key: 'payees', label: 'Payées' },
 ];
 
-// No invoice source is wired in the app yet; the web page shows the same empty
-// state until the extra has billed prestations.
-const INVOICES = [];
-
 function formatEuro(amount) {
-  return `${amount.toFixed(2).replace('.', ',')}\u00A0€`;
+  return `${Number(amount || 0).toFixed(2).replace('.', ',')}\u00A0€`;
 }
 
 export default function ExtraFactures() {
   const [filter, setFilter] = useState('toutes');
   const [query, setQuery] = useState('');
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadInvoices = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getExtraInvoices();
+      setInvoices(Array.isArray(data) ? data : []);
+    } catch {
+      setInvoices([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadInvoices(); }, [loadInvoices]);
 
   const year = new Date().getFullYear();
-  const pendingInvoices = INVOICES.filter(
-    invoice => invoice.status === 'a_recevoir',
+  const pendingInvoices = invoices.filter(
+    invoice => invoice.status === 'a_recevoir' || invoice.status === 'en_retard',
   );
-  const paidThisYear = INVOICES.filter(
+  const paidThisYear = invoices.filter(
     invoice =>
       invoice.status === 'payee' &&
-      new Date(invoice.paid_at).getFullYear() === year,
+      new Date(invoice.paid_at || invoice.updated_at || invoice.created_at).getFullYear() === year,
   );
   const pendingTotal = pendingInvoices.reduce(
-    (sum, invoice) => sum + invoice.amount,
+    (sum, invoice) => sum + Number(invoice.amount || 0),
     0,
   );
   const paidTotal = paidThisYear.reduce(
-    (sum, invoice) => sum + invoice.amount,
+    (sum, invoice) => sum + Number(invoice.amount || 0),
     0,
   );
 
@@ -126,7 +139,7 @@ export default function ExtraFactures() {
             <Text style={styles.statLabel}>Factures</Text>
           </View>
           <Text style={[styles.statValue, styles.statValueOrange]}>
-            {INVOICES.length}
+            {invoices.length}
           </Text>
           <Text style={styles.statSub}>au total</Text>
         </View>
@@ -165,16 +178,91 @@ export default function ExtraFactures() {
         </View>
       </View>
 
-      {/* Empty state */}
-      <View style={styles.emptyCard}>
-        <View style={styles.emptyIconTile}>
-          <FileText size={22} color={colors.orange} />
+      {/* Invoice list / empty state */}
+      {loading ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyTitle}>Chargement…</Text>
         </View>
-        <Text style={styles.emptyTitle}>Aucune facture pour le moment</Text>
-        <Text style={styles.emptySubtitle}>
-          Vos factures apparaissent ici dès que vos prestations sont facturées.
-        </Text>
-      </View>
+      ) : (() => {
+        const filtered = invoices.filter(invoice => {
+          if (filter === 'toutes') return true;
+          if (filter === 'en_retard') return invoice.status === 'en_retard';
+          if (filter === 'a_recevoir') return invoice.status === 'a_recevoir' || invoice.status === 'en_retard';
+          if (filter === 'payees') return invoice.status === 'payee';
+          return true;
+        }).filter(invoice => {
+          if (!query.trim()) return true;
+          const q = query.toLowerCase();
+          return (
+            (invoice.number || invoice.invoice_number || '').toLowerCase().includes(q) ||
+            (invoice.client_name || invoice.space_name || '').toLowerCase().includes(q)
+          );
+        });
+
+        if (filtered.length === 0) {
+          return (
+            <View style={styles.emptyCard}>
+              <View style={styles.emptyIconTile}>
+                <FileText size={22} color={colors.orange} />
+              </View>
+              <Text style={styles.emptyTitle}>Aucune facture pour le moment</Text>
+              <Text style={styles.emptySubtitle}>
+                Vos factures apparaissent ici dès que vos prestations sont facturées.
+              </Text>
+            </View>
+          );
+        }
+
+        return (
+          <View style={styles.invoiceList}>
+            {filtered.map(invoice => {
+              const status = invoice.status || 'a_recevoir';
+              const statusLabel = {
+                a_recevoir: 'À recevoir',
+                en_retard: 'En retard',
+                payee: 'Payée',
+              }[status] || status;
+              const statusColor = {
+                a_recevoir: '#1565C0',
+                en_retard: '#DC2626',
+                payee: '#15803D',
+              }[status] || '#888';
+              return (
+                <View key={invoice.id} style={styles.invoiceCard}>
+                  <View style={styles.invoiceLeft}>
+                    <View style={[styles.invoiceIconTile, { backgroundColor: statusColor + '15' }]}>
+                      <FileText size={14} color={statusColor} />
+                    </View>
+                    <View style={styles.invoiceInfo}>
+                      <Text style={styles.invoiceNumber}>
+                        {invoice.number || invoice.invoice_number || `#${invoice.id}`}
+                      </Text>
+                      <Text style={styles.invoiceClient}>
+                        {invoice.client_name || invoice.space_name || '—'}
+                      </Text>
+                      <Text style={styles.invoiceDate}>
+                        {invoice.paid_at || invoice.updated_at || invoice.created_at
+                          ? new Date(invoice.paid_at || invoice.updated_at || invoice.created_at).toLocaleDateString('fr-FR')
+                          : '—'}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.invoiceRight}>
+                    <Text style={[styles.invoiceAmount, { color: statusColor }]}>
+                      {formatEuro(invoice.amount)}
+                    </Text>
+                    <View style={[styles.invoiceBadge, { backgroundColor: statusColor + '15' }]}>
+                      <Text style={[styles.invoiceBadgeText, { color: statusColor }]}>
+                        {statusLabel}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        );
+      })()}
     </View>
   );
 }

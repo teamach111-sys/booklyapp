@@ -15,7 +15,7 @@
  * 
  * =====================================================================
  */
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { Info, Plus, Trash2 } from 'lucide-react-native';
 import DatePicker from '../../../components/DatePicker';
@@ -23,6 +23,11 @@ import TimePicker from '../../../components/TimePicker';
 import { colors } from '../../../styles';
 import { extras } from '../styles';
 import { disponibilite as styles } from './styles';
+import {
+  getMyAvailabilities,
+  addAvailability,
+  deleteAvailability,
+} from '../../../api/extraService';
 
 // Port of the web "extra unavailability" page
 // (staffly-frontend/src/pages/extras/components/Disponibilite.jsx + .css):
@@ -110,8 +115,36 @@ export default function Disponibilite() {
   const [endTime, setEndTime] = useState(DEFAULT_END);
   const [reason, setReason] = useState('');
   const [slots, setSlots] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
 
-  function handleAdd() {
+  const loadSlots = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getMyAvailabilities();
+      const rows = Array.isArray(data) ? data : [];
+      const unavail = rows
+        .filter(r => r.type === 'unavailable' || (!r.type && !r.mission_id))
+        .map(r => ({
+          id: String(r.id),
+          day: (() => { const d = new Date(r.available_date || r.date_debut || r.date); d.setHours(0,0,0,0); return d; })(),
+          start: parseTimeInput(r.start || r.start_time || r.heure_debut || DEFAULT_START) ?? 9 * 60,
+          end: parseTimeInput(r.end || r.end_time || r.heure_fin || DEFAULT_END) ?? 18 * 60,
+          reason: r.description || r.comment || r.reason || r.commentaire || '',
+        }))
+        .filter(s => s.day >= startOfToday())
+        .sort((a, b) => a.day - b.day);
+      setSlots(unavail);
+    } catch {
+      // silent
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadSlots(); }, [loadSlots]);
+
+  async function handleAdd() {
     const day = parseDateInput(date);
     if (!day) {
       Alert.alert('Date requise', 'Choisissez une date.');
@@ -136,18 +169,51 @@ export default function Disponibilite() {
       return;
     }
 
-    setSlots(previous => [
-      ...previous,
-      { id: `${Date.now()}`, day, start, end, reason: reason.trim() },
-    ]);
-    setDate('');
-    setReason('');
-    setStartTime(DEFAULT_START);
-    setEndTime(DEFAULT_END);
+    setAdding(true);
+    try {
+      const isoDate = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+      await addAvailability({
+        availabilities: [{
+          available_date: isoDate,
+          start_time: formatTime(start),
+          end_time: formatTime(end),
+          comment: reason.trim() || null,
+        }],
+      });
+      setDate('');
+      setReason('');
+      setStartTime(DEFAULT_START);
+      setEndTime(DEFAULT_END);
+      await loadSlots();
+      Alert.alert('Succès', 'Indisponibilité enregistrée.');
+    } catch (err) {
+      Alert.alert('Erreur', err?.message || 'Impossible d\'enregistrer l\'indisponibilité.');
+    } finally {
+      setAdding(false);
+    }
   }
 
   function handleDelete(id) {
-    setSlots(previous => previous.filter(slot => slot.id !== id));
+    Alert.alert(
+      'Supprimer l\'indisponibilité',
+      'Voulez-vous vraiment supprimer cette indisponibilité ?',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAvailability(id);
+              await loadSlots();
+              Alert.alert('Succès', 'Indisponibilité supprimée.');
+            } catch (err) {
+              Alert.alert('Erreur', err?.message || 'Impossible de supprimer.');
+            }
+          },
+        },
+      ],
+    );
   }
 
   return (
@@ -166,7 +232,7 @@ export default function Disponibilite() {
         <Info size={15} color="#B45309" />
         <Text style={styles.noticeText}>
           Vous êtes <Text style={styles.noticeStrong}>disponible par défaut</Text>
-          . Indiquez uniquement les créneaux où vous n’êtes{' '}
+          . Indiquez uniquement les créneaux où vous n'êtes{' '}
           <Text style={styles.noticeStrong}>pas disponible</Text>.
         </Text>
       </View>
@@ -242,14 +308,16 @@ export default function Disponibilite() {
         <View style={styles.formActions}>
           <Pressable
             accessibilityRole="button"
+            disabled={adding}
             onPress={handleAdd}
             style={({ pressed }) => [
               styles.submitBtn,
-              pressed && styles.submitBtnPressed,
+              (pressed || adding) && styles.submitBtnPressed,
+              adding && { opacity: 0.6 },
             ]}
           >
             <Plus size={14} color={colors.white} />
-            <Text style={styles.submitText}>Marquer indisponible</Text>
+            <Text style={styles.submitText}>{adding ? 'Enregistrement…' : 'Marquer indisponible'}</Text>
           </Pressable>
         </View>
       </View>
@@ -261,7 +329,9 @@ export default function Disponibilite() {
           <Text style={styles.sectionCount}>{slots.length}</Text>
         </View>
 
-        {slots.length === 0 ? (
+        {loading ? (
+          <Text style={styles.emptyState}>Chargement…</Text>
+        ) : slots.length === 0 ? (
           <Text style={styles.emptyState}>Aucune indisponibilité à venir.</Text>
         ) : (
           <View style={styles.slotList}>
