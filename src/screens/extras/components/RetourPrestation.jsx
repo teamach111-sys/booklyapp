@@ -17,7 +17,7 @@
  * =====================================================================
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -144,6 +144,9 @@ export default function RetourPrestation({ missionId, onBack }) {
   const [pendingCategory, setPendingCategory] = useState(null);
   const [customCategory, setCustomCategory] = useState('');
   const [showCustomCat, setShowCustomCat] = useState(false);
+  // Dernière quantité saisie par boisson : permet d'envoyer la valeur réelle
+  // au blur, même si le re-render n'a pas encore eu lieu.
+  const qtyDraftRef = useRef({});
 
   const isSent = retour?.statut === 'envoye';
   const roleKey = ROLE_ALIASES[roleCode] || roleCode;
@@ -215,23 +218,34 @@ export default function RetourPrestation({ missionId, onBack }) {
   const boissonEntry = key => boissons[key] || { checked: false, qty: '' };
 
   const boissonPayloadEntry = (key, entry) => {
-    const qty = entry.qty === '' ? null : parseInt(String(entry.qty), 10) || null;
+    const raw = entry.qty === '' || entry.qty == null ? null : parseInt(String(entry.qty), 10);
+    const qty = Number.isFinite(raw) && raw > 0 ? raw : null;
     return {
       checked: !!entry.checked,
       qty: entry.checked ? qty : null,
     };
   };
 
+  // Construit la charge utile `boissons_cochees` à partir de l'état local
+  // (source de vérité), en ne renvoyant que les boissons connues du serveur.
+  const buildBoissonsPayload = source => {
+    const payload = { ...(retour?.boissons_cochees || {}) };
+    Object.keys(source).forEach(key => {
+      payload[key] = boissonPayloadEntry(key, source[key]);
+    });
+    return payload;
+  };
+
   const setBoisson = (key, patch) => {
     const current = boissonEntry(key);
     const next = { ...current, ...patch };
-    if (!next.checked) next.qty = '';
+    if (!next.checked) {
+      next.qty = '';
+      delete qtyDraftRef.current[key];
+    }
     setBoissons(prev => ({ ...prev, [key]: next }));
     saveField({
-      boissons_cochees: {
-        ...(retour?.boissons_cochees || {}),
-        [key]: boissonPayloadEntry(key, next),
-      },
+      boissons_cochees: buildBoissonsPayload({ ...boissons, [key]: next }),
     });
   };
 
@@ -239,27 +253,31 @@ export default function RetourPrestation({ missionId, onBack }) {
   // immédiatement par la validation, même si le champ n'a pas encore perdu le
   // focus au moment où l'on appuie sur « Envoyer ».
   const setBoissonQty = (key, text) => {
+    qtyDraftRef.current[key] = text;
     setBoissons(prev => ({
       ...prev,
       [key]: { ...(prev[key] || { checked: false, qty: '' }), qty: text },
     }));
   };
 
-  const commitBoissonQty = (key, text) => {
+  // Persiste la quantité côté backend. La dernière valeur saisie est gardée
+  // dans une ref afin de ne pas dépendre d'une closure de rendu potentiellement
+  // périmée (le `onBlur` peut se déclencher avant le re-render suivant).
+  const commitBoissonQty = key => {
+    const draft = qtyDraftRef.current[key];
     const current = boissonEntry(key);
+    const text =
+      draft !== undefined
+        ? draft
+        : current.qty === ''
+        ? ''
+        : String(parseInt(current.qty, 10) || '');
     const next = { ...current, qty: text };
-    setBoissons(prev => ({
-      ...prev,
-      [key]: { ...next, qty: text === '' ? '' : String(parseInt(text, 10) || '') },
-    }));
+    setBoissons(prev => ({ ...prev, [key]: next }));
     saveField({
-      boissons_cochees: {
-        ...(retour?.boissons_cochees || {}),
-        [key]: boissonPayloadEntry(key, next),
-      },
+      boissons_cochees: buildBoissonsPayload({ ...boissons, [key]: next }),
     });
   };
-
   const updateDraft = (field, value) => {
     setDrafts(prev => ({ ...prev, [field]: value }));
   };
@@ -530,16 +548,12 @@ export default function RetourPrestation({ missionId, onBack }) {
                   </Pressable>
                   {entry.checked ? (
                     <TextInput
-                      defaultValue={String(entry.qty ?? '')}
+                      value={String(entry.qty ?? '')}
                       keyboardType="number-pad"
-                      onBlur={event =>
-                        setBoisson(drink.key, {
-                          qty:
-                            event.nativeEvent.text === ''
-                              ? null
-                              : parseInt(event.nativeEvent.text, 10) || null,
-                        })
+                      onChangeText={text =>
+                        setBoissonQty(drink.key, text.replace(/[^0-9]/g, ''))
                       }
+                      onBlur={() => commitBoissonQty(drink.key)}
                       placeholder="Qté"
                       placeholderTextColor="#bbb"
                       style={[
