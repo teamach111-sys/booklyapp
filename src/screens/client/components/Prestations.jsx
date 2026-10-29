@@ -47,6 +47,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   ScrollView,
   Text,
@@ -92,6 +93,7 @@ import BottomSheet from './BottomSheet';
 import DatePicker from '../../../components/DatePicker';
 import TimePicker from '../../../components/TimePicker';
 import clientService from '../../../api/clientService';
+import { API_BASE_URL } from '../../../config/env';
 
 /* ── Constants (mirrors staffly-frontend MissionList/MissionForm) ── */
 
@@ -1133,6 +1135,7 @@ function MissionForm({ mission, mode, activeSite, onBack, onSaved, styles, color
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [autoSavedAt, setAutoSavedAt] = useState(null);
   const [isApproved, setIsApproved] = useState(false);
+  const [favorites, setFavorites] = useState([]);
 
   const draftIdRef = useRef(isEdit ? mission?.id : null);
   const lastSnapshotRef = useRef(null);
@@ -1167,9 +1170,10 @@ function MissionForm({ mission, mode, activeSite, onBack, onSaved, styles, color
     const load = async () => {
       setLoading(true);
       try {
-        const [opts, profile] = await Promise.all([
+        const [opts, profile, favData] = await Promise.all([
           clientService.getMissionFormOptions(activeSite.id),
           clientService.getClientProfile(),
+          clientService.getFavoritesBySpace(activeSite.id),
         ]);
         if (!alive) return;
 
@@ -1179,6 +1183,7 @@ function MissionForm({ mission, mode, activeSite, onBack, onSaved, styles, color
           types: opts?.types || [],
         });
         setClientId(String(profile?.personal_info?.client_id || ''));
+        setFavorites(favData?.favorites || []);
 
         const isComet = (profile?.business_info?.raison_sociale || '')
           .toUpperCase()
@@ -1274,6 +1279,17 @@ function MissionForm({ mission, mode, activeSite, onBack, onSaved, styles, color
       alive = false;
     };
   }, [activeSite?.id, activeSite?.address, activeSite?.adresse, mission?.id, isEdit, mission]);
+
+  /* ── Re-fetch favorites with availability when dates change (mirrors web) ── */
+  useEffect(() => {
+    if (loading || !clientId || !form.date_debut || !form.date_fin) return;
+    const debut = form.startTime ? `${form.date_debut} ${form.startTime}` : form.date_debut;
+    const fin = form.endTime ? `${form.date_fin} ${form.endTime}` : form.date_fin;
+    clientService
+      .getFavoritesBySpace(activeSite.id, debut, fin)
+      .then(data => setFavorites(data?.favorites || []))
+      .catch(() => {});
+  }, [form.date_debut, form.date_fin, form.startTime, form.endTime, activeSite.id, loading, clientId]);
 
   const patch = useCallback((key, value) => setForm(p => ({ ...p, [key]: value })), []);
 
@@ -1405,6 +1421,79 @@ function MissionForm({ mission, mode, activeSite, onBack, onSaved, styles, color
     [activeSite.id],
   );
 
+  /* ── Flat list of all staff slots across blocks (for nominations UI) ── */
+  const flatSlots = form.event_blocks.flatMap(b =>
+    b.staff_requirements.map(r => ({
+      ...r,
+      blockLabel: (b.prestation_type_detail || ''),
+    })),
+  );
+  const requiredQuals = flatSlots.map(r => r.qualification_code).filter(Boolean);
+
+  /* ── Nomination helpers (mirrors staffly-frontend MissionForm) ── */
+  const slotsOverlap = (aS, aE, bS, bE) => {
+    const m = t => {
+      if (!t) return null;
+      const [h, mi] = String(t).split(':').map(Number);
+      return h * 60 + (mi || 0);
+    };
+    const as = m(aS), ae0 = m(aE), bs = m(bS), be0 = m(bE);
+    if (as === null || ae0 === null || bs === null || be0 === null) return true;
+    const ae = ae0 <= as ? ae0 + 1440 : ae0;
+    const be = be0 <= bs ? be0 + 1440 : be0;
+    return [-1440, 0, 1440].some(off => as < be + off && bs + off < ae);
+  };
+
+  const extraClashes = (extraId, requirementUid) => {
+    const all = form.event_blocks.flatMap(b => b.staff_requirements);
+    const target = all.find(r => r.uid === requirementUid);
+    if (!target) return false;
+    return form.nominations.some(n => {
+      if (n.extra_id !== extraId || n.requirement_uid === requirementUid) return false;
+      const o = all.find(r => r.uid === n.requirement_uid);
+      return o && slotsOverlap(o.heure_debut, o.heure_fin, target.heure_debut, target.heure_fin);
+    });
+  };
+
+  const toggleNomination = (extraId, qualCode, requirementUid) => {
+    const exists = form.nominations.find(
+      n => n.extra_id === extraId && n.requirement_uid === requirementUid,
+    );
+    if (exists) {
+      setForm(p => ({
+        ...p,
+        nominations: p.nominations.filter(
+          n => !(n.extra_id === extraId && n.requirement_uid === requirementUid),
+        ),
+      }));
+      return;
+    }
+    if (extraClashes(extraId, requirementUid)) {
+      Alert.alert('Conflit', "Cet extra a déjà un créneau qui chevauche celui-ci.");
+      return;
+    }
+    setForm(p => ({
+      ...p,
+      nominations: [
+        ...p.nominations,
+        { extra_id: extraId, qualification_code: qualCode, requirement_uid: requirementUid },
+      ],
+    }));
+  };
+
+  const buildNominationsPayload = useCallback(currentForm => {
+    const allSlots = currentForm.event_blocks.flatMap(b => b.staff_requirements);
+    return currentForm.nominations.map(n => {
+      const slot = allSlots.find(r => r.uid === n.requirement_uid);
+      return {
+        extra_id: n.extra_id,
+        qualification_code: n.qualification_code,
+        heure_debut: slot?.heure_debut || null,
+        heure_fin: slot?.heure_fin || null,
+      };
+    });
+  }, []);
+
   /* ── 30 s autosave (draft) ── */
   useEffect(() => {
     if (loading) return;
@@ -1527,6 +1616,14 @@ function MissionForm({ mission, mode, activeSite, onBack, onSaved, styles, color
         draftIdRef.current = missionId;
       }
       if (pendingFiles.length && missionId) await uploadPendingFiles(missionId);
+
+      if (form.nominations.length > 0 && missionId) {
+        try {
+          await clientService.nominateExtras(missionId, buildNominationsPayload(form));
+        } catch {
+          Alert.alert('Nominations', "Mission enregistrée mais certaines nominations ont échoué.");
+        }
+      }
       onSaved();
     } catch (err) {
       Alert.alert('Erreur', err?.error || err?.message || "Erreur lors de l'enregistrement.");
@@ -1899,6 +1996,190 @@ function MissionForm({ mission, mode, activeSite, onBack, onSaved, styles, color
             <Text style={styles.addStaffText}>Ajouter un type d'événement</Text>
           </Pressable>
         </View>
+
+        {/* Choix des extras (nominations) */}
+        {requiredQuals.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitlePlain}>
+              Choix des extras{' '}
+              <Text style={styles.cardTitleMuted}>(optionnel)</Text>
+            </Text>
+
+            {(!form.date_debut || !form.date_fin) && (
+              <View style={styles.warnBanner}>
+                <CircleAlert size={14} color="#f57f17" />
+                <Text style={styles.warnText}>
+                  Renseignez les dates de l'évènement pour voir la disponibilité des extras.
+                </Text>
+              </View>
+            )}
+
+            {flatSlots
+              .filter(r => r.qualification_code)
+              .map(req => {
+                const qLabel =
+                  options.qualifications.find(q => q.code === req.qualification_code)?.libelle ||
+                  req.qualification_code;
+                const slotNoms = form.nominations.filter(
+                  n => n.requirement_uid === req.uid,
+                );
+                const isFull = slotNoms.length >= req.count;
+                const eligible = favorites.filter(
+                  fav => fav.qualifications?.includes(req.qualification_code),
+                );
+                const sameQualSlots = flatSlots.filter(
+                  r => r.qualification_code === req.qualification_code,
+                );
+                const optionIndex = sameQualSlots.findIndex(r => r.uid === req.uid) + 1;
+                const hasOptions = sameQualSlots.length > 1;
+
+                return (
+                  <View key={req.uid} style={styles.nomSlotWrap}>
+                    <View style={styles.nomSlotHeader}>
+                      {req.blockLabel ? (
+                        <View style={styles.nomBlockBadge}>
+                          <Text style={styles.nomBlockBadgeText}>{req.blockLabel}</Text>
+                        </View>
+                      ) : null}
+                      <Text style={styles.nomQualLabel}>{qLabel}</Text>
+                      {hasOptions && (
+                        <View style={styles.nomOptionBadge}>
+                          <Text style={styles.nomOptionBadgeText}>Option {optionIndex}</Text>
+                        </View>
+                      )}
+                      {req.heure_debut && req.heure_fin ? (
+                        <View style={styles.nomTimeBadge}>
+                          <Text style={styles.nomTimeBadgeText}>
+                            {req.heure_debut} → {req.heure_fin}
+                          </Text>
+                        </View>
+                      ) : null}
+                      <Text
+                        style={[
+                          styles.nomCount,
+                          { color: isFull ? '#2e7d32' : '#aaa' },
+                        ]}
+                      >
+                        {slotNoms.length}/{req.count} assigné(s)
+                      </Text>
+                    </View>
+
+                    {eligible.length === 0 ? (
+                      <Text style={styles.nomEmpty}>
+                        Aucun favori ne correspond à ce poste.
+                      </Text>
+                    ) : (
+                      <View style={styles.nomList}>
+                        {eligible.map(fav => {
+                          const nominatedHere = slotNoms.find(
+                            n => n.extra_id === fav.id,
+                          );
+                          const nominatedElsewhere =
+                            !nominatedHere && extraClashes(fav.id, req.uid);
+                          const status = fav.availability_status || 'unknown';
+                          const isBlocked = status === 'busy' || status === 'unavailable';
+                          const statusLabel =
+                            status === 'available'
+                              ? 'Disponible'
+                              : status === 'busy'
+                                ? 'Déjà réservé'
+                                : status === 'unavailable'
+                                  ? 'Non disponible'
+                                  : null;
+                          const statusColor =
+                            status === 'available'
+                              ? '#2e7d32'
+                              : status === 'busy'
+                                ? '#f57f17'
+                                : status === 'unavailable'
+                                  ? '#9b1c1c'
+                                  : '#aaa';
+                          const dimmed = isBlocked || nominatedElsewhere;
+
+                          const favPhotoSrc = fav.profile_photo_url
+                            ? fav.profile_photo_url.startsWith('http')
+                              ? fav.profile_photo_url
+                              : `${API_BASE_URL.replace('/api', '')}/${fav.profile_photo_url}`
+                            : null;
+                          const favInitials = (
+                            (fav.firstname?.[0] || '') + (fav.name?.[0] || '')
+                          ).toUpperCase();
+
+                          return (
+                            <View
+                              key={fav.id}
+                              style={[
+                                styles.nomItem,
+                                nominatedHere && styles.nomItemSelected,
+                                { opacity: dimmed ? 0.6 : 1 },
+                              ]}
+                            >
+                              {favPhotoSrc ? (
+                                <Image
+                                  source={{ uri: favPhotoSrc }}
+                                  style={styles.nomAvatar}
+                                />
+                              ) : (
+                                <View style={styles.nomAvatar}>
+                                  <Text style={styles.nomAvatarText}>
+                                    {favInitials || '?'}
+                                  </Text>
+                                </View>
+                              )}
+
+                              <View style={{ flex: 1, minWidth: 0 }}>
+                                <Text style={styles.nomName} numberOfLines={1}>
+                                  {fav.firstname} {fav.name}
+                                </Text>
+                                {statusLabel && (
+                                  <Text style={{ fontSize: 10, fontWeight: '700', color: statusColor }}>
+                                    {statusLabel}
+                                  </Text>
+                                )}
+                              </View>
+
+                              {isBlocked ? (
+                                <Text style={styles.nomDisabled}>Non disponible</Text>
+                              ) : nominatedHere ? (
+                                <Pressable
+                                  onPress={() =>
+                                    toggleNomination(fav.id, req.qualification_code, req.uid)
+                                  }
+                                  style={styles.nomRemoveBtn}
+                                >
+                                  <X size={12} color="#9b1c1c" />
+                                </Pressable>
+                              ) : nominatedElsewhere ? (
+                                <Text style={styles.nomDisabled}>
+                                  Chevauche un autre créneau
+                                </Text>
+                              ) : isFull ? (
+                                <Text style={styles.nomDisabled}>Complet</Text>
+                              ) : (
+                                <Pressable
+                                  onPress={() =>
+                                    toggleNomination(fav.id, req.qualification_code, req.uid)
+                                  }
+                                  style={styles.nomChooseBtn}
+                                >
+                                  <User size={11} color={colors.orangeDark} />
+                                  <Text style={styles.nomChooseText}>
+                                    {req.heure_debut && req.heure_fin
+                                      ? `${req.heure_debut} → ${req.heure_fin}`
+                                      : 'Choisir'}
+                                  </Text>
+                                </Pressable>
+                              )}
+                            </View>
+                          );
+                        })}
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+          </View>
+        )}
 
         {/* Pièces jointes */}
         <View style={styles.card}>
