@@ -14,7 +14,7 @@
  * 
  * =====================================================================
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Modal,
@@ -187,32 +187,40 @@ const cities = [
   'Goussainville',
 ];
 
+// Langues parlées — `code` must exist in the `langues` table (FK constraint
+// on extras_langues.code_langue), `label` is what we display to the user.
 const languages = [
-  'Français',
-  'Anglais',
-  'Espagnol',
-  'Arabe',
-  'Allemand',
-  'Italien',
-  'Portugais',
-  'Chinois',
+  { code: 'FR', label: 'Français' },
+  { code: 'EN', label: 'Anglais' },
+  { code: 'ES', label: 'Espagnol' },
+  { code: 'AR', label: 'Arabe' },
+  { code: 'DE', label: 'Allemand' },
+  { code: 'IT', label: 'Italien' },
+  { code: 'PT', label: 'Portugais' },
+  { code: 'ZH', label: 'Chinois' },
 ];
 
-const qualifications = [
-  'Barista',
-  'Chef de cuisine',
-  'Chef de partie',
-  'Chef de rang',
-  'Commis',
-  'Commis de salle',
-  'Équipier MK',
-  'Maître d’hôtel CKDIN',
-  'Maître d’hôtel référent',
-  'Maître d’hôtel responsable',
-  'Maître d’hôtel',
-  'Mixologue',
-  'Plongeur',
+// Fallback catalog used when the API is unreachable. Mirrors the shape
+// returned by GET /qualifications/public: [{ code, libelle, description, quiz }].
+// The quiz is [{ question, options[] }] — options are NOT shuffled here (the
+// web app shuffles at render time; we do the same via useMemo below).
+const FALLBACK_QUALIFICATIONS = [
+  { code: 'BARISTA', libelle: 'Barista', quiz: [] },
+  { code: 'CHEF_DE_CUISINE', libelle: 'Chef de cuisine', quiz: [] },
+  { code: 'CHEF_DE_PARTIE', libelle: 'Chef de partie', quiz: [] },
+  { code: 'CHEF_DE_RANG', libelle: 'Chef de rang', quiz: [] },
+  { code: 'COMMIS', libelle: 'Commis', quiz: [] },
+  { code: 'MK_POLYVALENT_DTD', libelle: 'Commis de salle', quiz: [] },
+  { code: 'EQUIPIER_MK', libelle: 'Équipier MK', quiz: [] },
+  { code: 'MAITRE_HOTEL_CKDIN', libelle: 'Maître d’hôtel CKDIN', quiz: [] },
+  { code: 'MAITRE_HOTEL_REFERENT', libelle: 'Maître d’hôtel référent', quiz: [] },
+  { code: 'MAITRE_HOTEL_RESPONSABLE', libelle: 'Maître d’hôtel responsable', quiz: [] },
+  { code: 'MAITRE_HOTEL', libelle: 'Maitre d’hôtel', quiz: [] },
+  { code: 'MIXOLOGUE', libelle: 'Mixologue', quiz: [] },
+  { code: 'PLONGEUR', libelle: 'Plongeur', quiz: [] },
 ];
+
+const ANSWER_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 const skills = [
   {
@@ -271,142 +279,12 @@ const skills = [
   },
 ];
 
-// Step 6 shows the validation questionnaire matching each qualification the
-// extra selected. Only the roles below have a questionnaire today — add a new
-// entry here to support another qualification.
-const questionnaires = {
-  Barista: [
-    {
-      question:
-        'Q1. Pendant une pause de séminaire, 40 personnes arrivent en même temps au stand café.',
-      answers: [
-        'Servir uniquement les cafés simples',
-        "Dire aux invités d'attendre",
-        'Prendre chaque commande sans organisation',
-        'Organiser les commandes par type (espresso, allongé, cappuccino) pour fluidifier le service',
-      ],
-    },
-    {
-      question: 'Q2. Entre deux vagues de service, vous devez :',
-      answers: [
-        'Vous éloigner du poste',
-        'Laisser le plan de travail encombré',
-        'Attendre la prochaine demande',
-        'Nettoyer et réorganiser votre poste pour rester efficace',
-      ],
-    },
-    {
-      question: "Q3. Un client se plaint que son café n'est 'pas assez chaud'.",
-      answers: [
-        "Ajouter de l'eau chaude",
-        "Dire que c'est la température standard",
-        'Refaire le café immédiatement avec professionnalisme',
-        'Ignorer',
-      ],
-    },
-  ],
-  'Chef de cuisine': [
-    {
-      question:
-        'Q1. Pour un événement de 400 couverts avec envoi simultané, votre priorité en amont est :',
-      answers: [
-        "Déléguer toute l'organisation",
-        'Structurer la production (planning, répartition des postes, volumes, timing) en amont',
-        'Vous concentrer uniquement sur les recettes',
-        "Attendre d'être sur site pour ajuster",
-      ],
-    },
-    {
-      question:
-        "Q2. Le maître d'hôtel annonce que le client souhaite accélérer le rythme du dîner.",
-      answers: [
-        'Évaluer immédiatement la faisabilité avec vos équipes et coordonner un ajustement réaliste',
-        'Ignorer la demande',
-        'Refuser catégoriquement',
-        'Envoyer plus vite sans prévenir',
-      ],
-    },
-    {
-      question: 'Q3. Après le service, votre rôle est :',
-      answers: [
-        'Laisser les chefs de partie gérer seuls',
-        "Vérifier que la cuisine est rangée, propre et que l'équipe a terminé correctement avant départ",
-        "Partir une fois l'envoi terminé",
-        'Vous concentrer uniquement sur le démontage matériel',
-      ],
-    },
-  ],
-  'Chef de partie': [
-    {
-      question:
-        'Q1. Pour un dîner de 250 couverts avec envoi simultané, votre priorité est :',
-      answers: [
-        'Soigner uniquement le premier envoi',
-        'Aller le plus vite possible',
-        'Organiser votre poste et briefer les équipes',
-        "Préparer un maximum d'assiettes en avance",
-      ],
-    },
-    {
-      question:
-        "Q2. Le maître d'hôtel responsable annonce que le client avance le plat de 15 minutes.",
-      answers: [
-        "Adapter immédiatement l'organisation du poste et prévenir les équipes en cuisine",
-        "Refuser car ce n'était pas prévu",
-        'Continuer comme prévu',
-        'Prioriser la vitesse, même si la qualité diminue',
-      ],
-    },
-    {
-      question:
-        "Q3. Le service est terminé mais votre poste n'est pas totalement nettoyé.",
-      answers: [
-        "Attendre qu'on vous dise quoi faire",
-        'Partir car le service est terminé',
-        'Nettoyer et laisser un poste propre avant de quitter la prestation',
-        'Laisser les commis terminer seuls',
-      ],
-    },
-  ],
-  'Chef de rang': [
-    {
-      question:
-        'Q1. Le buffet commence à se vider rapidement et la présentation se dégrade. Que faites-vous ?',
-      answers: [
-        'Organiser le réassort, maintenir la présentation et anticiper la rupture',
-        'Laisser les responsables gérer',
-        'Fermer le buffet temporairement',
-        'Attendre le réassort cuisine',
-      ],
-    },
-    {
-      question: 'Q2. Le bar est saturé et les invités attendent.',
-      answers: [
-        'Laisser le barman gérer seul',
-        "Venir en renfort et réorganiser le flux avec l'accord du maître d'hôtel responsable",
-        'Quitter son poste pour venir en renfort',
-        "Dire aux invités d'attendre",
-      ],
-    },
-    {
-      question:
-        "Q3. Lors d'un cocktail, vous remarquez que la consommation de vin blanc est beaucoup plus rapide que prévu. Que faites-vous ?",
-      answers: [
-        "Continuer normalement, ce n'est pas votre responsabilité",
-        'Réduire les quantités servies sans prévenir',
-        'Attendre que le stock soit totalement vide',
-        "Prévenir immédiatement le maître d'hôtel responsable et anticiper une solution",
-      ],
-    },
-  ],
-};
-
 const documentGroups = [
   {
     files: [{ key: 'photo_profil', label: 'Photo de profil' }],
   },
   {
-    title: "Pièce d'identité",
+    title: "Pièce d’identité",
     files: [
       { key: 'cni_recto', label: 'CNI Recto' },
       { key: 'cni_verso', label: 'CNI Verso' },
@@ -696,58 +574,98 @@ export default function ExtraRegisterScreen({ navigation }) {
     authService
       .getPublicQualifications()
       .then(data => {
-        if (Array.isArray(data)) {
-          setCatalogQualifications(data.map(q => q.name || q.label || q));
+        if (Array.isArray(data) && data.length > 0) {
+          // Normalize: API returns { code, libelle, description, quiz }
+          setCatalogQualifications(
+            data.map(q => ({
+              code: q.code,
+              libelle: q.libelle || q.label || q.name || q.code,
+              description: q.description || '',
+              quiz: Array.isArray(q.quiz) ? q.quiz : [],
+            })),
+          );
         }
       })
       .catch(() => {
-        // Fall back to default catalog
+        // Fall back to hardcoded catalog (FALLBACK_QUALIFICATIONS)
       });
   }, []);
+
+  // The qualification list the user picks from: API catalog if loaded,
+  // fallback otherwise. Same shape [{ code, libelle, quiz }] either way.
+  const qualifications = catalogQualifications || FALLBACK_QUALIFICATIONS;
 
   const updateValue = (name, value) => {
     setValues(current => ({ ...current, [name]: value }));
     if (name === 'email') setEmailError('');
   };
-  const toggleLanguage = language => {
+  const toggleLanguage = code => {
     setValues(current => ({
       ...current,
-      languages: current.languages.includes(language)
-        ? current.languages.filter(item => item !== language)
-        : [...current.languages, language],
+      languages: current.languages.includes(code)
+        ? current.languages.filter(item => item !== code)
+        : [...current.languages, code],
     }));
   };
-  const toggleQualification = qualification => {
+  const toggleQualification = code => {
     setSelectedQualifications(current =>
-      current.includes(qualification)
-        ? current.filter(item => item !== qualification)
-        : [...current, qualification],
+      current.includes(code)
+        ? current.filter(item => item !== code)
+        : [...current, code],
     );
+    // Clear quiz answers for a qualification that was just deselected,
+    // so stale answers don't linger if the user re-selects it later.
+    setQuestionnaireAnswers(current => {
+      if (!current[code]) return current;
+      const next = { ...current };
+      delete next[code];
+      return next;
+    });
   };
   const toggleConsent = name => {
     setAccepted(current => ({ ...current, [name]: !current[name] }));
   };
-  const setQuestionnaireAnswer = (qualification, questionIndex, answerIndex) => {
+
+  // Quiz answers: { QUAL_CODE: { questionIndex: "A"|"B"|"C"|"D" } }
+  // — letters, not indices, matching what the backend compares against
+  // correct_option in qualification_quiz_questions.
+  const setQuizAnswer = (qualCode, questionIndex, letter) => {
     setQuestionnaireAnswers(current => ({
       ...current,
-      [qualification]: {
-        ...current[qualification],
-        [questionIndex]: answerIndex,
+      [qualCode]: {
+        ...(current[qualCode] || {}),
+        [questionIndex]: letter,
       },
     }));
   };
 
-  const questionnaireQualifications = selectedQualifications.filter(
-    qualification => questionnaires[qualification],
-  );
-  const hasQuestionnaire = questionnaireQualifications.length > 0;
-  const questionnaireComplete = questionnaireQualifications.every(
-    qualification =>
-      questionnaires[qualification].every(
-        (_, questionIndex) =>
-          questionnaireAnswers[qualification]?.[questionIndex] !== undefined,
-      ),
-  );
+  // Which selected quals actually have a quiz in the catalog?
+  const qualsWithQuiz = selectedQualifications.filter(code => {
+    const q = qualifications.find(item => item.code === code);
+    return q && Array.isArray(q.quiz) && q.quiz.length > 0;
+  });
+  const hasQuestionnaire = qualsWithQuiz.length > 0;
+
+  // Stable per-question answer shuffle order (like the web app's quizOrder).
+  // Computed once when the catalog loads, never re-shuffled during the session.
+  const quizOrder = useMemo(() => {
+    const order = {};
+    qualifications.forEach(q => {
+      order[q.code] = (q.quiz || []).map(question => {
+        const n = question.options?.length || 0;
+        return Array.from({ length: n }, (_, i) => i);
+      });
+    });
+    return order;
+  }, [qualifications]);
+
+  const quizComplete = qualsWithQuiz.every(code => {
+    const q = qualifications.find(item => item.code === code);
+    return (q?.quiz || []).every((_, questionIndex) =>
+      Boolean(questionnaireAnswers[code]?.[questionIndex]),
+    );
+  });
+
   const validationStep = hasQuestionnaire ? baseStepCount : baseStepCount - 1;
   const totalSteps = hasQuestionnaire ? baseStepCount + 1 : baseStepCount;
 
@@ -841,10 +759,12 @@ export default function ExtraRegisterScreen({ navigation }) {
         }
       });
 
-      // AE status
+      // AE status — eligibility keys are 'active' | 'pending' | 'none'.
+      // Backend validation only accepts 'active' or 'en_cours'. The 'none'
+      // case is blocked by the wizard (step -2) and never reaches finish().
       formData.append(
         'statut_ae',
-        eligibility === 'ae' ? 'oui' : eligibility === 'in_progress' ? 'en_cours' : 'non',
+        eligibility === 'active' ? 'active' : eligibility === 'pending' ? 'en_cours' : 'non',
       );
 
       // Qualifications
@@ -933,7 +853,7 @@ export default function ExtraRegisterScreen({ navigation }) {
         icon={<ArrowRight size={15} color={colors.white} />}
         disabled={!eligibility}
         onPress={goNext}
-        title="Commencer l'inscription"
+        title="Commencer l’inscription"
         style={styles.eligibilityButton}
       />
     </>
@@ -1032,7 +952,7 @@ export default function ExtraRegisterScreen({ navigation }) {
         onChange={value => updateValue('has_permis_b', value)}
       />
       <ChoiceRow
-        label="Seriez-vous d'accord de conduire un camion ?"
+        label="Seriez-vous d’accord de conduire un camion ?"
         value={values.accepte_camion}
         onChange={value => updateValue('accepte_camion', value)}
       />
@@ -1045,13 +965,13 @@ export default function ExtraRegisterScreen({ navigation }) {
         <FieldLabel label="Langues parlées" required />
         <View style={styles.languageOptions}>
           {languages.map(language => {
-            const selected = values.languages.includes(language);
+            const selected = values.languages.includes(language.code);
             return (
               <Pressable
-                key={language}
+                key={language.code}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: selected }}
-                onPress={() => toggleLanguage(language)}
+                onPress={() => toggleLanguage(language.code)}
                 style={[
                   styles.languageButton,
                   selected && styles.selectedLanguageButton,
@@ -1066,7 +986,7 @@ export default function ExtraRegisterScreen({ navigation }) {
                     selected && styles.selectedLanguageButtonText,
                   ]}
                 >
-                  {language}
+                  {language.label}
                 </Text>
               </Pressable>
             );
@@ -1200,13 +1120,13 @@ export default function ExtraRegisterScreen({ navigation }) {
       </Text>
       <View style={styles.qualificationGrid}>
         {qualifications.map(qualification => {
-          const selected = selectedQualifications.includes(qualification);
+          const selected = selectedQualifications.includes(qualification.code);
           return (
             <Pressable
-              key={qualification}
+              key={qualification.code}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: selected }}
-              onPress={() => toggleQualification(qualification)}
+              onPress={() => toggleQualification(qualification.code)}
               style={[
                 styles.qualificationCard,
                 selected && styles.selectedQualification,
@@ -1218,7 +1138,7 @@ export default function ExtraRegisterScreen({ navigation }) {
                   selected && styles.selectedQualificationText,
                 ]}
               >
-                {qualification}
+                {qualification.libelle}
               </Text>
               <View
                 style={[
@@ -1295,60 +1215,69 @@ export default function ExtraRegisterScreen({ navigation }) {
       )}
       <Text style={styles.description}>
         Vos réponses seront évaluées par notre équipe pour valider vos
-        qualifications. Il n'y a pas de temps limite.
+        qualifications. Il n’y a pas de temps limite.
       </Text>
-      {questionnaireQualifications.map(qualification => (
-        <View key={qualification}>
-          <Text style={styles.questionnaireQualification}>{qualification}</Text>
-          {questionnaires[qualification].map((item, questionIndex) => (
-            <View key={item.question} style={styles.questionCard}>
-              <Text style={styles.questionText}>{item.question}</Text>
-              <View style={styles.questionAnswers}>
-                {item.answers.map((answer, answerIndex) => {
-                  const selected =
-                    questionnaireAnswers[qualification]?.[questionIndex] ===
-                    answerIndex;
-                  return (
-                    <Pressable
-                      key={answer}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected }}
-                      onPress={() =>
-                        setQuestionnaireAnswer(
-                          qualification,
-                          questionIndex,
-                          answerIndex,
-                        )
-                      }
-                      style={[
-                        styles.questionAnswer,
-                        selected && styles.selectedQuestionAnswer,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.questionAnswerLetter,
-                          selected && styles.selectedQuestionAnswerText,
-                        ]}
-                      >
-                        {String.fromCharCode(65 + answerIndex)}.
-                      </Text>
-                      <Text
-                        style={[
-                          styles.questionAnswerText,
-                          selected && styles.selectedQuestionAnswerText,
-                        ]}
-                      >
-                        {answer}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-          ))}
-        </View>
-      ))}
+      {qualsWithQuiz.map(qualCode => {
+        const qual = qualifications.find(q => q.code === qualCode);
+        const questions = qual?.quiz || [];
+        return (
+          <View key={qualCode}>
+            <Text style={styles.questionnaireQualification}>
+              {qual?.libelle || qualCode}
+            </Text>
+            {questions.map((item, questionIndex) => {
+              const order = quizOrder[qualCode]?.[questionIndex] ||
+                Array.from({ length: item.options?.length || 0 }, (_, i) => i);
+              const selectedLetter = questionnaireAnswers[qualCode]?.[questionIndex];
+              return (
+                <View key={questionIndex} style={styles.questionCard}>
+                  <Text style={styles.questionText}>
+                    Q{questionIndex + 1}. {item.question}
+                  </Text>
+                  <View style={styles.questionAnswers}>
+                    {order.map((origIdx, displayPos) => {
+                      const displayLetter = ANSWER_LABELS[displayPos];
+                      const origLetter = ANSWER_LABELS[origIdx];
+                      const isSelected = selectedLetter === origLetter;
+                      return (
+                        <Pressable
+                          key={displayLetter}
+                          accessibilityRole="radio"
+                          accessibilityState={{ selected: isSelected }}
+                          onPress={() =>
+                            setQuizAnswer(qualCode, questionIndex, origLetter)
+                          }
+                          style={[
+                            styles.questionAnswer,
+                            isSelected && styles.selectedQuestionAnswer,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.questionAnswerLetter,
+                              isSelected && styles.selectedQuestionAnswerText,
+                            ]}
+                          >
+                            {displayLetter}.
+                          </Text>
+                          <Text
+                            style={[
+                              styles.questionAnswerText,
+                              isSelected && styles.selectedQuestionAnswerText,
+                            ]}
+                          >
+                            {item.options[origIdx]}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        );
+      })}
     </>
   );
 
@@ -1382,7 +1311,13 @@ export default function ExtraRegisterScreen({ navigation }) {
           <BriefcaseBusiness size={14} color="#888888" />
           <Text style={styles.summaryText}>
             {selectedQualifications.length
-              ? selectedQualifications.join(' · ')
+              ? selectedQualifications
+                  .map(
+                    code =>
+                      qualifications.find(q => q.code === code)?.libelle ||
+                      code,
+                  )
+                  .join(' · ')
               : 'Aucune qualification sélectionnée'}
           </Text>
         </View>
@@ -1527,7 +1462,7 @@ export default function ExtraRegisterScreen({ navigation }) {
                   submitting ||
                   checkingEmail ||
                   (step === 3 && selectedQualifications.length === 0) ||
-                  (step === 5 && hasQuestionnaire && !questionnaireComplete) ||
+                  (step === 5 && hasQuestionnaire && !quizComplete) ||
                   (isValidationStep &&
                     !consents.every(([name]) => accepted[name]))
                 }
@@ -1537,7 +1472,7 @@ export default function ExtraRegisterScreen({ navigation }) {
                   isValidationStep
                     ? 'Soumettre mon profil'
                     : step === 2
-                    ? "J'ai compris"
+                    ? "J’ai compris"
                     : 'Suivant'
                 }
               />
