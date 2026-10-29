@@ -64,20 +64,25 @@ const serifFont = Platform.select({
   default: 'Georgia',
 });
 
-const PERIODS = [
-  'Toutes les périodes',
-  'Octobre 2026',
-  'Septembre 2026',
-  'Août 2026',
-  'Juillet 2026',
-  'Juin 2026',
-];
+// Maps the backend's `statut_paiement` values (paye / en_attente / litige /
+// non_generee) to the three filter buckets the UI uses.
+const STATUT_PAIEMENT_MAP = {
+  paye: { key: 'paid', label: 'Payée' },
+  en_attente: { key: 'to_pay', label: 'En attente' },
+  litige: { key: 'overdue', label: 'Litige' },
+  non_generee: { key: 'to_pay', label: 'Non générée' },
+};
 
 const STATUS_FILTERS = [
   { key: 'all', label: 'Toutes' },
   { key: 'to_pay', label: 'À régler' },
-  { key: 'overdue', label: 'En retard' },
+  { key: 'overdue', label: 'Litige' },
   { key: 'paid', label: 'Réglées' },
+];
+
+const MONTHS_FR = [
+  '', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
 ];
 
 export default function Factures() {
@@ -103,39 +108,43 @@ export default function Factures() {
     try {
       const data = await clientService.getMissionsForSpace(activeSite.id);
       const list = Array.isArray(data) ? data : data?.missions || [];
-      const finished = list.filter(
-        m => m.etat_mission === 'Terminée' || m.status === 'Terminée' || m.finished,
-      );
+      // The web frontend filters on `etat_mission === 'Terminée'`.
+      const finished = list.filter(m => m.etat_mission === 'Terminée');
 
       const mapped = finished.map(m => {
-        const isPaid = m.facture_statut === 'paye' || m.paid;
-        const isOverdue = m.facture_statut === 'retard' || m.overdue;
-        const status = isPaid ? 'paid' : isOverdue ? 'overdue' : 'to_pay';
-        const statusLabel = isPaid
-          ? 'Réglée'
-          : isOverdue
-          ? 'En retard'
-          : 'À régler';
-        const extraName = m.extra
-          ? `${m.extra.firstname || ''} ${m.extra.name || ''}`.trim()
-          : m.extra_name || 'Extra assigné';
+        // Map the backend's statut_paiement to our UI status.
+        const sp = m.statut_paiement || 'non_generee';
+        const mappedStatus = STATUT_PAIEMENT_MAP[sp] || STATUT_PAIEMENT_MAP.non_generee;
+        const status = mappedStatus.key;
+        const statusLabel = mappedStatus.label;
+
+        // The backend returns `total_ht` (a number or null). TTC = HT * 1.2.
+        const ht = parseFloat(m.total_ht) || 0;
+        const ttc = Math.round(ht * 1.2 * 100) / 100;
+
+        // Period label from date_debut_raw (ISO) for filtering.
+        const rawDate = m.date_debut_raw || m.date_debut;
+        const parsed = rawDate ? new Date(rawDate) : null;
+        const period = parsed && !isNaN(parsed.getTime())
+          ? `${MONTHS_FR[parsed.getMonth() + 1]} ${parsed.getFullYear()}`
+          : 'Période inconnue';
 
         return {
           id: m.id,
-          number: m.facture_numero || `FAC-M-${m.id}`,
-          date: m.date_debut || m.created_at?.slice(0, 10) || '—',
+          number: `FAC-M-${m.id}`,
+          // Backend returns `nom`, not `prestation_nom`.
+          missionTitle: m.nom || m.prestation_nom || `Mission #${m.id}`,
+          // Backend returns `date` already formatted as d/m/Y.
+          date: m.date || '—',
           status,
           statusLabel,
-          missionTitle: m.prestation_nom || m.titre || `Mission #${m.id}`,
-          extraName,
-          amountTTC: `${m.total_ttc || m.tarif_total || '0'} €`,
-          amountHT: `${m.total_ht || (m.total_ttc ? Math.round(m.total_ttc / 1.2) : '0')} €`,
-          period: m.date_debut
-            ? new Date(m.date_debut).toLocaleDateString('fr-FR', {
-                month: 'long',
-                year: 'numeric',
-              })
-            : 'Période inconnue',
+          // The list endpoint doesn't return extra info — show staff count.
+          extraName: m.staff || `${m.staff_accepted || 0} extra(s)`,
+          amountHT: `${ht.toFixed(2)} €`,
+          amountTTC: `${ttc.toFixed(2)} €`,
+          period,
+          // Keep raw fields for the detail modal.
+          _raw: m,
         };
       });
 
@@ -151,10 +160,18 @@ export default function Factures() {
     loadInvoices();
   }, [loadInvoices]);
 
+  // Reset filters when the active site changes — the period list is rebuilt.
+  useEffect(() => {
+    setSelectedStatus('all');
+    setSelectedPeriodIndex(0);
+    setSearchQuery('');
+  }, [activeSite?.id]);
+
   const openInvoiceDetail = async inv => {
     setLoadingDetail(true);
     try {
       const detail = await clientService.getClientInvoice(inv.id);
+      // Backend returns { mission, breakdown, total_to_pay }
       setSelectedInvoiceDetail({ invoice: inv, detail });
     } catch (err) {
       Alert.alert(
@@ -166,7 +183,25 @@ export default function Factures() {
     }
   };
 
-  const selectedPeriod = PERIODS[selectedPeriodIndex];
+  function closeInvoiceDetail() {
+    setSelectedInvoiceDetail(null);
+  }
+
+  // Build periods dynamically from loaded invoices — mirrors the web's
+  // "Par mois" tab which derives months from the data.
+  const PERIODS = ['Toutes les périodes', ...Array.from(
+    new Set(invoices.map(inv => inv.period).filter(p => p !== 'Période inconnue'))
+  ).sort((a, b) => {
+    // Sort descending: "Octobre 2026" before "Septembre 2026"
+    const ma = a.match(/(\w+)\s+(\d{4})/);
+    const mb = b.match(/(\w+)\s+(\d{4})/);
+    if (!ma || !mb) return b.localeCompare(a);
+    const ya = parseInt(ma[2]), yb = parseInt(mb[2]);
+    if (ya !== yb) return yb - ya;
+    return MONTHS_FR.indexOf(mb[1]) - MONTHS_FR.indexOf(ma[1]);
+  })];
+
+  const selectedPeriod = PERIODS[selectedPeriodIndex] || PERIODS[0];
 
   function resetFilters() {
     setSelectedStatus('all');
@@ -503,6 +538,162 @@ export default function Factures() {
           ))}
         </View>
       )}
+
+      {/* ── Invoice Detail Modal ── */}
+      <Modal
+        animationType="slide"
+        onRequestClose={closeInvoiceDetail}
+        transparent
+        visible={!!selectedInvoiceDetail}
+      >
+        <View style={styles.detailBackdrop}>
+          <View style={styles.detailSheet}>
+            {selectedInvoiceDetail ? (
+              (() => {
+                const { invoice: inv, detail } = selectedInvoiceDetail;
+                const mission = detail?.mission;
+                const breakdown = detail?.breakdown || [];
+                const totalToPay = parseFloat(detail?.total_to_pay) || 0;
+                const ht = Math.round(totalToPay / 1.2 * 100) / 100;
+
+                return (
+                  <>
+                    <View style={styles.detailHeader}>
+                      <Pressable
+                        accessibilityLabel="Retour"
+                        accessibilityRole="button"
+                        hitSlop={8}
+                        onPress={closeInvoiceDetail}
+                        style={styles.detailBackBtn}
+                      >
+                        <ChevronLeft size={18} color={colors.orangeDark} />
+                        <Text style={styles.detailBackText}>Retour</Text>
+                      </Pressable>
+                      <View style={styles.detailTitleWrap}>
+                        <Text style={styles.detailTitle}>
+                          Facture — {mission?.prestation_nom || inv.missionTitle}
+                        </Text>
+                        <Text style={styles.detailSubtitle}>
+                          {inv.number} · {inv.date}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.invoiceStatusBadge,
+                          inv.status === 'paid' && styles.statusBadgePaid,
+                          inv.status === 'to_pay' && styles.statusBadgeToPay,
+                          inv.status === 'overdue' && styles.statusBadgeOverdue,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.invoiceStatusText,
+                            inv.status === 'paid' && styles.statusTextPaid,
+                            inv.status === 'to_pay' && styles.statusTextToPay,
+                            inv.status === 'overdue' && styles.statusTextOverdue,
+                          ]}
+                        >
+                          {inv.statusLabel}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <ScrollView
+                      style={styles.detailScroll}
+                      contentContainerStyle={styles.detailScrollContent}
+                      showsVerticalScrollIndicator={false}
+                    >
+                      {/* Mission info */}
+                      <View style={styles.detailInfoCard}>
+                        <Text style={styles.detailInfoTitle}>
+                          {mission?.prestation_nom || inv.missionTitle}
+                        </Text>
+                        <Text style={styles.detailInfoMeta}>
+                          {inv.date}
+                          {mission?.prestation_type_detail
+                            ? ` · ${mission.prestation_type_detail}`
+                            : ''}
+                          {mission?.adresse_exacte
+                            ? ` · ${mission.adresse_exacte}`
+                            : ''}
+                        </Text>
+                      </View>
+
+                      {/* Breakdown table */}
+                      {breakdown.length > 0 ? (
+                        <View style={styles.breakdownWrap}>
+                          <View style={styles.breakdownHeaderRow}>
+                            <Text style={[styles.breakdownCol, styles.breakdownColExtra]}>Extra</Text>
+                            <Text style={[styles.breakdownCol, styles.breakdownColSmall]}>Poste</Text>
+                            <Text style={[styles.breakdownCol, styles.breakdownColTiny]}>Total h</Text>
+                            <Text style={[styles.breakdownCol, styles.breakdownColTiny]}>Taux</Text>
+                            <Text style={[styles.breakdownCol, styles.breakdownColTiny]}>Sous-total</Text>
+                          </View>
+                          {breakdown.map((s, i) => (
+                            <View key={i} style={styles.breakdownRow}>
+                              <Text style={[styles.breakdownCol, styles.breakdownColExtra, styles.breakdownCellText]}>
+                                {s.extra_name}
+                              </Text>
+                              <Text style={[styles.breakdownCol, styles.breakdownColSmall, styles.breakdownCellText]}>
+                                {s.job_title}
+                              </Text>
+                              <Text style={[styles.breakdownCol, styles.breakdownColTiny, styles.breakdownCellText]}>
+                                {s.total_hours}h
+                              </Text>
+                              <Text style={[styles.breakdownCol, styles.breakdownColTiny, styles.breakdownCellText]}>
+                                {s.hourly_rate}€/h
+                              </Text>
+                              <Text style={[styles.breakdownCol, styles.breakdownColTiny, styles.breakdownCellBold]}>
+                                {Number(s.subtotal || 0).toFixed(2)}€
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      ) : (
+                        <Text style={styles.noBreakdownText}>
+                          Aucun détail de staffing disponible.
+                        </Text>
+                      )}
+
+                      {/* Reviews */}
+                      {breakdown.some(s => s.review) ? (
+                        <View style={styles.reviewsBox}>
+                          {breakdown.filter(s => s.review).map((s, i) => (
+                            <Text key={i} style={styles.reviewText}>
+                              <Text style={styles.reviewAuthor}>{s.extra_name} : </Text>
+                              "{s.review}"
+                            </Text>
+                          ))}
+                        </View>
+                      ) : null}
+                    </ScrollView>
+
+                    {/* Grand total */}
+                    <View style={styles.detailTotalRow}>
+                      <View>
+                        <Text style={styles.detailTotalLabel}>TOTAL À PAYER</Text>
+                        <Text style={styles.detailTotalHT}>{ht.toFixed(2)} € HT</Text>
+                      </View>
+                      <Text style={styles.detailTotalAmount}>
+                        {totalToPay.toFixed(2)} € TTC
+                      </Text>
+                    </View>
+                  </>
+                );
+              })()
+            ) : null}
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Loading detail overlay ── */}
+      {loadingDetail ? (
+        <Modal animationType="fade" transparent visible>
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={colors.orange} />
+          </View>
+        </Modal>
+      ) : null}
     </View>
   );
 }
@@ -860,6 +1051,177 @@ const createStyles = colors => StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: colors.orangeDark,
+  },
+
+  /* ── Invoice Detail Modal ── */
+  detailBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  detailSheet: {
+    maxHeight: '92%',
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingTop: 12,
+    paddingBottom: 20,
+  },
+  detailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0E4DD',
+  },
+  detailBackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#E0D0C8',
+  },
+  detailBackText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.orangeDark,
+  },
+  detailTitleWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  detailTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.orangeDark,
+    fontFamily: serifFont,
+  },
+  detailSubtitle: {
+    fontSize: 11,
+    color: '#AAAAAA',
+  },
+  detailScroll: {
+    maxHeight: 400,
+  },
+  detailScrollContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  detailInfoCard: {
+    backgroundColor: '#FAF6F4',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ECDDD6',
+    padding: 12,
+    gap: 4,
+  },
+  detailInfoTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  detailInfoMeta: {
+    fontSize: 11,
+    color: '#888888',
+  },
+  breakdownWrap: {
+    borderWidth: 1,
+    borderColor: '#ECDDD6',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  breakdownHeaderRow: {
+    flexDirection: 'row',
+    backgroundColor: '#FAF6F4',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0E4DD',
+  },
+  breakdownRow: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F9F0EB',
+  },
+  breakdownCol: {
+    fontSize: 10,
+  },
+  breakdownColExtra: {
+    flex: 2.5,
+  },
+  breakdownColSmall: {
+    flex: 2,
+  },
+  breakdownColTiny: {
+    flex: 1.3,
+    textAlign: 'right',
+  },
+  breakdownCellText: {
+    color: '#555555',
+  },
+  breakdownCellBold: {
+    fontWeight: '700',
+    color: colors.orange,
+  },
+  noBreakdownText: {
+    fontSize: 12,
+    color: '#AAAAAA',
+    textAlign: 'center',
+    paddingVertical: 20,
+  },
+  reviewsBox: {
+    backgroundColor: '#FAF6F4',
+    borderRadius: 8,
+    padding: 10,
+    gap: 4,
+  },
+  reviewText: {
+    fontSize: 12,
+    color: '#666666',
+    fontStyle: 'italic',
+  },
+  reviewAuthor: {
+    fontWeight: '700',
+    fontStyle: 'normal',
+  },
+  detailTotalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#F0E4DD',
+  },
+  detailTotalLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#AAAAAA',
+  },
+  detailTotalHT: {
+    fontSize: 11,
+    color: '#BBBBBB',
+    marginTop: 2,
+  },
+  detailTotalAmount: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.orange,
+    fontFamily: serifFont,
+  },
+  loadingOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 const stylesByBrand = createBrandStyles(createStyles);
