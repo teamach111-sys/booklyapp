@@ -15,7 +15,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -24,6 +23,7 @@ import {
   View,
   Alert,
 } from 'react-native';
+import SafeAreaModal from '../../../components/SafeAreaModal';
 import {
   Calendar,
   Check,
@@ -490,7 +490,7 @@ export default function ClientHistorique({ selectedSpace } = {}) {
         ) : null}
 
         {/* Type options bottom sheet */}
-        <Modal
+        <SafeAreaModal
           animationType="fade"
           onRequestClose={() => setShowTypeDropdown(false)}
           transparent
@@ -537,7 +537,7 @@ export default function ClientHistorique({ selectedSpace } = {}) {
               </ScrollView>
             </Pressable>
           </Pressable>
-        </Modal>
+        </SafeAreaModal>
       </View>
 
       {/* ── Content ── */}

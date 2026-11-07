@@ -31,13 +31,13 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Modal,
   Pressable,
   ScrollView,
   StatusBar,
   Text,
   View,
 } from 'react-native';
+import SafeAreaModal from '../../components/SafeAreaModal';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Ban,
@@ -315,7 +315,7 @@ export default function ExtrasScreen({ navigation }) {
         </View>
       </View>
 
-      <Modal
+      <SafeAreaModal
         animationType="slide"
         onRequestClose={() => setMenuOpen(false)}
         transparent
@@ -410,7 +410,7 @@ export default function ExtrasScreen({ navigation }) {
             </View>
           </Pressable>
         </Pressable>
-      </Modal>
+      </SafeAreaModal>
     </SafeAreaView>
   );
 }

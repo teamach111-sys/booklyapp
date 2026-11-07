@@ -15,7 +15,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import {
   Briefcase,
   Calendar,
@@ -30,6 +30,7 @@ import {
 import { colors } from '../../../styles';
 import { extras } from '../styles';
 import { extraRecapGlobal as styles } from './styles';
+import SafeAreaModal from '../../../components/SafeAreaModal';
 import {
   getCompletedMissions,
   generateExtraInvoice,
@@ -330,7 +331,7 @@ export default function ExtraRecapGlobal({ onGoToInvoice }) {
       )}
 
       {/* Generate modal */}
-      <Modal
+      <SafeAreaModal
         animationType="fade"
         onRequestClose={() => setShowGenModal(false)}
         transparent
@@ -465,7 +466,7 @@ export default function ExtraRecapGlobal({ onGoToInvoice }) {
             </ScrollView>
           </Pressable>
         </Pressable>
-      </Modal>
+      </SafeAreaModal>
     </View>
   );
 }

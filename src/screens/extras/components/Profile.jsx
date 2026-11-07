@@ -27,13 +27,13 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Image,
-  Modal,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import SafeAreaModal from '../../../components/SafeAreaModal';
 import {
   errorCodes,
   isErrorWithCode,
@@ -234,7 +234,7 @@ function CheckField({ label, checked, onToggle }) {
 /* Mobile stand-in for the web <select>: a bottom sheet listing the options. */
 function OptionSheet({ visible, title, options, value, onSelect, onClose }) {
   return (
-    <Modal
+    <SafeAreaModal
       animationType="fade"
       onRequestClose={onClose}
       transparent
@@ -279,7 +279,7 @@ function OptionSheet({ visible, title, options, value, onSelect, onClose }) {
           </ScrollView>
         </Pressable>
       </Pressable>
-    </Modal>
+    </SafeAreaModal>
   );
 }
 

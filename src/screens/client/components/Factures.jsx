@@ -34,7 +34,6 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -43,6 +42,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import SafeAreaModal from '../../../components/SafeAreaModal';
 import {
   Check,
   ChevronDown,
@@ -345,7 +345,7 @@ export default function Factures() {
         </View>
 
         {/* Period options bottom sheet */}
-        <Modal
+        <SafeAreaModal
           animationType="fade"
           onRequestClose={() => setShowPeriodDropdown(false)}
           transparent
@@ -394,7 +394,7 @@ export default function Factures() {
               </ScrollView>
             </Pressable>
           </Pressable>
-        </Modal>
+        </SafeAreaModal>
 
         {/* Row 2: Status Pills + Reset Button */}
         <View style={styles.filterBottomRow}>
@@ -540,7 +540,7 @@ export default function Factures() {
       )}
 
       {/* ── Invoice Detail Modal ── */}
-      <Modal
+      <SafeAreaModal
         animationType="slide"
         onRequestClose={closeInvoiceDetail}
         transparent
@@ -684,15 +684,15 @@ export default function Factures() {
             ) : null}
           </View>
         </View>
-      </Modal>
+      </SafeAreaModal>
 
       {/* ── Loading detail overlay ── */}
       {loadingDetail ? (
-        <Modal animationType="fade" transparent visible>
+        <SafeAreaModal animationType="fade" transparent visible>
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color={colors.orange} />
           </View>
-        </Modal>
+        </SafeAreaModal>
       ) : null}
     </View>
   );

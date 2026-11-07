@@ -58,7 +58,6 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Modal,
   Pressable,
   ScrollView,
   StatusBar,
@@ -66,6 +65,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import SafeAreaModal from '../../components/SafeAreaModal';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Bell,
@@ -676,7 +676,7 @@ function ClientDashboard({ navigation }) {
         </View>
       </View>
 
-      <Modal
+      <SafeAreaModal
         animationType="slide"
         onRequestClose={closeMenu}
         transparent
@@ -744,7 +744,7 @@ function ClientDashboard({ navigation }) {
                   }
                 />
               </Pressable>
-              <Modal
+              <SafeAreaModal
                 animationType="fade"
                 onRequestClose={() => setSpaceOpen(false)}
                 transparent
@@ -807,7 +807,7 @@ function ClientDashboard({ navigation }) {
                     </ScrollView>
                   </Pressable>
                 </Pressable>
-              </Modal>
+              </SafeAreaModal>
             </View>
             <ScrollView
               contentContainerStyle={layoutStyles.drawerList}
@@ -858,7 +858,7 @@ function ClientDashboard({ navigation }) {
             </View>
           </Pressable>
         </Pressable>
-      </Modal>
+      </SafeAreaModal>
     </SafeAreaView>
   );
 }

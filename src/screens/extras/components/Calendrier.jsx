@@ -17,13 +17,13 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   Alert,
-  Modal,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import SafeAreaModal from '../../../components/SafeAreaModal';
 import {
   Ban,
   Briefcase,
@@ -591,7 +591,7 @@ export default function Calendrier() {
       </View>
 
       {/* Déclarer une indisponibilité */}
-      <Modal
+      <SafeAreaModal
         animationType="fade"
         onRequestClose={() => setModalOpen(false)}
         transparent
@@ -711,7 +711,7 @@ export default function Calendrier() {
             </ScrollView>
           </Pressable>
         </Pressable>
-      </Modal>
+      </SafeAreaModal>
     </View>
   );
 }

@@ -24,13 +24,13 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import SafeAreaModal from '../../../components/SafeAreaModal';
 import {
   Check,
   ChevronDown,
@@ -703,7 +703,7 @@ export default function Notifications({ onGo }) {
       </View>
 
       {/* Notification detail */}
-      <Modal
+      <SafeAreaModal
         animationType="fade"
         onRequestClose={closeDetail}
         transparent
@@ -807,10 +807,10 @@ export default function Notifications({ onGo }) {
             ) : null}
           </Pressable>
         </Pressable>
-      </Modal>
+      </SafeAreaModal>
 
       {/* Page size select */}
-      <Modal
+      <SafeAreaModal
         animationType="fade"
         onRequestClose={() => setPageSizeOpen(false)}
         transparent
@@ -863,7 +863,7 @@ export default function Notifications({ onGo }) {
             ))}
           </Pressable>
         </Pressable>
-      </Modal>
+      </SafeAreaModal>
     </View>
   );
 }

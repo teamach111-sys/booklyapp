@@ -24,13 +24,13 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import SafeAreaModal from '../../../components/SafeAreaModal';
 import {
   ArrowLeft,
   CheckCircle,
@@ -653,7 +653,7 @@ export default function Messages() {
       </View>
 
       {/* ── Nouveau report bottom sheet ── */}
-      <Modal
+      <SafeAreaModal
         animationType="fade"
         onRequestClose={() => setReportOpen(false)}
         transparent
@@ -759,7 +759,7 @@ export default function Messages() {
             </ScrollView>
           </Pressable>
         </Pressable>
-      </Modal>
+      </SafeAreaModal>
     </View>
   );
 }

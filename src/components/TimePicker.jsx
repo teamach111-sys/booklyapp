@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,6 +8,7 @@ import {
 } from 'react-native';
 import { Clock, X } from 'lucide-react-native';
 import { colors as appColors } from '../styles';
+import SafeAreaModal from './SafeAreaModal';
 
 // Themed time picker, companion of DatePicker. Two scrollable columns (hours /
 // minutes) painted with the palette of the current dashboard, so the extras
@@ -137,7 +137,7 @@ export default function TimePicker({
         ) : null}
       </Pressable>
 
-      <Modal
+      <SafeAreaModal
         animationType="fade"
         onRequestClose={() => setOpen(false)}
         transparent
@@ -265,7 +265,7 @@ export default function TimePicker({
             </View>
           </Pressable>
         </Pressable>
-      </Modal>
+      </SafeAreaModal>
     </>
   );
 }

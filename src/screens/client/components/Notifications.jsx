@@ -23,7 +23,6 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -32,6 +31,7 @@ import {
   View,
   Alert,
 } from 'react-native';
+import SafeAreaModal from '../../../components/SafeAreaModal';
 import {
   Bell,
   BriefcaseBusiness,
@@ -242,7 +242,7 @@ export default function Notifications({ onGo }) {
         </View>
 
         {/* Per page options bottom sheet */}
-        <Modal
+        <SafeAreaModal
           animationType="fade"
           onRequestClose={() => setShowPerPageMenu(false)}
           transparent
@@ -287,7 +287,7 @@ export default function Notifications({ onGo }) {
               </ScrollView>
             </Pressable>
           </Pressable>
-        </Modal>
+        </SafeAreaModal>
 
         {/* Search Bar */}
         <View style={styles.searchWrap}>

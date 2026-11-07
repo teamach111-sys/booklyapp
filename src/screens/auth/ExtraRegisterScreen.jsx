@@ -17,13 +17,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Modal,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import SafeAreaModal from '../../components/SafeAreaModal';
 import {
   errorCodes,
   isErrorWithCode,
@@ -468,7 +468,7 @@ function SelectField({
           style={open ? styles.selectArrowOpen : undefined}
         />
       </Pressable>
-      <Modal
+      <SafeAreaModal
         animationType="fade"
         onRequestClose={() => setOpen(false)}
         transparent
@@ -516,7 +516,7 @@ function SelectField({
             </ScrollView>
           </Pressable>
         </Pressable>
-      </Modal>
+      </SafeAreaModal>
     </View>
   );
 }

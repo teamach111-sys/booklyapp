@@ -1,5 +1,6 @@
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { X } from 'lucide-react-native';
+import SafeAreaModal from '../../../components/SafeAreaModal';
 import { useClientColors } from '../theme/ClientThemeContext';
 
 // Shared bottom sheet matching the "Site actif" / select-input picker:
@@ -20,7 +21,7 @@ export default function BottomSheet({
   const colors = useClientColors();
 
   return (
-    <Modal
+    <SafeAreaModal
       animationType="fade"
       onRequestClose={onClose}
       statusBarTranslucent
@@ -66,7 +67,7 @@ export default function BottomSheet({
           {children}
         </Pressable>
       </Pressable>
-    </Modal>
+    </SafeAreaModal>
   );
 }
 

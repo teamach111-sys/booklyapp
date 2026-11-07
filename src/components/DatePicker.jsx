@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { CalendarDays, ChevronLeft, ChevronRight, X } from 'lucide-react-native';
 import { colors as appColors } from '../styles';
+import SafeAreaModal from './SafeAreaModal';
 
 // Themed date picker used everywhere a date is typed in the app.
 //
@@ -161,7 +162,7 @@ export default function DatePicker({
         ) : null}
       </Pressable>
 
-      <Modal
+      <SafeAreaModal
         animationType="fade"
         onRequestClose={() => setOpen(false)}
         transparent
@@ -310,7 +311,7 @@ export default function DatePicker({
             </View>
           </Pressable>
         </Pressable>
-      </Modal>
+      </SafeAreaModal>
     </>
   );
 }

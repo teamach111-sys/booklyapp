@@ -16,13 +16,13 @@
 import { useState } from 'react';
 import {
   Alert,
-  Modal,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import SafeAreaModal from '../../components/SafeAreaModal';
 import { Check, ChevronDown, X } from 'lucide-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import DatePicker from '../../components/DatePicker';
@@ -202,7 +202,7 @@ function SelectField({
         </Text>
         <ChevronDown size={18} color={colors.orangeDark} />
       </Pressable>
-      <Modal
+      <SafeAreaModal
         animationType="fade"
         onRequestClose={onToggle}
         transparent
@@ -252,7 +252,7 @@ function SelectField({
             </ScrollView>
           </Pressable>
         </Pressable>
-      </Modal>
+      </SafeAreaModal>
     </View>
   );
 }

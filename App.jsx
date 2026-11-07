@@ -1,6 +1,10 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import {
+  initialWindowMetrics,
+  SafeAreaProvider,
+} from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import ClientRegisterScreen from './src/screens/auth/ClientRegisterScreen';
@@ -31,49 +35,51 @@ function BootGate({ children }) {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BootGate>
-        <NavigationContainer>
-          <Stack.Navigator>
-            <Stack.Screen
-              name="Home"
-              component={HomeScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="ClientDashboard"
-              component={ClientScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="ExtraDashboard"
-              component={ExtrasScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="Login"
-              component={LoginScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="ForgotPassword"
-              component={ForgotPasswordScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="ClientRegister"
-              component={ClientRegisterScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="ExtraRegister"
-              component={ExtraRegisterScreen}
-              options={{ headerShown: false }}
-            />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </BootGate>
-    </AuthProvider>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <AuthProvider>
+        <BootGate>
+          <NavigationContainer>
+            <Stack.Navigator>
+              <Stack.Screen
+                name="Home"
+                component={HomeScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="ClientDashboard"
+                component={ClientScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="ExtraDashboard"
+                component={ExtrasScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="Login"
+                component={LoginScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="ForgotPassword"
+                component={ForgotPasswordScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="ClientRegister"
+                component={ClientRegisterScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="ExtraRegister"
+                component={ExtraRegisterScreen}
+                options={{ headerShown: false }}
+              />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </BootGate>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
 
